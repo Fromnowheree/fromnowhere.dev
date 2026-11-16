@@ -15,11 +15,12 @@
     "label": "Jezik"
   },
   "home": {
-    "kicker": "fromnowhere.dev",
-    "boardKicker": "Projekti",
-    "boardTitle": "Kamo vodi svaka linija",
-    "mapLabel": "Karta linija",
-    "origin": "Ovdje ste",
+    "kicker": "Fromnowhere · softverski studio jednog čovjeka",
+    "tally": "Linije ukratko",
+    "tallyLines": "Linije",
+    "tallyRunning": "U prometu",
+    "tallyBuilding": "U izgradnji",
+    "tallyPaused": "Obustavljeno",
     "contactKicker": "Javite se",
     "contactTitle": "Imate nešto za izraditi?",
     "contactLead": "Recite mi što je to. Odgovaram osobno.",
@@ -27,16 +28,31 @@
     "empty": "Još nema objavljenih projekata."
   },
   "map": {
-    "pause": ", ",
-    "more": "još {count, plural, one {# adresa} few {# adrese} other {# adresa}}"
+    "label": "Karta linija",
+    "origin": "00 · točka",
+    "stops": "{count, plural, one {+# stanica} few {+# stanice} other {+# stanica}}",
+    "hintPoint": "Postavite pokazivač na liniju ili terminal i ona će zasvijetliti.",
+    "hintTap": "Dodirnite terminal da otvorite njegov projekt.",
+    "pause": ", "
   },
   "board": {
+    "kicker": "Peron 00 · iz točke",
+    "title": "Polasci",
+    "clock": "Vaše lokalno vrijeme",
     "line": "Linija",
     "destination": "Odredište",
-    "what": "Što je to",
     "address": "Adresa",
     "status": "Status",
-    "here": "Njegova stranica ovdje"
+    "here": "Njegova stranica ovdje",
+    "sub": {
+      "running": "Polazi pri svakom posjetu",
+      "building": "Još nije u prometu",
+      "planned": "Još nije u prometu",
+      "paused": "Promet obustavljen"
+    },
+    "tickerIntro": "<b>Kratke poveznice</b> rade u traci za adresu",
+    "tickerHere": "njegova stranica ovdje",
+    "tickerOutro": "<b>Svaka linija</b> kreće iz iste točke"
   },
   "status": {
     "running": "Radi",
@@ -63,6 +79,7 @@
   "footer": {
     "label": "Podnožje",
     "privacy": "Privatnost",
+    "contact": "Kontakt",
     "elsewhere": "Drugdje"
   },
   "contact": {

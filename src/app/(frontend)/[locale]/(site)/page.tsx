@@ -1,14 +1,15 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
+import type React from 'react'
 
-import { SectionHeading } from '@/components/fnw'
-import { Lockup } from '@/components/site/Chrome'
+import { HomeMotion } from '@/components/site/HomeMotion'
 import { RouteMap } from '@/components/site/RouteMap'
 import { Board } from '@/components/site/Signs'
 import { Link } from '@/i18n/navigation'
 import { asLocale } from '@/i18n/server'
 import { pageMetadata } from '@/lib/metadata'
-import { getProjects, getStudio } from '@/lib/payload'
+import { getProjects, getShortLinks, getStudio } from '@/lib/payload'
+import { serverUrl } from '@/lib/serverUrl'
 
 type Props = { params: Promise<{ locale: string }> }
 
@@ -23,70 +24,113 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   })
 }
 
+const delay = (d: number) => ({ '--d': d }) as React.CSSProperties
+
 /**
- * The origin (docs/vision.html): the lockup and one sentence, then the route map (one line per
- * project, from the point to a plate that opens its page), then the board, which lists the same
- * projects in the same order as a table. Hovering or focusing a board row lights its line on the
- * map (routemap.css, up to six lines).
+ * The origin (Night transit, docs/prototypes/night-transit.html): the headline whose full stop is
+ * the point, the tally, the route map (one coloured line per project, drawn out of the point on
+ * every visit, with trains running), the departures board listing the same projects in the same
+ * order, the ticker of short links, and the way to get in touch. Everything is the CMS's: the
+ * studio's words, the published projects, the short links; the tally is counted from them.
  */
 export default async function Home({ params }: Props) {
   const locale = asLocale((await params).locale)
-  const [t, studio, projects] = await Promise.all([
+  const [t, studio, projects, shortLinks] = await Promise.all([
     getTranslations({ locale, namespace: 'home' }),
     getStudio(locale),
     getProjects(locale),
+    getShortLinks(),
   ])
 
+  // The headline's own full stop gives way to the point.
+  const headline = (studio.headline || 'Fromnowhere').replace(/[.。]\s*$/, '')
+  const running = projects.filter((project) => project.status === 'running').length
+  const building = projects.filter((p) => p.status === 'building' || p.status === 'planned').length
+  const paused = projects.filter((project) => project.status === 'paused').length
+  const tally = [
+    { label: t('tallyLines'), count: projects.length },
+    { label: t('tallyRunning'), count: running },
+    ...(building > 0 || paused === 0 ? [{ label: t('tallyBuilding'), count: building }] : []),
+    ...(paused > 0 ? [{ label: t('tallyPaused'), count: paused }] : []),
+  ]
+
   return (
-    <>
-      <section className="fnw-hero home-hero">
-        <div className="fnw-hero__text">
-          <span className="fnw-enter" style={{ '--i': 0 } as React.CSSProperties}>
-            <Lockup size={48} full />
-          </span>
-          <p className="fnw-kicker fnw-enter" style={{ '--i': 1 } as React.CSSProperties}>
-            {t('kicker')}
-          </p>
-          <h1 className="fnw-hero__title fnw-enter" style={{ '--i': 2 } as React.CSSProperties}>
-            {studio.headline || 'Fromnowhere'}
-          </h1>
-          {studio.lede && (
-            <p className="fnw-hero__lede fnw-enter" style={{ '--i': 3 } as React.CSSProperties}>
+    <div className="home">
+      <section className="hero" aria-labelledby="home-title">
+        <p className="kicker enter" style={delay(0)}>
+          {t('kicker')}
+        </p>
+        <h1 id="home-title" className="enter" style={delay(1)}>
+          {headline}
+          <span className="hero__point" aria-hidden="true" />
+        </h1>
+        <div className="hero__row">
+          {studio.lede ? (
+            <p className="hero__lede enter" style={delay(2)}>
               {studio.lede}
             </p>
+          ) : (
+            <span />
+          )}
+          {projects.length > 0 && (
+            <dl className="tally enter" style={delay(3)} aria-label={t('tally')}>
+              {tally.map(({ label, count }) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{count}</dd>
+                </div>
+              ))}
+            </dl>
           )}
         </div>
-        {await RouteMap({ projects, locale })}
       </section>
 
-      <section className="home-section" aria-labelledby="projects">
-        <SectionHeading
-          number="01"
-          kicker={t('boardKicker')}
-          title={t('boardTitle')}
-          id="projects"
-        />
+      {projects.length > 0 && (
+        <section className="home__map">{await RouteMap({ projects, locale })}</section>
+      )}
+
+      <section className="home__board" aria-labelledby="projects">
         {projects.length > 0 ? (
-          <div className="fnw-reveal">
-            <Board projects={projects} locale={locale} />
-          </div>
+          await Board({ projects, shortLinks, host: new URL(serverUrl).host, locale })
         ) : (
-          <p className="fnw-muted">{t('empty')}</p>
+          <>
+            <h2 id="projects" className="fnw-sr">
+              {t('tallyLines')}
+            </h2>
+            <p className="home__empty">{t('empty')}</p>
+          </>
         )}
       </section>
 
-      {/* The band is indigo (--section) in both themes, so it keeps the dark pair's text tokens;
-          the light pair's dark text on it would be about 1.1:1. */}
-      <section className="fnw-band home-band" data-theme="dark">
-        <p className="fnw-kicker">{t('contactKicker')}</p>
-        <h2>{t('contactTitle')}</h2>
-        <p>{t('contactLead')}</p>
+      <section className="band home-band" aria-labelledby="band-title">
         <div>
-          <Link className="fnw-btn fnw-btn--primary" href="/contact">
+          <p className="kicker">{t('contactKicker')}</p>
+          <h2 id="band-title">{t('contactTitle')}</h2>
+          <p className="band__lead">{t('contactLead')}</p>
+        </div>
+        <div className="band__go">
+          <span className="band__rail" aria-hidden="true">
+            <span className="band__mover" />
+          </span>
+          <Link className="btn" href="/contact">
             {t('contactAction')}
+            <svg
+              viewBox="0 0 256 256"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="20"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path d="M40 128h176M144 56l72 72-72 72" />
+            </svg>
           </Link>
         </div>
       </section>
-    </>
+
+      <HomeMotion />
+    </div>
   )
 }

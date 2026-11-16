@@ -1,68 +1,35 @@
 import { expect, test, type Page } from '@playwright/test'
 
 /**
- * The route map in the home hero (docs/phase-1.md, 2), against the seeded projects: 01 Locals,
- * 02 Giogio (three addresses), 03 Nowhere's Medical Toolbox (building, dashed), 04 Gati.
- * Lighting, layout, the rail, the draw once per visit, reduced motion, forced colours, no
- * JavaScript and touch.
+ * The home page in Night transit (docs/prototypes/night-transit.html), against the seeded
+ * projects: 01 Locals, 02 Giogio (three addresses), 03 Nowhere's Medical Toolbox (building),
+ * 04 Gati. The opening on every visit, the trains, lighting between the map and the board, the
+ * phone map, reduced motion, no JavaScript, touch targets and forced colours.
  */
 
 const slugs = ['locals', 'giogio', 'nmt', 'gati']
 
-/** A CSS colour as the browser computes it, resolved inside the map (so the map's own custom
- * properties apply), for comparing with computed styles. */
-const colour = (page: Page, value: string) =>
-  page.evaluate((value) => {
-    const probe = document.createElement('i')
-    probe.style.color = value
-    document.querySelector('.map')!.append(probe)
-    const resolved = getComputedStyle(probe).color
-    probe.remove()
-    return resolved
-  }, value)
-
-/** The computed stroke of every fan path, in line order. */
-const strokes = (page: Page) =>
-  page.$$eval('.map-line__fan path', (paths) => paths.map((path) => getComputedStyle(path).stroke))
-
-/** Every colour in a line's rail parts (`::before` trunk, `::after` spur), normalised. */
-const railColours = (page: Page, index: number, part: '::before' | '::after') =>
-  page.evaluate(
-    ({ index, part }) => {
-      const li = document.querySelectorAll('.map-line')[index]
-      const style = getComputedStyle(li, part)
-      const found = [
-        ...style.backgroundImage.matchAll(/(?:rgba?|color|oklab|oklch|lab|lch|hsla?)\([^)]*\)/g),
-      ].map((match) => match[0])
-      if (style.backgroundColor !== 'rgba(0, 0, 0, 0)') found.push(style.backgroundColor)
-      const probe = document.createElement('i')
-      li.append(probe)
-      const normal = found.map((value) => {
-        probe.style.color = value
-        return getComputedStyle(probe).color
-      })
-      probe.remove()
-      return normal
-    },
-    { index, part },
-  )
-
-/** The animations playing under the map now, with their durations. */
-const mapAnimations = (page: Page) =>
+/** The trains' animations on the page now: their line, state and speed. */
+const trains = (page: Page) =>
   page.evaluate(() =>
     document
       .getAnimations()
-      .filter((animation) => {
-        const target = (animation.effect as KeyframeEffect | null)?.target
-        return target?.closest('.map') && animation.playState === 'running'
-      })
-      .map((animation) => ({
-        name: (animation as CSSAnimation).animationName ?? 'transition',
-        duration: Number(animation.effect!.getTiming().duration),
-      })),
+      .filter((animation) =>
+        ((animation.effect as KeyframeEffect | null)?.target as Element | null)?.classList.contains(
+          'train',
+        ),
+      )
+      .map((animation) => {
+        const target = (animation.effect as KeyframeEffect).target as Element
+        return {
+          line: target.closest('.line')?.getAttribute('data-line'),
+          state: animation.playState,
+          rate: animation.playbackRate,
+        }
+      }),
   )
 
-/** Records the name of every animation that starts under the map (`window.__mapStarts`). */
+/** Names of the CSS animations that have started under the map since the page began. */
 const recordStarts = (page: Page) =>
   page.addInitScript(() => {
     const record = window as unknown as { __mapStarts: string[] }
@@ -76,377 +43,408 @@ const recordStarts = (page: Page) =>
       true,
     )
   })
-
 const starts = (page: Page) =>
   page.evaluate(() => (window as unknown as { __mapStarts: string[] }).__mapStarts)
-
 const resetStarts = (page: Page) =>
   page.evaluate(() => {
     ;(window as unknown as { __mapStarts: string[] }).__mapStarts = []
   })
 
-for (const colorScheme of ['dark', 'light'] as const) {
-  test.describe(`the wide map at 1280, ${colorScheme}`, () => {
-    test.use({ viewport: { width: 1280, height: 900 }, colorScheme })
+const lineOpacity = (page: Page, slug: string) =>
+  page
+    .locator(`.map__svg--wide .line[data-line="${slug}"]`)
+    .evaluate((el) => Number(getComputedStyle(el).opacity))
 
-    test.beforeEach(async ({ page }) => {
-      await page.goto('/en')
-      await expect(page.locator('.map-line__fan path')).toHaveCount(4)
-    })
+test.describe('the wide map at 1440', () => {
+  test.use({ viewport: { width: 1440, height: 900 } })
 
-    test('hovering plate 02 lights the Giogio line and dims the others', async ({ page }) => {
-      const accent = await colour(page, 'var(--accent)')
-      const dim = await colour(page, 'var(--route-dim)')
-      await page.locator('.map-plate').nth(1).hover()
-      await expect.poll(() => strokes(page)).toEqual([dim, accent, dim, dim])
-    })
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/en')
+    await expect(page.locator('.map__svg--wide .line')).toHaveCount(4)
+  })
 
-    test('hovering board row 3 lights map line 3 and its dashed plate', async ({ page }) => {
-      const accent = await colour(page, 'var(--accent)')
-      const dim = await colour(page, 'var(--route-dim)')
-      await page.locator('.board tbody tr').nth(2).hover()
-      await expect.poll(() => strokes(page)).toEqual([dim, dim, accent, dim])
-      const plate = page.locator('.map-line').nth(2).locator('.map-plate')
-      await expect.poll(() => plate.evaluate((el) => getComputedStyle(el).borderColor)).toBe(accent)
-      const ring = await plate
-        .locator('.map-plate__num')
-        .evaluate((el) => getComputedStyle(el).boxShadow)
-      expect(ring).toContain('inset')
-      expect(ring).toContain(accent)
-    })
-
-    test('focusing board row 3’s link with the keyboard lights map line 3', async ({ page }) => {
-      const accent = await colour(page, 'var(--accent)')
-      const dim = await colour(page, 'var(--route-dim)')
-      await page.locator('.board tbody tr').nth(1).locator('a').focus()
-      await page.keyboard.press('Tab')
-      await expect(page.locator('.board tbody tr').nth(2).locator('a')).toBeFocused()
-      await expect.poll(() => strokes(page)).toEqual([dim, dim, accent, dim])
-      const plate = page.locator('.map-line').nth(2).locator('.map-plate')
-      await expect.poll(() => plate.evaluate((el) => getComputedStyle(el).borderColor)).toBe(accent)
+  test('shows the wide drawing, its terminals with their labels to the right', async ({ page }) => {
+    await expect(page.locator('.map__svg--wide')).toBeVisible()
+    await expect(page.locator('.map__svg--tall')).toBeHidden()
+    for (const slug of slugs) {
+      const terminal = await page
+        .locator(`.map__svg--wide .line[data-line="${slug}"] .line__terminal`)
+        .boundingBox()
+      const card = await page.locator(`.term[data-line="${slug}"]`).boundingBox()
+      expect(card!.x).toBeGreaterThan(terminal!.x + terminal!.width)
       expect(
-        await plate.locator('.map-plate__num').evaluate((el) => getComputedStyle(el).boxShadow),
-      ).toContain(accent)
-    })
-
-    test('Tab from the skip link reaches the plates in line order, each lighting its line', async ({
-      page,
-    }) => {
-      const accent = await colour(page, 'var(--accent)')
-      await page.keyboard.press('Tab')
-      await expect(page.locator('.skip-link')).toBeFocused()
-      for (let step = 0; step < 20; step++) {
-        if (await page.evaluate(() => document.activeElement?.classList.contains('map-plate')))
-          break
-        await page.keyboard.press('Tab')
-      }
-      for (const [index, slug] of slugs.entries()) {
-        if (index > 0) await page.keyboard.press('Tab')
-        const plate = page.locator('.map-plate').nth(index)
-        await expect(plate).toBeFocused()
-        await expect(plate).toHaveAttribute('href', `/en/projects/${slug}`)
-        await expect.poll(async () => (await strokes(page))[index]).toBe(accent)
-        const outline = await plate.evaluate((el) => {
-          const style = getComputedStyle(el)
-          return { width: style.outlineWidth, style: style.outlineStyle }
-        })
-        expect(outline).toEqual({ width: '2px', style: 'solid' })
-      }
-    })
+        Math.abs(card!.y + card!.height / 2 - (terminal!.y + terminal!.height / 2)),
+      ).toBeLessThan(4)
+    }
   })
-}
 
-test.describe('"You are here"', () => {
-  test.use({ reducedMotion: 'reduce' })
+  test('the trains run once the lines are drawn, one or more on every working line', async ({
+    page,
+  }) => {
+    await expect.poll(async () => (await trains(page)).length, { timeout: 8_000 }).toBe(8)
+    const running = await trains(page)
+    expect(running.every((train) => train.state === 'running' && train.rate === 1)).toBe(true)
+    expect(running.filter((train) => train.line === 'giogio')).toHaveLength(3)
+    expect(running.filter((train) => train.line === 'nmt')).toHaveLength(1)
+  })
 
-  for (const width of [1280, 320])
-    for (const locale of ['en', 'hr'])
-      test(`never collides with a line, at ${width} in ${locale}`, async ({ page }) => {
-        await page.setViewportSize({ width, height: 900 })
-        await page.goto(`/${locale}`)
-        const result = await page.evaluate(() => {
-          const here = document.querySelector('.map__here')!
-          here.scrollIntoView({ block: 'center' })
-          const box = here.getBoundingClientRect()
-          const overlaps = (other: DOMRect) =>
-            other.width > 0 &&
-            other.height > 0 &&
-            box.left < other.right &&
-            other.left < box.right &&
-            box.top < other.bottom &&
-            other.top < box.bottom
-          const parts = [...document.querySelectorAll('.map-line__fan path, .map-line__run')].map(
-            (part) => part.getBoundingClientRect(),
-          )
-          const rail =
-            getComputedStyle(document.querySelector('.map-line__fan')!).display === 'none'
-          const lines = document.querySelector('.map__lines')!.getBoundingClientRect()
-          return {
-            collisions: parts.filter(overlaps).length,
-            rail,
-            aboveLines: box.bottom <= lines.top + 0.5,
-            inside:
-              box.left >= 0 &&
-              box.top >= 0 &&
-              box.right <= window.innerWidth &&
-              box.bottom <= window.innerHeight,
-          }
-        })
-        expect(result.collisions).toBe(0)
-        expect(result.inside).toBe(true)
-        expect(result.rail).toBe(width < 672)
-        if (result.rail) expect(result.aboveLines).toBe(true)
-      })
-})
+  test('a train arriving pulses its terminal', async ({ page }) => {
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() =>
+            document
+              .getAnimations()
+              .some((animation) =>
+                (
+                  (animation.effect as KeyframeEffect | null)?.target as Element | null
+                )?.classList.contains('line__pulse'),
+              ),
+          ),
+        { timeout: 15_000, intervals: [100] },
+      )
+      .toBe(true)
+  })
 
-test.describe('text growth on the wide map', () => {
-  test.use({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' })
-
-  test('keeps every plate within its row, with no two overlapping', async ({ page }) => {
-    await page.goto('/en')
-    await page.addStyleTag({ content: '.map-plate, .map-plate * { font-size: 24px !important }' })
-    const rows = await page.$$eval('.map-line', (lines) =>
-      lines.map((li) => ({
-        li: li.getBoundingClientRect().toJSON() as DOMRect,
-        plate: li.querySelector('.map-plate')!.getBoundingClientRect().toJSON() as DOMRect,
-      })),
+  test('pointing at terminal 02 lights the Giogio line and its row, dims the rest and speeds its trains up', async ({
+    page,
+  }) => {
+    await expect.poll(async () => (await trains(page)).length, { timeout: 8_000 }).toBe(8)
+    await page.locator('.term[data-line="giogio"] .term__name').hover()
+    await expect(page.locator('#route-map')).toHaveAttribute('data-active', 'giogio')
+    await expect(page.locator('.map__svg--wide .line[data-line="giogio"]')).toHaveClass(/is-active/)
+    await expect(page.locator('.row[data-line="giogio"]')).toHaveClass(/is-active/)
+    await expect.poll(() => lineOpacity(page, 'locals')).toBeLessThan(0.2)
+    expect(await lineOpacity(page, 'giogio')).toBe(1)
+    await expect
+      .poll(async () => (await trains(page)).filter((t) => t.line === 'giogio').map((t) => t.rate))
+      .toEqual([3, 3, 3])
+    expect((await trains(page)).filter((t) => t.line !== 'giogio').every((t) => t.rate === 1)).toBe(
+      true,
     )
-    expect(rows).toHaveLength(4)
-    for (const { li, plate } of rows) {
-      expect(plate.top).toBeGreaterThanOrEqual(li.top - 0.5)
-      expect(plate.bottom).toBeLessThanOrEqual(li.bottom + 0.5)
-    }
-    for (let a = 0; a < rows.length; a++)
-      for (let b = a + 1; b < rows.length; b++)
-        expect(
-          rows[a].plate.bottom <= rows[b].plate.top || rows[b].plate.bottom <= rows[a].plate.top,
-        ).toBe(true)
+
+    await page.mouse.move(5, 5)
+    await expect(page.locator('#route-map')).not.toHaveAttribute('data-active')
+    await expect.poll(() => lineOpacity(page, 'locals')).toBe(1)
+    await expect.poll(async () => (await trains(page)).every((t) => t.rate === 1)).toBe(true)
   })
-})
 
-test.describe('the rail on a phone', () => {
-  test.use({ reducedMotion: 'reduce' })
+  test('pointing at a line lights it, and its stroke opens the project', async ({ page }) => {
+    const line = page.locator('.map__svg--wide .line[data-line="locals"] .line__terminal')
+    await line.scrollIntoViewIfNeeded()
+    const box = (await line.boundingBox())!
+    // Along the run, left of the terminal.
+    await page.mouse.move(box.x - 120, box.y + box.height / 2)
+    await expect(page.locator('#route-map')).toHaveAttribute('data-active', 'locals')
+    await page.mouse.click(box.x - 120, box.y + box.height / 2)
+    await expect(page).toHaveURL(/\/en\/projects\/locals$/)
+  })
 
-  for (const width of [320, 360, 390])
-    for (const locale of ['en', 'hr'])
-      test(`shows whole plates at ${width} in ${locale}`, async ({ page }) => {
-        await page.setViewportSize({ width, height: 800 })
-        await page.goto(`/${locale}`)
-        const result = await page.evaluate(() => {
-          const visibleSvgs = [
-            ...document.querySelectorAll('.map svg.map-line__fan, .map svg.map-line__run'),
-          ].filter((svg) => svg.getBoundingClientRect().width > 0).length
-          const trunks = [...document.querySelectorAll('.map-line')].map(
-            (li) => getComputedStyle(li, '::before').display,
-          )
-          const truncated = [...document.querySelectorAll('.map-plate__name, .map-plate__where')]
-            .filter((el) => el.scrollWidth > el.clientWidth)
-            .map((el) => el.textContent)
-          const heights = [...document.querySelectorAll('.map-plate')].map(
-            (plate) => plate.getBoundingClientRect().height,
-          )
-          return {
-            visibleSvgs,
-            trunks,
-            truncated,
-            heights,
-            scrolls: document.documentElement.scrollWidth > window.innerWidth,
-          }
-        })
-        expect(result.visibleSvgs).toBe(0)
-        expect(result.trunks).toEqual(['block', 'block', 'block', 'block'])
-        expect(result.scrolls).toBe(false)
-        expect(result.truncated).toEqual([])
-        expect(result.heights).toHaveLength(4)
-        for (const height of result.heights) expect(height).toBeGreaterThanOrEqual(44)
-      })
-})
+  test('pointing at board row 03 lights map line 03', async ({ page }) => {
+    await page.locator('.row[data-line="nmt"]').hover()
+    await expect(page.locator('#route-map')).toHaveAttribute('data-active', 'nmt')
+    await expect(page.locator('.term[data-line="nmt"]')).toHaveClass(/is-active/)
+    await expect(page.locator('.row[data-line="nmt"]')).toHaveClass(/is-active/)
+  })
 
-test.describe('rail lighting', () => {
-  test.use({ viewport: { width: 390, height: 844 }, hasTouch: false })
-
-  test('focusing plate 03 lights the trunk down to its spur', async ({ page }) => {
-    await page.goto('/en')
-    const accent = await colour(page, 'var(--accent)')
-    const dim = await colour(page, 'var(--route-dim)')
-    await page.locator('.map-plate').nth(1).focus()
+  test('focusing a board link with the keyboard lights its map line', async ({ page }) => {
+    await page.locator('.row[data-line="giogio"] .row__dest a').focus()
     await page.keyboard.press('Tab')
-    await expect(page.locator('.map-plate').nth(2)).toBeFocused()
+    await expect(page.locator('.row[data-line="giogio"] .row__addr a').first()).toBeFocused()
+    await expect(page.locator('#route-map')).toHaveAttribute('data-active', 'giogio')
+    await page.keyboard.press('Shift+Tab')
+    await page.keyboard.press('Shift+Tab')
+    await expect(page.locator('#route-map')).toHaveAttribute('data-active', 'locals')
+  })
 
-    await expect.poll(async () => (await railColours(page, 2, '::before'))[0]).toBe(accent)
-    const third = await railColours(page, 2, '::before')
-    expect(third[0]).toBe(accent)
-    expect(third[third.length - 1]).toBe(dim)
-    for (const index of [0, 1]) {
-      const trunk = await railColours(page, index, '::before')
-      expect(trunk.length).toBeGreaterThan(0)
-      expect(new Set(trunk)).toEqual(new Set([accent]))
+  test('Tab from the skip link reaches the terminals in line order, each lighting its line with a visible focus', async ({
+    page,
+  }) => {
+    await page.keyboard.press('Tab')
+    await expect(page.locator('.skip-link')).toBeFocused()
+    for (let step = 0; step < 20; step++) {
+      if (await page.evaluate(() => document.activeElement?.classList.contains('term__name'))) break
+      await page.keyboard.press('Tab')
     }
-    const fourth = await railColours(page, 3, '::before')
-    expect(new Set(fourth)).toEqual(new Set([dim]))
-    expect(await railColours(page, 2, '::after')).toContain(accent)
+    for (const [index, slug] of slugs.entries()) {
+      if (index > 0) await page.keyboard.press('Tab')
+      const name = page.locator(`.term[data-line="${slug}"] .term__name`)
+      await expect(name).toBeFocused()
+      await expect(name).toHaveAttribute('href', `/en/projects/${slug}`)
+      await expect(page.locator('#route-map')).toHaveAttribute('data-active', slug)
+      const ring = await name.evaluate((el) => {
+        const style = getComputedStyle(el, '::after')
+        return { width: style.outlineWidth, style: style.outlineStyle }
+      })
+      expect(ring).toEqual({ width: '2px', style: 'solid' })
+    }
+    // After the four terminals, the board.
+    await page.keyboard.press('Tab')
+    await expect(page.locator('.row[data-line="locals"] .row__dest a')).toBeFocused()
   })
 })
 
-test.describe('without JavaScript', () => {
-  test.use({ javaScriptEnabled: false, viewport: { width: 1280, height: 900 } })
-
-  test('the plates are working links, and hovering one still lights its line', async ({ page }) => {
-    await page.goto('/en')
-    const plates = page.locator('.map-plate')
-    await expect(plates).toHaveCount(4)
-    for (const [index, slug] of slugs.entries())
-      await expect(plates.nth(index)).toHaveAttribute('href', `/en/projects/${slug}`)
-    const accent = await colour(page, 'var(--accent)')
-    await plates.nth(1).hover()
-    await expect.poll(async () => (await strokes(page))[1]).toBe(accent)
-    await plates.nth(3).click()
-    await expect(page).toHaveURL(/\/en\/projects\/gati$/)
-  })
-})
-
-test.describe('drawn once per visit', () => {
-  test.use({ viewport: { width: 1280, height: 900 } })
+test.describe('the opening, on every visit', () => {
+  test.use({ viewport: { width: 1440, height: 900 } })
 
   test.beforeEach(async ({ page }) => {
     await recordStarts(page)
     await page.goto('/en', { waitUntil: 'commit' })
     await page.waitForSelector('.map')
-    // Everything under the map that plays on a first visit is an entrance: slow or slower. Wait
-    // until routemap.css has applied and the plates, the fans and the runs are all scheduled
-    // (in their delay or playing), so the check never passes on an empty list.
-    let playing: Awaited<ReturnType<typeof mapAnimations>> = []
-    await expect
-      .poll(async () => (playing = await mapAnimations(page)).map((animation) => animation.name), {
-        intervals: [50],
-      })
-      .toEqual(expect.arrayContaining(['fnw-enter-sm', 'fnw-fade', 'fnw-draw']))
-    for (const animation of playing)
-      expect(animation.duration, animation.name).toBeGreaterThanOrEqual(280)
-    await page.waitForFunction(() =>
-      (window as unknown as { __mapStarts: string[] }).__mapStarts.includes('fnw-draw'),
-    )
   })
 
-  /** Nothing under the map plays, now or over the next moments. */
-  const expectStill = async (page: Page) => {
-    await expect(page.locator('html')).toHaveClass(/\bfnw-calm\b/)
-    expect(await mapAnimations(page)).toEqual([])
-    await page.waitForTimeout(1_800)
-    expect(await starts(page)).toEqual([])
-    expect(await mapAnimations(page)).toEqual([])
+  /** The lines draw out of the point one after another, and the terminals light. */
+  const expectOpening = async (page: Page) => {
+    await expect
+      .poll(async () => (await starts(page)).filter((name) => name === 'map-draw').length, {
+        timeout: 5_000,
+      })
+      .toBeGreaterThanOrEqual(8) // a main stroke and a glow per line
+    await expect.poll(async () => starts(page), { timeout: 5_000 }).toContain('map-pop')
+    expect(await starts(page)).toContain('map-label')
+    expect(await starts(page)).toContain('map-core')
   }
 
-  test('a first load draws the map', async ({ page }) => {
-    expect(await starts(page)).toContain('fnw-draw')
-    expect(await starts(page)).toContain('fnw-enter-sm')
+  test('draws the map on the first load, lines leaving one after another', async ({ page }) => {
+    await expectOpening(page)
+    const delays = await page.$$eval('.map__svg--wide .line .line__main', (paths) =>
+      paths.map((path) => getComputedStyle(path).animationDelay),
+    )
+    const ms = delays.map((delay) => parseFloat(delay) * (delay.endsWith('ms') ? 1 : 1000))
+    for (let i = 1; i < ms.length; i++) expect(ms[i]).toBeGreaterThan(ms[i - 1])
+    // Midway, the map is still being drawn; at the end it is whole.
+    await expect(page.locator('#route-map')).toHaveClass(/is-settled/, { timeout: 6_000 })
   })
 
-  test('a reload does not draw it again', async ({ page }) => {
+  test('draws it again on a reload', async ({ page }) => {
+    await expectOpening(page)
     await page.reload({ waitUntil: 'commit' })
     await page.waitForSelector('.map')
-    await expectStill(page)
+    await expectOpening(page)
   })
 
-  test('a soft navigation away and back does not draw it again', async ({ page }) => {
-    await page.locator('.map-plate').first().click()
+  test('draws it again after a soft navigation away and back', async ({ page }) => {
+    await expectOpening(page)
+    await page.locator('.term[data-line="locals"] .term__name').click()
     await expect(page).toHaveURL(/\/en\/projects\/locals$/)
     await resetStarts(page)
-    await page.locator('.fnw-nav__brand').click()
+    await page.locator('.site-nav .fnw-nav__brand').click()
     await expect(page).toHaveURL(/\/en$/)
     await page.waitForSelector('.map')
-    await expectStill(page)
+    await expectOpening(page)
   })
 
-  test('switching to Croatian does not draw it again', async ({ page }) => {
-    // The English map finishes its draw first; only the Croatian one is watched.
-    await expect.poll(() => mapAnimations(page), { timeout: 5_000 }).toEqual([])
+  test('draws it again in the other language', async ({ page }) => {
+    await expectOpening(page)
     await resetStarts(page)
     await page.locator('a[hreflang="hr"]').first().click()
     await expect(page).toHaveURL(/\/hr$/)
     await expect(page.locator('nav.map')).toHaveAttribute('aria-label', 'Karta linija')
-    await expectStill(page)
+    await expectOpening(page)
+  })
+})
+
+test.describe('the trains rest when nobody can see them', () => {
+  test.use({ viewport: { width: 1440, height: 900 } })
+
+  test('while the map is off screen, and while the tab is hidden', async ({ page }) => {
+    await page.goto('/en')
+    await expect.poll(async () => (await trains(page)).length, { timeout: 8_000 }).toBe(8)
+
+    await page.locator('.site-footer').scrollIntoViewIfNeeded()
+    await expect
+      .poll(async () => (await trains(page)).every((train) => train.state === 'paused'))
+      .toBe(true)
+    await page.evaluate(() => scrollTo(0, 0))
+    await expect
+      .poll(async () => (await trains(page)).every((train) => train.state === 'running'))
+      .toBe(true)
+
+    const setHidden = (hidden: boolean) =>
+      page.evaluate((hidden) => {
+        Object.defineProperty(document, 'hidden', { value: hidden, configurable: true })
+        document.dispatchEvent(new Event('visibilitychange'))
+      }, hidden)
+    await setHidden(true)
+    await expect
+      .poll(async () => (await trains(page)).every((train) => train.state === 'paused'))
+      .toBe(true)
+    await setHidden(false)
+    await expect
+      .poll(async () => (await trains(page)).every((train) => train.state === 'running'))
+      .toBe(true)
+  })
+})
+
+test.describe('the board', () => {
+  test.use({ viewport: { width: 1440, height: 900 } })
+
+  test('shows the visitor’s local time, ticking', async ({ page }) => {
+    await page.goto('/en')
+    const clock = page.locator('.clock time')
+    await expect(clock).toBeVisible()
+    await expect(clock).toHaveText(/^\d\d:\d\d:\d\d$/)
+    const first = await clock.textContent()
+    await expect.poll(() => clock.textContent(), { timeout: 3_000 }).not.toBe(first)
+  })
+
+  test('its rows wait below the fold, then sweep in, and end fully shown', async ({ page }) => {
+    await page.goto('/en')
+    const board = page.locator('#departures')
+    await expect(board).toHaveClass(/is-pending/)
+    await board.scrollIntoViewIfNeeded()
+    await expect(board).toHaveClass(/is-arrived/)
+    await expect
+      .poll(() =>
+        page.$$eval('.row > .row__dest', (cells) =>
+          cells.map((cell) => Number(getComputedStyle(cell).opacity)),
+        ),
+      )
+      .toEqual([1, 1, 1, 1])
+  })
+})
+
+test.describe('the tall map on a phone', () => {
+  for (const width of [320, 375])
+    for (const locale of ['en', 'hr'])
+      test(`at ${width} in ${locale}: the tall drawing, whole cards, no sideways scroll`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({ width, height: 800 })
+        await page.goto(`/${locale}`)
+        await expect(page.locator('.map__svg--tall')).toBeVisible()
+        await expect(page.locator('.map__svg--wide')).toBeHidden()
+        const result = await page.evaluate(() => {
+          const cards = [...document.querySelectorAll('.term')].map((card) =>
+            card.getBoundingClientRect(),
+          )
+          return {
+            scrolls: document.documentElement.scrollWidth > window.innerWidth,
+            outside: cards.filter((box) => box.right > window.innerWidth + 0.5).length,
+            overlaps: cards.filter((box, i) => i > 0 && box.top < cards[i - 1].bottom - 0.5).length,
+            heights: cards.map((box) => box.height),
+          }
+        })
+        expect(result.scrolls).toBe(false)
+        expect(result.outside).toBe(0)
+        expect(result.overlaps).toBe(0)
+        for (const height of result.heights) expect(height).toBeGreaterThanOrEqual(44)
+      })
+})
+
+test.describe('touch targets', () => {
+  test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true })
+
+  test('every control on the home page is at least 44px tall', async ({ page }) => {
+    await page.goto('/en')
+    const small = await page.evaluate(() =>
+      [...document.querySelectorAll('.site-nav a, .term, .row a, .band a, .site-footer a')]
+        // Shown only: a link the phone layout hides (About, in the footer instead) has no box.
+        .filter((el) => el.getClientRects().length > 0)
+        .map((el) => ({ el: el.outerHTML.slice(0, 80), height: el.getBoundingClientRect().height }))
+        .filter(({ height }) => height < 44),
+    )
+    expect(small).toEqual([])
+  })
+
+  test('a terminal’s whole card opens its project', async ({ page }) => {
+    await page.goto('/en')
+    await page.locator('.term[data-line="gati"]').scrollIntoViewIfNeeded()
+    const card = (await page.locator('.term[data-line="gati"]').boundingBox())!
+    await page.touchscreen.tap(card.x + card.width - 8, card.y + card.height - 6)
+    await expect(page).toHaveURL(/\/en\/projects\/gati$/)
   })
 })
 
 test.describe('reduced motion', () => {
-  test.use({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' })
+  test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
 
-  test('shows the finished map at once, with nothing playing', async ({ page }) => {
+  test('shows the finished map at once, with nothing moving: no trains, pulses, ticker or haze', async ({
+    page,
+  }) => {
     await recordStarts(page)
-    await page.goto('/en', { waitUntil: 'commit' })
-    await page.waitForSelector('.map')
-    expect(await mapAnimations(page)).toEqual([])
-    await page.waitForTimeout(1_000)
+    await page.goto('/en')
+    await page.waitForTimeout(2_500)
     expect(await starts(page)).toEqual([])
-    expect(await mapAnimations(page)).toEqual([])
+    expect(await page.evaluate(() => document.getAnimations().length)).toBe(0)
+    const drawn = await page.$$eval('.map__svg--wide .line--running .line__main', (paths) =>
+      paths.map((path) => getComputedStyle(path).strokeDasharray),
+    )
+    expect(drawn).toEqual(['none', 'none', 'none'])
+    const cards = await page.$$eval('.term', (cards) =>
+      cards.map((card) => Number(getComputedStyle(card).opacity)),
+    )
+    expect(cards).toEqual([1, 1, 1, 1])
+    // The ticker stands still and wraps, so all of it can be read.
+    expect(
+      await page
+        .locator('.ticker__copy')
+        .first()
+        .evaluate((el) => getComputedStyle(el).whiteSpace),
+    ).toBe('normal')
+    // The clock still tells the time.
+    await expect(page.locator('.clock time')).toHaveText(/^\d\d:\d\d:\d\d$/)
+  })
+
+  test('still lights a line when a terminal is pointed at', async ({ page }) => {
+    await page.goto('/en')
+    await page.locator('.term[data-line="giogio"] .term__name').hover()
+    await expect(page.locator('#route-map')).toHaveAttribute('data-active', 'giogio')
+  })
+})
+
+test.describe('without JavaScript', () => {
+  test.use({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } })
+
+  test('the map and the board read and every link works', async ({ page }) => {
+    await page.goto('/en')
+    for (const slug of slugs) {
+      await expect(page.locator(`.term[data-line="${slug}"] .term__name`)).toHaveAttribute(
+        'href',
+        `/en/projects/${slug}`,
+      )
+      await expect(page.locator(`.row[data-line="${slug}"] .row__dest a`)).toHaveAttribute(
+        'href',
+        `/en/projects/${slug}`,
+      )
+    }
+    await expect(page.locator('.row[data-line="gati"] .row__addr a')).toHaveAttribute(
+      'href',
+      'https://www.gati.hr',
+    )
+    // No made-up time: without a script there is no clock.
+    await expect(page.locator('.clock')).toBeHidden()
+    // The opening is CSS and ends with the whole map.
+    await page.waitForTimeout(3_500)
+    expect(
+      await page.$$eval('.term', (cards) =>
+        cards.map((card) => Number(getComputedStyle(card).opacity)),
+      ),
+    ).toEqual([1, 1, 1, 1])
+    await page.locator('.term[data-line="gati"] .term__name').click()
+    await expect(page).toHaveURL(/\/en\/projects\/gati$/)
   })
 })
 
 test.describe('forced colours', () => {
-  test.use({ reducedMotion: 'reduce' })
+  test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
 
-  test('keeps the lines, the stops and the point in system colours at 1280', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 900 })
+  test('draws the lines, terminals and the point in system colours', async ({ page }) => {
     await page.emulateMedia({ forcedColors: 'active' })
     await page.goto('/en')
-    const text = await colour(page, 'CanvasText')
-    const canvas = await colour(page, 'Canvas')
-    expect(text).not.toBe('rgba(0, 0, 0, 0)')
-    expect(new Set(await strokes(page))).toEqual(new Set([text]))
-    const fills = await page.$$eval('.map-line__run circle', (circles) =>
-      circles.map((circle) => getComputedStyle(circle).fill),
-    )
-    expect(fills).toHaveLength(2)
-    expect(new Set(fills)).toEqual(new Set([canvas]))
-    const point = await page.locator('.map__point').evaluate((el) => ({
-      background: getComputedStyle(el).backgroundColor,
-      width: el.getBoundingClientRect().width,
-    }))
-    expect(point.background).toBe(text)
-    expect(point.width).toBeGreaterThan(0)
-  })
-
-  test('keeps the rail and the point in system colours at 320', async ({ page }) => {
-    await page.setViewportSize({ width: 320, height: 800 })
-    await page.emulateMedia({ forcedColors: 'active' })
-    await page.goto('/en')
-    const text = await colour(page, 'CanvasText')
-    for (let index = 0; index < 4; index++) {
-      for (const part of ['::before', '::after'] as const) {
-        const colours = await railColours(page, index, part)
-        expect(colours.length, `${index} ${part}`).toBeGreaterThan(0)
-        // A dashed spur alternates the line with transparent gaps.
-        expect(colours.filter((value) => value !== 'rgba(0, 0, 0, 0)')).not.toEqual([])
-        for (const value of colours.filter((value) => value !== 'rgba(0, 0, 0, 0)'))
-          expect(value, `${index} ${part}`).toBe(text)
-      }
-    }
-    const point = await page
-      .locator('.map__point')
-      .evaluate((el) => getComputedStyle(el).backgroundColor)
-    expect(point).toBe(text)
-  })
-})
-
-test.describe('touch', () => {
-  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })
-
-  test('a tapped plate does not stay lit after coming back', async ({ page }) => {
-    await page.goto('/en')
-    const accent = await colour(page, 'var(--accent)')
-    await page.locator('.map-plate').nth(1).tap()
-    await expect(page).toHaveURL(/\/en\/projects\/giogio$/)
-    await page.goBack()
-    await expect(page).toHaveURL(/\/en$/)
-    await page.waitForSelector('.map')
-    await page.waitForTimeout(300)
-    for (let index = 0; index < 4; index++)
-      for (const part of ['::before', '::after'] as const)
-        expect(await railColours(page, index, part), `${index} ${part}`).not.toContain(accent)
-    const borders = await page.$$eval('.map-plate', (plates) =>
-      plates.map((plate) => getComputedStyle(plate).borderColor),
-    )
-    expect(borders).not.toContain(accent)
+    const colours = await page.evaluate(() => {
+      const probe = document.createElement('i')
+      probe.style.color = 'CanvasText'
+      document.body.append(probe)
+      const text = getComputedStyle(probe).color
+      probe.remove()
+      const strokes = [...document.querySelectorAll('.map__svg--wide .line__main')].map(
+        (path) => getComputedStyle(path).stroke,
+      )
+      const point = getComputedStyle(document.querySelector('.map__svg--wide .origin__core')!).fill
+      return { text, strokes, point }
+    })
+    expect(new Set(colours.strokes)).toEqual(new Set([colours.text]))
+    expect(colours.point).toBe(colours.text)
   })
 })

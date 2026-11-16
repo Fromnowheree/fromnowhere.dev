@@ -15,11 +15,12 @@
     "label": "Language"
   },
   "home": {
-    "kicker": "fromnowhere.dev",
-    "boardKicker": "Projects",
-    "boardTitle": "Where each line goes",
-    "mapLabel": "Route map",
-    "origin": "You are here",
+    "kicker": "Fromnowhere · one-person software studio",
+    "tally": "The lines at a glance",
+    "tallyLines": "Lines",
+    "tallyRunning": "Running",
+    "tallyBuilding": "Under construction",
+    "tallyPaused": "Paused",
     "contactKicker": "Get in touch",
     "contactTitle": "Something to build?",
     "contactLead": "Tell me what it is. I’ll reply myself.",
@@ -27,16 +28,31 @@
     "empty": "No projects are published yet."
   },
   "map": {
-    "pause": ", ",
-    "more": "{count, plural, one {# more address} other {# more addresses}}"
+    "label": "Route map",
+    "origin": "00 · the point",
+    "stops": "{count, plural, one {+# stop} other {+# stops}}",
+    "hintPoint": "Point at a line or a terminal to light it.",
+    "hintTap": "Tap a terminal to open its project.",
+    "pause": ", "
   },
   "board": {
+    "kicker": "Platform 00 · from the point",
+    "title": "Departures",
+    "clock": "Your local time",
     "line": "Line",
     "destination": "Destination",
-    "what": "What it is",
     "address": "Address",
     "status": "Status",
-    "here": "Its page here"
+    "here": "Its page here",
+    "sub": {
+      "running": "Departs every visit",
+      "building": "Not in service yet",
+      "planned": "Not in service yet",
+      "paused": "Service paused"
+    },
+    "tickerIntro": "<b>Short links</b> work in the address bar",
+    "tickerHere": "its page here",
+    "tickerOutro": "<b>Every line</b> leaves from the same point"
   },
   "status": {
     "running": "Running",
@@ -63,6 +79,7 @@
   "footer": {
     "label": "Footer",
     "privacy": "Privacy",
+    "contact": "Contact",
     "elsewhere": "Elsewhere"
   },
   "contact": {

@@ -27,24 +27,23 @@ export const readPlayed = (read: () => string | null): string[] => {
   }
 }
 
-/** Whether a page shows everything at once: already played this visit, or reduced motion. */
+/**
+ * Whether a page shows everything at once: already played this visit, or reduced motion. This
+ * governs the `.fnw-enter` and `.fnw-reveal` entrances of the other pages only: the home page's
+ * opening (routemap.css) never reads `fnw-calm` and plays on every visit, and reduced motion stops
+ * it through its own media query.
+ */
 export const isCalm = (pathname: string, played: string[], mm: typeof matchMedia): boolean =>
   played.includes(playedKey(pathname)) || mm('(prefers-reduced-motion: reduce)').matches
 
-/** Dark is the brand's primary theme; a device set to light gets the light pair
- * (design/README.md). */
-export const themeFor = (mm: typeof matchMedia): 'light' | 'dark' =>
-  mm('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
-
 /**
- * Runs in <head> before paint (`[locale]/layout.tsx`). It makes the calls <ThemeSync> and <Motion>
- * make once React is awake, written out by hand: the theme by `themeFor`, and `fnw-calm` by
- * `readPlayed` and `isCalm` (a page already seen this session, by `playedKey`, or reduced motion).
- * Keep them in step (tests/int/motion.int.spec.ts).
+ * Runs in <head> before paint (`[locale]/layout.tsx`). It makes the call <Motion> makes once React
+ * is awake, written out by hand: `fnw-calm` by `readPlayed` and `isCalm` (a page already seen this
+ * session, by `playedKey`, or reduced motion). Keep them in step (tests/int/motion.int.spec.ts).
+ * There is no theme to set: the site is dark only.
  */
 export const headScript =
   `(function(d){` +
-  `try{d.dataset.theme=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'}catch(e){}` +
   `try{var c=matchMedia('(prefers-reduced-motion: reduce)').matches;` +
   `try{var k=location.pathname.replace(new RegExp(${JSON.stringify(LOCALE_PREFIX)}),'')||'/';` +
   `var p=JSON.parse(sessionStorage.getItem(${JSON.stringify(PLAYED_KEY)})||'[]');` +

@@ -106,8 +106,8 @@ const focusedId = (page: Page) => page.evaluate(() => document.activeElement?.id
 const expectFocusOnContent = (page: Page) =>
   expect.poll(() => focusedId(page), { timeout: 2_000 }).toBe('content')
 
-const plate = (page: Page, n: number) => page.locator('.map .map-plate').nth(n)
-const boardLink = (page: Page, n: number) => page.locator('.board tbody tr a').nth(n)
+const plate = (page: Page, n: number) => page.locator('.map .term__name').nth(n)
+const boardLink = (page: Page, n: number) => page.locator('.board .row__dest a').nth(n)
 const headerLink = (page: Page, href: string) => page.locator(`.site-nav a[href="${href}"]`)
 const languageLink = (page: Page, locale: string) =>
   page.locator(`.site-nav .lang__opt[hreflang="${locale}"]`)
@@ -272,15 +272,27 @@ test.describe('page transition', () => {
     expect(await box()).toEqual(before)
   })
 
-  test.describe('theme', () => {
+  test.describe('dark only', () => {
     test.use({ colorScheme: 'light' })
 
-    test('stays light across EN→HR and a missing project', async ({ page }) => {
+    test('stays at night across EN→HR and a missing project, even on a light device', async ({
+      page,
+    }) => {
+      const night = async () => {
+        const html = page.locator('html')
+        await expect(html).not.toHaveAttribute('data-theme', 'light')
+        expect(
+          await page.evaluate(() => ({
+            scheme: getComputedStyle(document.documentElement).colorScheme,
+            background: getComputedStyle(document.documentElement).backgroundColor,
+          })),
+        ).toEqual({ scheme: 'dark', background: 'rgb(5, 6, 15)' })
+      }
       await page.goto('/en')
-      await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+      await night()
 
       await navigate(page, /\/hr$/, () => languageLink(page, 'hr').click())
-      await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+      await night()
 
       await page.goto('/en')
       await navigate(page, /\/en\/projects\/nope$/, () =>
@@ -290,7 +302,7 @@ test.describe('page transition', () => {
           ).next.router.push('/en/projects/nope'),
         ),
       )
-      await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+      await night()
     })
   })
 

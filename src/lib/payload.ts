@@ -103,10 +103,6 @@ export const getPublishedIndex = cache(async (): Promise<PublishedIndex> => {
   }
 })
 
-/** Whether the line is drawn solid: only a running project with an address of its own. */
-export const isRunning = (project: Pick<Project, 'status' | 'addresses'>): boolean =>
-  project.status === 'running' && (project.addresses?.length ?? 0) > 0
-
 /** Where a project's line ends: its first address, or its page here while it has none. */
 export const destinationOf = (
   project: Pick<Project, 'addresses' | 'slug'>,
@@ -116,6 +112,56 @@ export const destinationOf = (
     ? { href: first, external: true }
     : { href: projectHref(project.slug ?? ''), external: false }
 }
+
+/** A short link as the home page's ticker shows it: the word, and where it leads. */
+export type ShortLinkSign = {
+  alias: string
+  /** An absolute https address, or a site path without its language (a project's page here). */
+  href: string
+  external: boolean
+}
+
+/**
+ * Every short link that leads somewhere public, for the ticker: in the line order of the projects
+ * they name, then the ones with an address of their own, by word. Short links have no drafts; the
+ * projects they name do, so a link to a project that is not published is left out, exactly as
+ * `resolveShortLink` would refuse it.
+ */
+export const getShortLinks = cache(async (): Promise<ShortLinkSign[]> => {
+  const payload = await getPayloadClient()
+  const { docs: links } = await payload.find({
+    collection: 'short-links',
+    depth: 0,
+    limit: 100,
+    sort: 'alias',
+    select: { alias: true, project: true, url: true },
+  })
+  const ids = links.flatMap((link) => {
+    const id = typeof link.project === 'object' ? link.project?.id : link.project
+    return !link.url && id ? [id] : []
+  })
+  const { docs: projects } = ids.length
+    ? await payload.find({
+        collection: 'projects',
+        where: { and: [{ id: { in: ids } }, published] },
+        depth: 0,
+        limit: 100,
+        select: { slug: true, addresses: true, line: true },
+      })
+    : { docs: [] }
+  const byId = new Map(projects.map((project) => [project.id, project]))
+
+  return links
+    .flatMap((link) => {
+      if (link.url) return [{ alias: link.alias, href: link.url, external: true, order: Infinity }]
+      const id = typeof link.project === 'object' ? link.project?.id : link.project
+      const project = id ? byId.get(id) : undefined
+      if (!project) return []
+      return [{ alias: link.alias, ...destinationOf(project), order: project.line }]
+    })
+    .sort((a, b) => a.order - b.order || a.alias.localeCompare(b.alias))
+    .map(({ alias, href, external }) => ({ alias, href, external }))
+})
 
 /**
  * Where a short link (fromnowhere.dev/<word>) leads, or null when there is no such word or what

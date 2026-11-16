@@ -1,614 +1,580 @@
-/* The route map in the home hero (src/components/site/RouteMap.tsx; docs/phase-1.md, 2).
-   Tokens only. The base layout is the rail (mobile first, and the safe fallback where container
-   queries are unsupported); a container of 42rem or more with at most six lines gets the wide
-   fan. Lighting is CSS only, through custom properties set per line; the draw is transform and
-   opacity only, and its base state is the finished map. */
+/* The route map (src/components/site/RouteMap.tsx, src/lib/routeMap.ts; Night transit).
+   The server renders both layouts whole; a container query shows the wide one from 700px of map
+   width and the tall one below. The base state is the finished map: the opening below plays only
+   under no-preference, on every visit, and the island (HomeMotion) adds trains and lighting.
+   Colours come from the line's own `--c` (--line-1 … --line-6 by line number). */
 
 .map {
   container: map / inline-size;
-  max-width: 48rem;
-  --map-unit: calc(var(--space-section) / 64); /* 1px */
-  --map-stroke: calc(3 * var(--map-unit));
-  --map-gap: calc(4 * var(--map-unit));
-  --route: var(--border-control); /* ≥3:1 on ground and surface, both themes */
-  --route-dim: color-mix(in srgb, var(--route) 40%, var(--ground)); /* opaque, never opacity */
-  --rail-pad: calc(var(--size-icon-xl) + var(--space-6));
-  --map-t0: calc(4 * var(--duration-stagger)); /* after the hero copy (--i 0..3) */
-}
-.map-line {
-  --line-ink: var(--route); /* the line itself: fan, run, spur */
-  --trunk-ink: var(--route); /* rail trunk from the top of this segment down to this spur */
-  --trunk-after: var(--route); /* rail trunk below this spur, on to the next line */
-  --plate-edge: var(--shadow-sm);
-  --plate-border: transparent;
-  --num-ring: none;
-  --plate-edge-lit: 0 0 0 1px var(--accent);
-  --plate-border-lit: transparent;
-}
-.map-line--dashed {
-  /* after .map-line: same specificity, later wins */
-  --plate-edge: none;
-  --plate-border: var(--border-control);
-  --plate-edge-lit: none;
-  --plate-border-lit: var(--accent);
-}
-
-/* ── the rail (base) ───────────────────────────────────────────────────── */
-
-.map__body {
-  display: block;
-}
-.map__origin {
-  display: flex;
-  flex-direction: row-reverse;
-  justify-content: flex-end;
-  align-items: center;
-  gap: var(--space-4);
-  margin-block-end: var(--map-gap);
-}
-.map__point {
-  flex: none;
-  width: var(--size-icon-xl);
-  height: var(--size-icon-xl);
-  border-radius: var(--radius-round);
-  background: var(--logo-point);
-}
-.map__here {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-.map__lines {
-  display: grid;
-  gap: var(--space-4);
-  max-width: calc(var(--rail-pad) + 20rem); /* a rail plate never outgrows a wide one */
-  margin: 0;
-  padding: 0 0 0 var(--rail-pad);
-  list-style: none;
-}
-.map-line {
   position: relative;
-  --i: 0;
-  --spur-at: calc(50% + var(--space-4) / 2 + var(--map-stroke) / 2);
+  width: 100%;
 }
-.map-line:first-child {
-  --spur-at: calc(50% + var(--map-stroke) / 2);
+.map__stage {
+  position: relative;
 }
-/* The last segment ends at its spur, so all of it is above the spur (this also covers a single
-   line, which is first and last at once). */
-.map-line:last-child {
-  --spur-at: 100%;
+.map__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
 }
-.map-line__fan,
-.map-line__run {
+.map__svg--wide {
+  --lw: 6;
+  --hit: 30;
+}
+.map__svg--tall {
+  --lw: 4.5;
+  --hit: 22;
   display: none;
 }
-/* The trunk segment from the line above (or the point) down to this line, split at its spur. */
-.map-line::before {
-  content: '';
-  position: absolute;
-  inset-block: calc(-1 * var(--space-4)) 0;
-  inset-inline-start: calc(var(--size-icon-xl) / 2 - var(--map-stroke) / 2 - var(--rail-pad));
-  width: var(--map-stroke);
-  background: linear-gradient(to bottom, var(--trunk-ink) 0 var(--spur-at), var(--trunk-after) 0);
-}
-.map-line:first-child::before {
-  inset-block-start: 0;
-}
-.map-line:last-child::before {
-  inset-block-end: calc(50% - var(--map-stroke) / 2);
-}
-/* The spur from the trunk to the plate. */
-.map-line::after {
-  content: '';
-  position: absolute;
-  top: calc(50% - var(--map-stroke) / 2);
-  height: var(--map-stroke);
-  inset-inline-start: calc(var(--size-icon-xl) / 2 + var(--map-stroke) / 2 - var(--rail-pad));
-  width: calc(var(--rail-pad) - var(--size-icon-xl) / 2 - var(--map-stroke) / 2 - var(--map-gap));
-  background: var(--line-ink);
-}
-.map-line--dashed::after {
-  background: repeating-linear-gradient(
-    90deg,
-    var(--line-ink) 0 calc(7 * var(--map-unit)),
-    transparent 0 calc(11 * var(--map-unit))
-  );
-}
-/* Rail plates wrap and grow with their text; nothing is truncated. */
-.map-plate__name,
-.map-plate__where {
-  overflow-wrap: anywhere;
-}
-/* The map is a piece of its own, not a fourth paragraph of the hero copy. */
-.home-hero .map {
-  margin-block-start: var(--space-8);
-}
-@media (max-width: 520px) {
-  .home-hero {
-    padding-inline: var(--space-6);
-  }
-}
-
-/* ── the wide fan: a container of 42rem or more, six lines at most ─────── */
-
-@container map (width >= 42rem) {
-  .map:not(.map--rail) .map__body {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-  .map:not(.map--rail) .map__origin {
-    flex-direction: row;
-    align-self: center;
-    margin: 0;
-    gap: var(--space-4);
-  }
-  .map:not(.map--rail) .map__lines {
-    max-width: none;
-    padding: 0;
-    gap: 0;
-    grid-template-columns: auto minmax(var(--space-section), 1fr) minmax(15rem, 20rem);
-    grid-auto-rows: var(--space-section);
-  }
-  .map:not(.map--rail) .map-line {
-    display: grid;
-    grid-column: 1 / -1;
-    grid-template-columns: subgrid;
-    grid-template-rows: var(--space-section);
-    align-items: center;
-  }
-  .map:not(.map--rail) .map-line::before,
-  .map:not(.map--rail) .map-line::after {
+@container map (width < 700px) {
+  .map__svg--wide {
     display: none;
   }
-  .map:not(.map--rail) .map-line__fan {
+  .map__svg--tall {
     display: block;
-    grid-column: 1;
-    overflow: visible;
-    pointer-events: none;
-  }
-  .map:not(.map--rail) .map-line__run {
-    display: block;
-    grid-column: 2;
-    justify-self: stretch;
-    width: auto;
-    min-width: 0;
-    margin-inline-end: var(--map-gap);
-    overflow: visible;
-    pointer-events: none;
-  }
-  /* A wide plate is exactly one row tall; its two lines clamp (the full text stays in the
-     accessible name and on the board). */
-  .map:not(.map--rail) .map-plate {
-    grid-column: 3;
-    align-self: center;
-    block-size: calc(var(--space-section) - 2 * var(--space-1));
-    min-height: 0;
-    overflow: clip;
-  }
-  .map:not(.map--rail) :is(.map-plate__name, .map-plate__where) {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 }
+/* Only a line's hit stroke takes the pointer, and only once the island listens to it. */
+.map__svg * {
+  pointer-events: none;
+}
 
-/* ── strokes ───────────────────────────────────────────────────────────── */
-
-.map-line__fan path,
-.map-line__run line {
+/* ── lines ─────────────────────────────────────────────────────────────── */
+.map__casing path {
   fill: none;
-  stroke: var(--line-ink);
-  stroke-width: 3;
-  stroke-linecap: butt;
+  stroke: var(--track);
+  stroke-width: calc(var(--lw) + 8);
+  stroke-linecap: round;
   stroke-linejoin: round;
-  transition: stroke var(--duration-fast) var(--ease-standard);
 }
-.map-line--dashed :is(.map-line__fan path, .map-line__run line) {
-  stroke-dasharray: 7 4;
+.line {
+  transition: opacity var(--nt-slow) var(--ease-standard);
 }
-.map-line__run circle {
+.line path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.line__main {
+  stroke: var(--c);
+  stroke-width: var(--lw);
+}
+.line__glow {
+  stroke: var(--c);
+  stroke-width: calc(var(--lw) * 2.6);
+  opacity: 0.32;
+  transition: opacity var(--nt-slow);
+}
+.line__rest {
+  stroke: var(--c);
+  stroke-width: calc(var(--lw) * 0.6);
+  stroke-linecap: butt;
+  opacity: 0.55;
+}
+.line--planned .line__rest {
+  stroke-width: calc(var(--lw) * 0.75);
+  opacity: 0.7;
+}
+.line--paused .line__main {
+  opacity: 0.55;
+}
+.line--paused .line__glow {
+  opacity: 0.12;
+}
+.line .line__hazard {
+  stroke: var(--sodium);
+  stroke-width: var(--lw);
+  stroke-linecap: butt;
+}
+.line__light {
+  fill: var(--sodium);
+}
+.line__light--far {
+  opacity: 0.8;
+}
+.line__stop {
   fill: var(--ground);
-  stroke: var(--line-ink);
-  stroke-width: 3;
+  stroke: var(--c);
+  stroke-width: calc(var(--lw) * 0.55);
+}
+.line__terminal {
+  fill: var(--ground);
+  stroke: var(--c);
+  stroke-width: calc(var(--lw) * 0.75);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.line--building .line__terminal,
+.line--planned .line__terminal {
+  stroke-dasharray: 5 5;
+}
+.map__svg--tall .line--building .line__terminal,
+.map__svg--tall .line--planned .line__terminal {
+  stroke-dasharray: 4 4;
+}
+.line__core {
+  fill: var(--c);
+}
+.line__pulse {
+  fill: none;
+  stroke: var(--c);
+  stroke-width: 2;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.line__hit {
+  stroke: transparent;
+  stroke-width: var(--hit);
+}
+.map.is-live .line__hit {
+  pointer-events: stroke;
+  cursor: pointer;
 }
 
-/* ── the plate ─────────────────────────────────────────────────────────── */
+/* Trains: three strokes of one dash, which they inherit from their group (the island moves it). */
+.train {
+  opacity: 0;
+}
+.train path {
+  stroke-linecap: round;
+}
+.train__halo {
+  stroke: var(--c);
+  stroke-width: calc(var(--lw) * 3.2);
+  opacity: 0.18;
+}
+.train__body {
+  stroke: var(--c);
+  stroke-width: calc(var(--lw) * 1.8);
+  opacity: 0.55;
+}
+.train__core {
+  stroke: var(--train-core);
+  stroke-width: calc(var(--lw) * 0.85);
+}
 
-.map-plate {
-  position: relative;
-  display: grid;
-  grid-template-columns: var(--size-icon-lg) minmax(0, 1fr);
-  column-gap: var(--space-4);
-  align-items: center;
-  min-height: calc(var(--space-section) - 2 * var(--space-1));
-  padding: var(--space-2) var(--space-6) var(--space-2) var(--space-4);
-  border: 1px solid var(--plate-border);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  box-shadow: var(--plate-edge); /* the lit edge replaces --shadow-sm: shadows never stack */
-  color: var(--text);
-  text-decoration: none;
-  transition:
-    box-shadow var(--duration-fast) var(--ease-standard),
-    border-color var(--duration-fast) var(--ease-standard);
+/* ── the point ─────────────────────────────────────────────────────────── */
+.map__halo-in {
+  stop-color: var(--accent);
+  stop-opacity: 0.55;
 }
-/* Not running: a sign not yet mounted. */
-.map-line--dashed .map-plate {
-  background: transparent;
-  border-style: dashed;
+.map__halo-mid {
+  stop-color: #7a63ff;
+  stop-opacity: 0.16;
 }
-.map-plate:active {
-  background: color-mix(in srgb, var(--surface), var(--text) 14%);
+.map__halo-out {
+  stop-color: #7a63ff;
+  stop-opacity: 0;
 }
-.map-plate__num {
-  grid-row: span 2;
-  display: grid;
-  place-items: center;
-  width: var(--size-icon-lg);
-  height: var(--size-icon-lg);
-  border-radius: var(--radius-sm);
-  background: var(--tag-neutral);
-  color: var(--tag-neutral-ink);
-  box-shadow: var(--num-ring);
-  font: 500 11px var(--font-mono);
-  font-variant-numeric: tabular-nums;
+.origin__ring {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
 }
-.map-plate__name {
-  font-size: 15px;
-  font-weight: 500;
+.origin__core {
+  fill: var(--accent);
+  transform-box: fill-box;
+  transform-origin: center;
 }
-/* Status stays muted, never --warning: the station is quiet. */
-.map-plate__where {
-  font-size: 13px;
+.origin__eye {
+  fill: #fff;
+}
+
+/* ── labels over the drawing: the point's, the stops', the terminals' ─── */
+.map__labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.map__origin-label,
+.map__stop-label {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: var(--text-dim);
+  transition: opacity var(--nt-slow);
+}
+.map__origin-label {
+  left: var(--wl);
+  top: var(--wt);
+  translate: -100% -50%;
   color: var(--text-muted);
 }
-.map-plate__addr,
-.map-plate__more {
+.map__stop-label--wide {
+  translate: -50% -50%;
+}
+.map__stop-label--tall {
+  display: none;
+  font-size: 10px;
+  translate: 0 -50%;
+}
+
+.term {
+  position: absolute;
+  left: var(--wl);
+  top: var(--wt);
+  max-width: var(--ww);
+  translate: 0 -50%;
+  margin-left: -12px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  pointer-events: auto;
+  transition:
+    opacity var(--nt-slow),
+    background var(--nt-slow),
+    border-color var(--nt-slow),
+    box-shadow var(--nt-slow),
+    transform var(--nt-slow) var(--nt-ease);
+}
+.term__no {
+  margin-top: 3px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--c);
+  color: var(--night);
   font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--c) 60%, transparent);
 }
-.map-plate__status {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
+.term--building .term__no,
+.term--planned .term__no,
+.term--paused .term__no {
+  background: transparent;
+  color: var(--c);
+  box-shadow: inset 0 0 0 1px var(--c);
+}
+.term__body {
+  min-width: 0;
+}
+.term__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 10px;
+}
+.term__name {
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  text-decoration: none;
+}
+/* The whole card is the way in: a 44px target and more. */
+.term__name::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.term__name:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--c);
+  text-underline-offset: 4px;
+}
+.term__name:focus-visible {
+  outline: none;
+}
+.term__name:focus-visible::after {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+.term__kind {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.term__addr {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--c);
+  overflow-wrap: anywhere;
+}
+.term__more,
+.term__later {
+  color: var(--text-dim);
+}
+.term__sum {
+  max-width: 38ch;
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--text-muted);
 }
 
-/* ── states (keep this order) ──────────────────────────────────────────── */
-
-/* 2. The others step back while any plate is lit. */
-.map:has(.map-plate:is(:focus-visible, :active)) .map-line {
-  --line-ink: var(--route-dim);
-  --trunk-ink: var(--route-dim);
-  --trunk-after: var(--route-dim);
+/* Lit: by a pointer or focus on the card itself (CSS), or on its line or board row (the island,
+   which sets .is-active and dims the rest through [data-active]). */
+.term.is-active,
+.term:hover,
+.term:has(:focus-visible) {
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border-color: color-mix(in srgb, var(--c) 55%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--c) 20%, transparent),
+    0 0 40px -6px color-mix(in srgb, var(--c) 45%, transparent);
+  transform: translateX(6px);
 }
-@media (hover: hover) and (pointer: fine) {
-  .map:has(.map-plate:hover) .map-line {
-    --line-ink: var(--route-dim);
-    --trunk-ink: var(--route-dim);
-    --trunk-after: var(--route-dim);
-  }
+.map[data-active] .line:not(.is-active) {
+  opacity: 0.13;
 }
-/* 3. Lit: the plate lights its own line, and the trunk down to its spur. */
-.map .map-line:has(.map-plate:is(:focus-visible, :active)) {
-  --line-ink: var(--accent);
-  --trunk-ink: var(--accent);
-  --plate-edge: var(--plate-edge-lit);
-  --plate-border: var(--plate-border-lit);
-  --num-ring: inset 0 0 0 1px var(--accent);
+.map[data-active] :is(.term, .map__stop-label):not(.is-active) {
+  opacity: 0.3;
 }
-@media (hover: hover) and (pointer: fine) {
-  .map .map-line:has(.map-plate:hover) {
-    --line-ink: var(--accent);
-    --trunk-ink: var(--accent);
-    --plate-edge: var(--plate-edge-lit);
-    --plate-border: var(--plate-border-lit);
-    --num-ring: inset 0 0 0 1px var(--accent);
-  }
-}
-/* 4. The rail's trunk above a lit line is lit all the way through. */
-.map .map-line:has(~ .map-line .map-plate:is(:focus-visible, :active)) {
-  --trunk-ink: var(--accent);
-  --trunk-after: var(--accent);
-}
-@media (hover: hover) and (pointer: fine) {
-  .map .map-line:has(~ .map-line .map-plate:hover) {
-    --trunk-ink: var(--accent);
-    --trunk-after: var(--accent);
-  }
+.line.is-active .line__glow {
+  opacity: 0.85;
 }
 
-/* 6. Board → map: board rows and map lines render the same projects in the same order, so row K
-   lights line K. Written out for K = 1..6 (MAP.wideMax); with more lines the map is the rail and
-   these never match. Never :focus-within (it sticks after a click and Back), never a nested
-   :has(). */
-@media (hover: hover) and (pointer: fine) {
-  .site-main:has(.board tbody tr:hover) .map:not(.map--rail) .map-line {
-    --line-ink: var(--route-dim);
-    --trunk-ink: var(--route-dim);
-    --trunk-after: var(--route-dim);
+.map__hint {
+  margin: 8px 0 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+.map__hint-tap {
+  display: none;
+}
+@media (hover: none) {
+  .map__hint-point {
+    display: none;
   }
-  .site-main:has(.board tbody tr:nth-child(1):hover) .map:not(.map--rail) .map-line:nth-child(1) {
-    --line-ink: var(--accent);
-    --trunk-ink: var(--accent);
-    --plate-edge: var(--plate-edge-lit);
-    --plate-border: var(--plate-border-lit);
-    --num-ring: inset 0 0 0 1px var(--accent);
-  }
-  .site-main:has(.board tbody tr:nth-child(2):hover) .map:not(.map--rail) .map-line:nth-child(2) {
-    --line-ink: var(--accent);
-    --trunk-ink: var(--accent);
-    --plate-edge: var(--plate-edge-lit);
-    --plate-border: var(--plate-border-lit);
-    --num-ring: inset 0 0 0 1px var(--accent);
-  }
-  .site-main:has(.board tbody tr:nth-child(2):hover)
-    .map:not(.map--rail)
-    .map-line:nth-child(-n + 1) {
-    --trunk-ink: var(--accent);
-    --trunk-after: var(--accent);
-  }
-  .site-main:has(.board tbody tr:nth-child(3):hover) .map:not(.map--rail) .map-line:nth-child(3) {
-    --line-ink: var(--accent);
-    --trunk-ink: var(--accent);
-    --plate-edge: var(--plate-edge-lit);
-    --plate-border: var(--plate-border-lit);
-    --num-ring: inset 0 0 0 1px var(--accent);
-  }
-  .site-main:has(.board tbody tr:nth-child(3):hover)
-    .map:not(.map--rail)
-    .map-line:nth-child(-n + 2) {
-    --trunk-ink: var(--accent);
-    --trunk-after: var(--accent);
-  }
-  .site-main:has(.board tbody tr:nth-child(4):hover) .map:not(.map--rail) .map-line:nth-child(4) {
-    --line-ink: var(--accent);
-    --trunk-ink: var(--accent);
-    --plate-edge: var(--plate-edge-lit);
-    --plate-border: var(--plate-border-lit);
-    --num-ring: inset 0 0 0 1px var(--accent);
-  }
-  .site-main:has(.board tbody tr:nth-child(4):hover)
-    .map:not(.map--rail)
-    .map-line:nth-child(-n + 3) {
-    --trunk-ink: var(--accent);
-    --trunk-after: var(--accent);
-  }
-  .site-main:has(.board tbody tr:nth-child(5):hover) .map:not(.map--rail) .map-line:nth-child(5) {
-    --line-ink: var(--accent);
-    --trunk-ink: var(--accent);
-    --plate-edge: var(--plate-edge-lit);
-    --plate-border: var(--plate-border-lit);
-    --num-ring: inset 0 0 0 1px var(--accent);
-  }
-  .site-main:has(.board tbody tr:nth-child(5):hover)
-    .map:not(.map--rail)
-    .map-line:nth-child(-n + 4) {
-    --trunk-ink: var(--accent);
-    --trunk-after: var(--accent);
-  }
-  .site-main:has(.board tbody tr:nth-child(6):hover) .map:not(.map--rail) .map-line:nth-child(6) {
-    --line-ink: var(--accent);
-    --trunk-ink: var(--accent);
-    --plate-edge: var(--plate-edge-lit);
-    --plate-border: var(--plate-border-lit);
-    --num-ring: inset 0 0 0 1px var(--accent);
-  }
-  .site-main:has(.board tbody tr:nth-child(6):hover)
-    .map:not(.map--rail)
-    .map-line:nth-child(-n + 5) {
-    --trunk-ink: var(--accent);
-    --trunk-after: var(--accent);
+  .map__hint-tap {
+    display: inline;
   }
 }
 
-.site-main:has(.board tbody tr a:focus-visible) .map:not(.map--rail) .map-line {
-  --line-ink: var(--route-dim);
-  --trunk-ink: var(--route-dim);
-  --trunk-after: var(--route-dim);
+/* More than six lines, or fewer than ~1040px of map: the cards drop their one-line summary (it
+   is on the board), so neighbouring terminals never overlap. */
+.map--dense .term__sum {
+  display: none;
 }
-.site-main:has(.board tbody tr:nth-child(1) a:focus-visible)
-  .map:not(.map--rail)
-  .map-line:nth-child(1) {
-  --line-ink: var(--accent);
-  --trunk-ink: var(--accent);
-  --plate-edge: var(--plate-edge-lit);
-  --plate-border: var(--plate-border-lit);
-  --num-ring: inset 0 0 0 1px var(--accent);
-}
-.site-main:has(.board tbody tr:nth-child(2) a:focus-visible)
-  .map:not(.map--rail)
-  .map-line:nth-child(2) {
-  --line-ink: var(--accent);
-  --trunk-ink: var(--accent);
-  --plate-edge: var(--plate-edge-lit);
-  --plate-border: var(--plate-border-lit);
-  --num-ring: inset 0 0 0 1px var(--accent);
-}
-.site-main:has(.board tbody tr:nth-child(2) a:focus-visible)
-  .map:not(.map--rail)
-  .map-line:nth-child(-n + 1) {
-  --trunk-ink: var(--accent);
-  --trunk-after: var(--accent);
-}
-.site-main:has(.board tbody tr:nth-child(3) a:focus-visible)
-  .map:not(.map--rail)
-  .map-line:nth-child(3) {
-  --line-ink: var(--accent);
-  --trunk-ink: var(--accent);
-  --plate-edge: var(--plate-edge-lit);
-  --plate-border: var(--plate-border-lit);
-  --num-ring: inset 0 0 0 1px var(--accent);
-}
-.site-main:has(.board tbody tr:nth-child(3) a:focus-visible)
-  .map:not(.map--rail)
-  .map-line:nth-child(-n + 2) {
-  --trunk-ink: var(--accent);
-  --trunk-after: var(--accent);
-}
-.site-main:has(.board tbody tr:nth-child(4) a:focus-visible)
-  .map:not(.map--rail)
-  .map-line:nth-child(4) {
-  --line-ink: var(--accent);
-  --trunk-ink: var(--accent);
-  --plate-edge: var(--plate-edge-lit);
-  --plate-border: var(--plate-border-lit);
-  --num-ring: inset 0 0 0 1px var(--accent);
-}
-.site-main:has(.board tbody tr:nth-child(4) a:focus-visible)
-  .map:not(.map--rail)
-  .map-line:nth-child(-n + 3) {
-  --trunk-ink: var(--accent);
-  --trunk-after: var(--accent);
-}
-.site-main:has(.board tbody tr:nth-child(5) a:focus-visible)
-  .map:not(.map--rail)
-  .map-line:nth-child(5) {
-  --line-ink: var(--accent);
-  --trunk-ink: var(--accent);
-  --plate-edge: var(--plate-edge-lit);
-  --plate-border: var(--plate-border-lit);
-  --num-ring: inset 0 0 0 1px var(--accent);
-}
-.site-main:has(.board tbody tr:nth-child(5) a:focus-visible)
-  .map:not(.map--rail)
-  .map-line:nth-child(-n + 4) {
-  --trunk-ink: var(--accent);
-  --trunk-after: var(--accent);
-}
-.site-main:has(.board tbody tr:nth-child(6) a:focus-visible)
-  .map:not(.map--rail)
-  .map-line:nth-child(6) {
-  --line-ink: var(--accent);
-  --trunk-ink: var(--accent);
-  --plate-edge: var(--plate-edge-lit);
-  --plate-border: var(--plate-border-lit);
-  --num-ring: inset 0 0 0 1px var(--accent);
-}
-.site-main:has(.board tbody tr:nth-child(6) a:focus-visible)
-  .map:not(.map--rail)
-  .map-line:nth-child(-n + 5) {
-  --trunk-ink: var(--accent);
-  --trunk-after: var(--accent);
+@container map (width < 1040px) {
+  .term__sum {
+    display: none;
+  }
+  .term__name {
+    font-size: 17px;
+  }
 }
 
-/* 7. Forced colours: the lines and the point keep system colours of their own; the plate is
-   left to the system (its border shows as a system colour). */
+/* ── the tall map, on a phone ──────────────────────────────────────────── */
+@container map (width < 700px) {
+  .term {
+    left: var(--tl);
+    top: var(--tt);
+    max-width: var(--tw);
+    margin-left: -10px;
+    padding: 8px 10px;
+  }
+  .term__kind {
+    display: none;
+  }
+  .term__name {
+    font-size: 16px;
+  }
+  .term__addr {
+    font-size: 11px;
+  }
+  .map__origin-label {
+    left: var(--tl);
+    top: var(--tt);
+    translate: 0 -50%;
+  }
+  .map__stop-label--wide {
+    display: none;
+  }
+  .map__stop-label--tall {
+    display: block;
+  }
+}
+
+/* ── forced colours: the drawing keeps system colours ─────────────────── */
 @media (forced-colors: active) {
-  .map {
-    --route: CanvasText;
-    --route-dim: GrayText;
-    --accent: Highlight; /* every lit part, board rules included (--focus-ring is set at :root) */
-  }
-  .map .map-line:has(.map-plate:is(:focus-visible, :active)) {
-    --line-ink: Highlight;
-    --trunk-ink: Highlight;
-  }
-  .map__point,
-  .map-line::before,
-  .map-line::after,
-  .map-line__fan,
-  .map-line__run {
+  .map__svg {
     forced-color-adjust: none;
   }
-  .map__point {
-    background: CanvasText;
+  /* Over each line's own colour, which its style attribute sets. */
+  .line,
+  .term,
+  .map__stop-label {
+    --c: CanvasText !important;
   }
-  .map-line__run circle {
+  .line__glow,
+  .origin__halo,
+  .train {
+    display: none;
+  }
+  .line__terminal,
+  .line__stop {
+    fill: Canvas;
+  }
+  .origin__core {
+    fill: CanvasText;
+  }
+  .origin__eye {
     fill: Canvas;
   }
 }
 
-/* ── drawn once per visit ──────────────────────────────────────────────── */
-
-/* The stagger, capped at 6 (design/motion.md). */
-.map-line:nth-child(2) {
-  --i: 1;
-}
-.map-line:nth-child(3) {
-  --i: 2;
-}
-.map-line:nth-child(4) {
-  --i: 3;
-}
-.map-line:nth-child(5) {
-  --i: 4;
-}
-.map-line:nth-child(6) {
-  --i: 5;
-}
-.map-line:nth-child(n + 7) {
-  --i: 6;
-}
-
-@keyframes map-rail {
+/* ── motion ───────────────────────────────────────────────────────────── */
+@keyframes map-draw {
   from {
-    transform: scaleY(0);
+    stroke-dasharray: var(--draw) var(--gap);
+    stroke-dashoffset: var(--draw);
+  }
+  to {
+    stroke-dasharray: var(--draw) var(--gap);
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes map-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes map-pop {
+  0% {
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.5);
+  }
+}
+@keyframes map-core {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.6);
+    opacity: 1;
+  }
+}
+@keyframes map-flash {
+  50% {
+    fill: var(--c);
+  }
+}
+@keyframes map-pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(3.2);
+    opacity: 0;
+  }
+}
+@keyframes map-label {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+@keyframes map-hazard {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 1;
   }
 }
 
-/* Only under no-preference, and only on a page not yet played this visit (fnw-calm). Keyframes
-   are from-only with fill both, so a skipped animation leaves the finished map; nothing animates
-   stroke-dashoffset. Links never wait for lines: the plates enter first. Dashed lines fade in
-   rather than draw, because they are not finished. */
 @media (prefers-reduced-motion: no-preference) {
-  html:not(.fnw-calm) .map-plate {
-    animation: fnw-enter-sm var(--duration-slow) var(--ease-enter) both;
-    animation-delay: calc(var(--map-t0) + var(--i, 0) * var(--duration-stagger));
+  /* Ambient, always: the point's rings, the work lights, the hazard segment. */
+  .origin__ring {
+    animation: nt-ring 3.2s var(--ease-standard) 1s infinite;
   }
-  html:not(.fnw-calm) .map__point {
-    animation: fnw-point-in var(--duration-slower) var(--ease-settle) both;
-    animation-delay: var(--map-t0);
+  .origin__ring--late {
+    animation-delay: 2.6s;
   }
-  /* The label arrives once its point nearly has, never alone in an empty hero. */
-  html:not(.fnw-calm) .map__here {
-    animation: fnw-fade var(--duration-slow) var(--ease-enter) both;
-    animation-delay: calc(var(--map-t0) + var(--duration-slow));
+  .line__light {
+    animation: nt-blink 1.1s steps(2, jump-none) infinite;
   }
-  html:not(.fnw-calm) .map-line__fan {
-    animation: fnw-fade var(--duration-slow) var(--ease-enter) both;
-    animation-delay: calc(
-      var(--map-t0) + var(--duration-slow) + var(--i, 0) * var(--duration-stagger)
-    );
+  .line__light--b {
+    animation-delay: 0.55s;
   }
-  html:not(.fnw-calm) .map-line__run {
-    transform-origin: left center;
-    animation: fnw-draw var(--duration-slower) var(--ease-settle) both;
-    animation-delay: calc(
-      var(--map-t0) + 2 * var(--duration-slow) + var(--i, 0) * var(--duration-stagger)
-    );
+  .line__hazard {
+    animation: map-hazard 0.9s ease-in-out infinite alternate;
   }
-  html:not(.fnw-calm) .map-line--dashed .map-line__run {
-    animation-name: fnw-fade;
-    animation-duration: var(--duration-slow);
-    animation-timing-function: var(--ease-enter);
-  }
-  html:not(.fnw-calm) .map-line__run circle {
-    animation: fnw-fade var(--duration-slow) var(--ease-enter) both;
-    animation-delay: calc(
-      var(--map-t0) + 2 * var(--duration-slow) + var(--duration-slower) + var(--i, 0) *
-        var(--duration-stagger)
-    );
-  }
-  html:not(.fnw-calm) .map-line::before {
-    transform-origin: top;
-    animation: map-rail var(--duration-slow) var(--ease-settle) both;
-    animation-delay: calc(
-      var(--map-t0) + var(--duration-slow) + var(--i, 0) * var(--duration-stagger)
-    );
-  }
-  html:not(.fnw-calm) .map-line::after {
-    transform-origin: left;
-    animation: fnw-draw var(--duration-slower) var(--ease-settle) both;
-    animation-delay: calc(
-      var(--map-t0) + 2 * var(--duration-slow) + var(--i, 0) * var(--duration-stagger)
-    );
-  }
-  html:not(.fnw-calm) .map-line--dashed::after {
-    animation-name: fnw-fade;
-    animation-duration: var(--duration-slow);
-    animation-timing-function: var(--ease-enter);
+
+  /* The opening, on every visit to the home page: the point appears, the lines draw out of it one
+     after another, each terminal lights and its label slides in. From-only keyframes with
+     backwards fill, so the end state is always the finished map. Once it has played the island
+     marks the map settled, and a layout that appears later (a resize) does not draw again. */
+  .map:not(.is-settled) {
+    /* When this line leaves the point, and when it reaches its terminal; set where each line's
+       index (--i) is, and inherited by its parts. */
+    & :is(.line, .term, .map__stop-label) {
+      --at: calc(var(--nt-lines-at) + var(--i, 0) * var(--stagger, 170ms));
+      --lit: calc(var(--at) + var(--nt-arrive));
+    }
+    & .origin__core {
+      animation: map-core 900ms var(--nt-ease) 250ms backwards;
+    }
+    & .origin__halo {
+      animation: map-fade 1400ms ease 250ms backwards;
+    }
+    & .map__origin-label {
+      animation: map-fade 600ms ease 900ms backwards;
+    }
+    & .line__main,
+    & .line__glow {
+      animation: map-draw var(--nt-draw) var(--nt-ease) var(--at) backwards;
+    }
+    & .line__rest,
+    & .line__stop,
+    & .line__core {
+      animation: map-fade 500ms ease var(--lit) backwards;
+    }
+    & .line__light {
+      animation:
+        nt-blink 1.1s steps(2, jump-none) infinite,
+        map-fade 500ms ease var(--lit) backwards;
+    }
+    & .line__light--b {
+      animation-delay: 0.55s, var(--lit);
+    }
+    & .line__hazard {
+      animation:
+        map-hazard 0.9s ease-in-out infinite alternate,
+        map-fade 500ms ease var(--lit) backwards;
+    }
+    & .line__terminal {
+      animation:
+        map-pop 600ms var(--nt-ease) var(--lit) backwards,
+        map-flash 700ms ease var(--lit);
+    }
+    & .line--running .line__pulse {
+      animation: map-pulse 900ms var(--ease-standard) var(--lit);
+    }
+    & .map__stop-label {
+      animation: map-fade 500ms ease var(--lit) backwards;
+    }
+    & .term {
+      animation: map-label 500ms var(--nt-ease) calc(var(--at) + var(--nt-draw) * 0.6) backwards;
+    }
+    & .map__hint {
+      animation: map-fade 600ms ease 1.6s backwards;
+    }
   }
 }

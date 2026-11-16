@@ -1,123 +1,462 @@
 /*
- * fromnowhere.dev's own layer, after the system's tokens.css and bundle.css. The studio site is
- * the system's home, so unlike the community sites it never steps outside it: every colour, size
- * and duration below is a token (design/README.md). The site-only pieces (the board, exit plates,
- * windows) are built from the same tokens, as docs/vision.html describes them.
+ * fromnowhere.dev's own layer, after the system's tokens.css and bundle.css: Night transit
+ * (docs/prototypes/night-transit.html). The station at night: a deep ground with a faint grid, a
+ * violet haze and a sodium glow from below; lines in their own colours; one glowing point.
  *
- * Layout: left-aligned and asymmetric, 1120px at most, sections a `space-section` apart.
+ * Every colour, size and duration below comes from a token. The night palette is defined here,
+ * over the system's dark tokens, so the system's own components (fields, alerts, tags) take it too.
+ * Dark only: there is no light theme. The map is routemap.css, the board board.css.
  */
 
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JetBrainsMono-latin.woff2') format('woff2');
+  font-weight: 400 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JetBrainsMono-latin-ext.woff2') format('woff2');
+  font-weight: 400 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+/* ── the night palette (over tokens.css) ──────────────────────────────── */
+:root {
+  color-scheme: dark;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --night: #05060f; /* the page */
+  --ground: #090b19; /* the sky's middle, terminal and stop fills */
+  --surface: #11142a; /* panels: the board, cards */
+  --surface-2: #181c38; /* raised: the logo tile, the current language */
+  --track: #04050c; /* the casing under every line */
+  --text: #eeedf6;
+  --text-muted: #a8acc6;
+  --text-dim: #7b80a3; /* small mono labels; 4.5:1 on --night and --surface */
+  --divider: rgba(238, 237, 246, 0.1);
+  --divider-strong: rgba(238, 237, 246, 0.2);
+  --grid: rgba(150, 160, 255, 0.05);
+
+  --accent: #a796ff; /* the point */
+  --accent-text: #a796ff;
+  --accent-soft: rgba(167, 150, 255, 0.35);
+  --accent-haze: rgba(120, 100, 255, 0.16);
+  --sodium: #ffb347; /* street light: the clock, work lights, the ticker */
+  --sodium-haze: rgba(255, 160, 60, 0.07);
+  --sodium-glow: rgba(255, 179, 71, 0.45);
+  --train-core: #fffaf0;
+
+  /* One colour per line, by line number: 1 → --line-1, …, 7 → --line-1 again
+     (src/lib/routeMap.ts, lineColour). */
+  --line-1: #5b8cff;
+  --line-2: #ff5fa8;
+  --line-3: #ffb347;
+  --line-4: #45e0b4;
+  --line-5: #ff7a59;
+  --line-6: #c4e85c;
+
+  --running: #7cf0b5;
+  --building: #ffb347;
+  --paused: var(--text-muted);
+  --focus: #ffffff;
+
+  /* The system's tokens, in the night's colours. */
+  --link: #c9c0ff;
+  --focus-ring: var(--focus);
+  --selection: var(--accent-soft);
+  --border-control: #7b80a3;
+  --accent-tint: #1f1b3f;
+  --accent-tint-strong: #2e2860;
+  --accent-tint-ink: #f1eeff;
+  --tag-neutral: var(--surface-2);
+  --tag-neutral-ink: var(--text);
+  --on-accent: var(--night);
+  --logo-tile: var(--surface-2);
+  --logo-plate: var(--text);
+  --logo-point: var(--accent);
+  --success: var(--running);
+  --success-tint: #0b2a22;
+  --warning: var(--building);
+  --warning-tint: #2e2210;
+  --shadow-sm: 0 0 0 1px var(--divider);
+  --shadow-md: 0 0 0 1px var(--divider-strong), 0 10px 30px rgba(0, 0, 0, 0.55);
+
+  /* Night transit's motion: the opening, the trains, the ambient loops (design/motion.md's
+     tokens for everything else). */
+  --nt-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --nt-fast: 160ms;
+  --nt-slow: 320ms;
+  --nt-enter: 900ms; /* the hero's lines of copy */
+  --nt-draw: 1300ms; /* one line drawing out of the point */
+  --nt-lines-at: 700ms; /* when the first line leaves */
+  --nt-arrive: 715ms; /* a line's terminal lights, this far into its draw */
+
+  --gutter: 16px;
+}
+@media (min-width: 720px) {
+  :root {
+    --gutter: 32px;
+  }
+}
+
+html {
+  background: var(--night);
+}
+/* The page's colour is the root's; the body stays clear so the sky (z-index -1) shows through.
+   (In the prototype the body's own background covered it.) */
+body {
+  /* A column, so the footer stays at the foot of a short page. */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: transparent;
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.55;
+  /* Full-bleed pieces (the sky, the band's rule) never scroll the page sideways. */
+  overflow-x: clip;
+}
 ::selection {
   background: var(--selection);
 }
-
 a {
-  color: var(--link);
+  color: inherit;
   text-underline-offset: 3px;
 }
 :focus-visible {
   outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
 }
 
 .wrap {
   width: 100%;
-  max-width: 1120px;
+  max-width: 1320px;
   margin-inline: auto;
-  padding-inline: max(var(--space-8), env(safe-area-inset-left, 0px))
-    max(var(--space-8), env(safe-area-inset-right, 0px));
-}
-@media (max-width: 520px) {
-  .wrap {
-    padding-inline: max(16px, env(safe-area-inset-left, 0px))
-      max(16px, env(safe-area-inset-right, 0px));
-  }
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
 }
 
 .skip-link {
   position: absolute;
-  left: var(--space-8);
-  top: var(--space-3);
+  left: 12px;
+  top: 12px;
   z-index: 10;
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  color: var(--text);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--text);
+  color: var(--night);
   transform: translateY(-200%);
 }
 .skip-link:focus-visible {
   transform: none;
 }
 
-/* ── motion (src/components/Motion.tsx, design/motion.md) ─────────────── */
-/* A page already seen this visit, or any page under reduced motion: everything shows at once.
-   <html> gets fnw-calm from the head script before paint, and from <Motion> after. */
-.fnw-calm .fnw-enter,
-.fnw-calm .fnw-reveal.is-in {
-  animation: none;
+/* ── the sky: grid, haze, sodium glow ─────────────────────────────────── */
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 70% at 50% 120%, var(--sodium-haze), transparent 60%),
+    radial-gradient(80% 60% at 10% 30%, var(--accent-haze), transparent 65%),
+    linear-gradient(180deg, var(--night), var(--ground) 40%, var(--night));
 }
-/* <Motion> adds is-waiting before paint, and only to reveals below the fold, so without
-   JavaScript nothing is ever hidden. */
-.fnw-reveal.is-waiting {
-  opacity: 0;
+.sky::before {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  background:
+    linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 48px 48px,
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 48px 48px;
+  mask-image: radial-gradient(70% 55% at 40% 40%, #000, transparent 75%);
 }
-/* A reveal already on screen when <Motion> wakes up (is-shown) has been seen at rest: it stays
-   as it is instead of dropping to opacity 0 and playing bundle.css's .is-in entrance. */
-.fnw-reveal.is-shown {
-  animation: none;
+.sky::after {
+  content: '';
+  position: absolute;
+  width: 70vmax;
+  height: 70vmax;
+  left: -10vmax;
+  top: -15vmax;
+  background: radial-gradient(circle, var(--accent-haze), transparent 60%);
 }
 
-/* ── header and footer ───────────────────────────────────────────────── */
+/* ── shared pieces: kicker, buttons ───────────────────────────────────── */
+.kicker {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.kicker::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+.btn,
+.fnw-btn--primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--night);
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background var(--nt-fast),
+    box-shadow var(--nt-slow);
+}
+.btn:hover,
+.fnw-btn--primary:hover {
+  background: #fff;
+  color: var(--night);
+  box-shadow: 0 0 24px var(--accent-soft);
+}
+.btn svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+/* ── header ───────────────────────────────────────────────────────────── */
 .site-nav {
-  padding-block: var(--space-8);
-  /* The header stays put while pages change (design/motion.md, page transitions). */
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+  /* The header stays put while pages change (transition.css). */
   view-transition-name: fnw-nav;
 }
-
-.lang {
+.site-nav .fnw-nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin-right: auto;
+  color: var(--text);
+  text-decoration: none;
+}
+.site-nav .fnw-tile {
+  box-shadow: none;
+}
+.site-nav__fnw {
+  font-weight: 500;
+  font-size: 17px;
+  letter-spacing: 0.06em;
+}
+.site-nav__links ul {
   display: flex;
-  gap: var(--space-1);
+  gap: 2px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
+.site-nav__links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 15px;
+  text-decoration: none;
+  transition: color var(--nt-fast);
+}
+.site-nav__links a:hover {
+  color: var(--text);
+}
+.site-nav .btn {
+  margin-left: 8px;
+}
+
+/* The language switch: a pill of two short codes, each a 44px target. */
+.lang {
+  position: relative;
+  display: flex;
+  margin: 0 0 0 6px;
+  padding: 0 3px;
+  list-style: none;
+}
+.lang::before {
+  content: '';
+  position: absolute;
+  inset: 6px 0;
+  border: 1px solid var(--divider-strong);
+  border-radius: 999px;
+  pointer-events: none;
+}
 .lang__opt {
+  position: relative;
   display: inline-grid;
   place-items: center;
-  min-width: 32px;
-  min-height: 32px;
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-md);
+  min-width: 38px;
+  min-height: 44px;
+  font-family: var(--font-mono);
   font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
+  color: var(--text-dim);
   text-decoration: none;
-  transition:
-    color var(--duration-fast) var(--ease-standard),
-    background var(--duration-fast) var(--ease-standard);
+  transition: color var(--nt-fast);
+}
+.lang__opt::before {
+  content: '';
+  position: absolute;
+  inset: 9px 1px;
+  z-index: -1;
+  border-radius: 999px;
+  transition: background var(--nt-fast);
 }
 .lang__opt:hover {
-  background: color-mix(in srgb, var(--text) 7%, transparent);
   color: var(--text);
 }
 .lang__opt[aria-current='true'] {
-  color: var(--accent-text);
-  box-shadow: inset 0 0 0 1px var(--accent);
+  color: var(--text);
+}
+.lang__opt[aria-current='true']::before {
+  background: var(--surface-2);
+}
+.lang__opt:focus-visible {
+  outline-offset: -4px;
+  border-radius: 999px;
 }
 
-.site-main {
-  display: grid;
-  gap: var(--space-section);
-  padding-bottom: var(--space-page);
+@media (max-width: 640px) {
+  .site-nav__fnw,
+  .site-nav__about {
+    display: none;
+  }
+  .site-nav__links a {
+    padding: 0 8px;
+    font-size: 14px;
+  }
+  .lang {
+    margin-left: 2px;
+  }
+  .lang__opt {
+    min-width: 34px;
+  }
+  .site-nav .btn {
+    margin-left: 4px;
+    padding-inline: 12px;
+    font-size: 14px;
+  }
 }
-/* Grid children may shrink below their content, so a wide table scrolls in its own box instead
-   of pushing the page sideways. */
+/* The narrowest phones: everything stays on one row, nothing scrolls sideways. */
+@media (max-width: 360px) {
+  .site-nav .fnw-nav__brand {
+    margin-right: auto;
+  }
+  .site-nav__links a {
+    padding: 0 6px;
+  }
+  .lang {
+    margin-left: 0;
+    padding: 0 2px;
+  }
+  .lang__opt {
+    min-width: 30px;
+  }
+  .site-nav .btn {
+    margin-left: 2px;
+    padding-inline: 10px;
+    font-size: 13.5px;
+  }
+}
+
+/* ── footer ───────────────────────────────────────────────────────────── */
+.site-footer {
+  padding: 32px 0 calc(32px + env(safe-area-inset-bottom, 0px));
+  color: var(--text-dim);
+  font-size: 13px;
+}
+.site-footer__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 16px;
+}
+.site-footer__bar::before {
+  content: '';
+  flex: 0 0 100%;
+  height: 1px;
+  margin-bottom: 16px;
+  background: var(--divider);
+}
+.site-footer__id {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: auto;
+}
+.site-footer__id .fnw-tile {
+  color: var(--text-dim);
+}
+.site-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.site-footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color var(--nt-fast);
+}
+.site-footer a:hover {
+  color: var(--text);
+}
+
+/* ── the page grid ────────────────────────────────────────────────────── */
+.site-main {
+  flex: 1 0 auto;
+  display: grid;
+  align-content: start;
+  padding-bottom: clamp(48px, 7vw, 88px);
+}
+/* Grid children may shrink below their content, so a wide piece never pushes the page
+   sideways. */
 .site-main > * {
   min-width: 0;
 }
 /* The page box inside <main>, the one part that changes on a navigation
-   (src/components/site/PageTransition.tsx). The same grid as .site-main, one level down. */
+   (src/components/site/PageTransition.tsx). */
 .site-page {
   display: grid;
   gap: var(--space-section);
@@ -126,197 +465,211 @@ a {
   min-width: 0;
 }
 
-.site-footer__id {
+/* ── home: the hero ───────────────────────────────────────────────────── */
+.home {
   display: grid;
-  gap: var(--space-4);
 }
-.site-footer .site-footer__mail {
-  color: var(--text);
+.home > * {
+  min-width: 0;
+}
+.hero {
+  padding-top: clamp(28px, 6vw, 64px);
+}
+.hero .kicker {
+  margin-bottom: 18px;
+}
+.hero h1 {
+  margin: 0;
+  max-width: 14ch;
+  font-weight: 500;
+  font-size: clamp(36px, 6.4vw, 84px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+}
+/* The headline's full stop is the point. */
+.hero__point {
+  display: inline-block;
+  width: 0.2em;
+  height: 0.2em;
+  margin-left: 0.06em;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow:
+    0 0 18px var(--accent),
+    0 0 48px var(--accent-soft);
+}
+.hero__row {
+  display: grid;
+  gap: 24px;
+  margin-top: 24px;
+  align-items: end;
+}
+@media (min-width: 900px) {
+  .hero__row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+.hero__lede {
+  margin: 0;
+  max-width: 52ch;
+  color: var(--text-muted);
+  font-size: clamp(16px, 1.6vw, 19px);
 }
 
-/* ── home ─────────────────────────────────────────────────────────────── */
-.home-hero .fnw-hero__text {
-  gap: var(--space-6);
+/* The tally, counted from the projects: a number over each label. */
+.tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 22px;
+  margin: 0;
 }
-.home-hero .fnw-hero__title {
-  font-size: clamp(34px, 6vw, 56px);
+.tally > div {
+  display: flex;
+  flex-direction: column-reverse;
+}
+.tally dt {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.tally dd {
+  margin: 0;
+  font-weight: 500;
+  font-size: 26px;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.home__map {
+  padding-top: clamp(24px, 4vw, 40px);
+}
+.home__board {
+  margin-top: clamp(48px, 7vw, 88px);
+  scroll-margin-top: 16px;
+}
+.home__empty {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* ── the contact band: a point runs along a dashed rail into the button ── */
+.band {
+  position: relative;
+  margin-top: clamp(48px, 7vw, 88px);
+  padding: clamp(28px, 5vw, 56px) 0 0;
+  display: grid;
+  gap: 24px;
+  align-items: center;
+}
+/* The band's rule runs the full width of the window, past the page's gutters. */
+.band::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 100vw;
+  height: 1px;
+  background: var(--divider);
+  transform: translateX(-50%);
+}
+@media (min-width: 820px) {
+  .band {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+.band .kicker {
+  margin-bottom: 12px;
+}
+.band h2 {
+  margin: 0;
+  font-weight: 500;
+  font-size: clamp(30px, 4.6vw, 56px);
   letter-spacing: -0.03em;
   line-height: 1.05;
 }
-.home-hero .fnw-kicker {
-  margin: 0;
-}
-.home-section {
-  display: grid;
-  gap: var(--space-8);
-  scroll-margin-top: var(--space-8);
-}
-.home-band {
-  display: grid;
-  gap: var(--space-4);
-  border-radius: var(--radius-lg);
-}
-.home-band h2,
-.home-band p {
-  margin: 0;
-}
-.home-band .fnw-kicker {
-  color: var(--accent-200);
-}
-.home-band h2 {
-  font-size: clamp(25px, 4vw, 42px);
-  max-width: 18ch;
-}
-
-/* ── the departures board ─────────────────────────────────────────────── */
-.board-wrap {
-  overflow-x: auto;
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
-}
-.board {
-  width: 100%;
-  min-width: 720px;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-.board th,
-.board td {
-  text-align: left;
-  vertical-align: top;
-  padding: var(--space-6);
-}
-.board thead th {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.band__lead {
+  margin: 10px 0 0;
   color: var(--text-muted);
-  padding-bottom: var(--space-4);
-  white-space: nowrap;
+  font-size: 17px;
 }
-.board tbody tr {
-  background: linear-gradient(
-      to right,
-      transparent,
-      var(--divider) 48px,
-      var(--divider) calc(100% - 48px),
-      transparent
-    )
-    no-repeat top / 100% 1px;
-  transition: background-color var(--duration-fast) var(--ease-standard);
+.band__go {
+  display: flex;
+  align-items: center;
+  min-width: 0;
 }
-.board tbody tr:hover {
-  background-color: color-mix(in srgb, var(--text) 4%, transparent);
+.band__rail {
+  position: relative;
+  flex: none;
+  width: clamp(48px, 18vw, 220px);
+  height: 14px;
+  background: repeating-linear-gradient(90deg, var(--accent) 0 6px, transparent 6px 14px) center /
+    100% 2px no-repeat;
+  opacity: 0.9;
 }
-.board__line {
-  width: 3.5em;
-  font-family: var(--font-mono);
-  font-size: 13px;
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
+.band__mover {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
 }
-.board__name {
-  font-weight: 500;
-  white-space: nowrap;
+.band__mover::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--train-core);
+  box-shadow:
+    0 0 10px var(--accent),
+    0 0 20px var(--accent);
 }
-.board__name a {
-  color: var(--text);
-  text-decoration: none;
-}
-.board__name a:hover {
-  color: var(--accent-text);
-}
-.board__what {
-  color: var(--text-muted);
-  max-width: 34ch;
-}
-.board__addr {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  color: var(--link);
-}
-.board__addr div + div,
-.board__here {
-  color: var(--text-muted);
-}
-.board__here {
-  font-family: var(--font-sans);
-}
-
-/* On a phone or a tablet each row becomes a stacked sign: number and name, what it is, where,
-   status (the project page's breakpoint; the table squeezes its descriptions below it). */
-@media (max-width: 860px) {
-  .board {
-    min-width: 0;
-  }
-  .board thead {
-    display: none;
-  }
-  .board tbody tr {
-    display: grid;
-    grid-template-columns: 3em minmax(0, 1fr);
-    gap: var(--space-2) var(--space-4);
-    padding: var(--space-6);
-  }
-  .board th,
-  .board td {
-    padding: 0;
-  }
-  .board tbody tr > :not(.board__line) {
-    grid-column: 2;
-  }
-  .board__line {
-    grid-row: 1;
-    width: auto;
-  }
-  .board__name {
-    grid-row: 1;
-    white-space: normal;
-  }
-  .board__addr {
-    overflow-wrap: anywhere;
-  }
-}
-.status-tag {
-  white-space: nowrap;
+.band .btn {
+  min-height: 50px;
+  padding: 14px 22px;
+  font-size: 17px;
 }
 
 /* ── page heads and text ──────────────────────────────────────────────── */
 .page-head {
   display: grid;
-  gap: var(--space-4);
-  padding-top: var(--space-8);
+  gap: 16px;
+  padding-top: clamp(28px, 6vw, 64px);
 }
 .page-head h1 {
   margin: 0;
-  font-size: clamp(34px, 5vw, 42px);
-  max-width: 22ch;
+  max-width: 20ch;
+  font-weight: 500;
+  font-size: clamp(36px, 5.4vw, 64px);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
   text-wrap: balance;
-}
-.page-head .fnw-kicker {
-  margin: 0;
 }
 .page-head__lead {
   margin: 0;
-  font-size: 17px;
-  line-height: 1.5;
-  color: var(--text-muted);
   max-width: 54ch;
+  color: var(--text-muted);
+  font-size: clamp(16px, 1.6vw, 19px);
+  line-height: 1.5;
   text-wrap: pretty;
 }
 
 .text-page,
 .contact {
   display: grid;
-  gap: var(--space-8);
+  gap: clamp(28px, 4vw, 48px);
 }
 
 .prose {
   max-width: 62ch;
   display: grid;
-  gap: var(--space-4);
+  gap: 14px;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--text);
 }
 .prose > * {
   margin: 0;
@@ -325,66 +678,342 @@ a {
 .prose li {
   text-wrap: pretty;
 }
+.prose a {
+  color: var(--link);
+  text-decoration-color: var(--accent-soft);
+}
+.prose a:hover {
+  text-decoration-color: var(--accent);
+}
 .prose h2 {
-  font-size: 25px;
-  margin-top: var(--space-6);
+  margin-top: 20px;
+  font-size: clamp(24px, 2.6vw, 30px);
+  letter-spacing: -0.02em;
 }
 .prose h3 {
+  margin-top: 12px;
   font-size: 20px;
-  margin-top: var(--space-4);
 }
 .prose ul,
 .prose ol {
   padding-left: 1.2em;
   display: grid;
-  gap: var(--space-2);
+  gap: 6px;
+}
+.prose li::marker {
+  color: var(--accent);
 }
 .prose blockquote {
-  padding-left: var(--space-6);
+  padding-left: 18px;
   color: var(--text-muted);
-  box-shadow: inset 2px 0 0 var(--divider);
+  box-shadow: inset 2px 0 0 var(--accent-soft);
 }
 
 /* ── project pages ────────────────────────────────────────────────────── */
 .project {
   display: grid;
-  gap: var(--space-section);
+  gap: clamp(36px, 5vw, 64px);
+}
+.project .kicker::before {
+  background: var(--c);
+  box-shadow: 0 0 10px var(--c);
 }
 .project__status {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
 }
+.project__sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* The trip: a short line from a small point to this project's terminal, in the line's colour.
+   Dashed past the frontier, with work lights, while it is being built. */
+.trip {
+  --lw: 6px;
+  --tr: 22px;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  max-width: 760px;
+  margin-top: 12px;
+  padding-block: 18px 22px;
+}
+.trip__origin {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--accent) 22%, transparent),
+    0 0 28px var(--accent-soft);
+}
+.trip__origin::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: var(--train-core);
+}
+.trip__ring {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid var(--accent);
+  border-radius: 50%;
+  opacity: 0;
+}
+.trip__track {
+  position: relative;
+  height: var(--tr);
+  margin-inline: 4px;
+  container-type: inline-size;
+}
+.trip__line,
+.trip__rest {
+  position: absolute;
+  left: 0;
+  top: calc(50% - var(--lw) / 2);
+  height: var(--lw);
+  border-radius: 999px;
+  background: var(--c);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--c) 55%, transparent);
+  transform-origin: left center;
+}
+.trip__line {
+  width: 100%;
+}
+.trip__rest {
+  display: none;
+}
+.trip__train {
+  position: absolute;
+  left: 0;
+  top: calc(50% - var(--lw) / 2);
+  width: 22px;
+  height: var(--lw);
+  border-radius: 999px;
+  background: var(--train-core);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--c) 55%, transparent),
+    0 0 18px var(--c);
+  opacity: 0;
+}
+.trip__terminal {
+  position: relative;
+  width: var(--tr);
+  height: var(--tr);
+  border: 4px solid var(--c);
+  border-radius: 50%;
+  background: var(--ground);
+}
+.trip__terminal::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: var(--c);
+}
+.trip__pulse {
+  position: absolute;
+  inset: -4px;
+  border: 2px solid var(--c);
+  border-radius: 50%;
+  opacity: 0;
+}
+.trip__label {
+  position: absolute;
+  top: calc(100% - 14px);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.trip__label--from {
+  left: 0;
+}
+.trip__label--to {
+  right: 0;
+  color: var(--c);
+}
+.trip__work {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: none;
+}
+.trip__work i {
+  position: absolute;
+  left: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sodium);
+  box-shadow: 0 0 8px var(--sodium);
+}
+.trip__work i:nth-child(1) {
+  top: -14px;
+}
+.trip__work i:nth-child(2) {
+  top: 8px;
+}
+.trip__work b {
+  position: absolute;
+  left: 4px;
+  top: calc(var(--lw) / -2);
+  width: 26px;
+  height: var(--lw);
+  background: var(--sodium);
+}
+/* Not running yet: built to the frontier, dashed beyond it, the terminal an open dashed ring. */
+.trip--building .trip__line,
+.trip--planned .trip__line {
+  width: 50%;
+}
+.trip--planned .trip__line {
+  display: none;
+}
+.trip--building .trip__rest,
+.trip--planned .trip__rest {
+  display: block;
+  left: 50%;
+  width: 50%;
+  height: calc(var(--lw) * 0.6);
+  top: calc(50% - var(--lw) * 0.3);
+  background: repeating-linear-gradient(90deg, var(--c) 0 6px, transparent 6px 16px);
+  box-shadow: none;
+  opacity: 0.6;
+}
+.trip--planned .trip__rest {
+  left: 0;
+  width: 100%;
+}
+.trip--building .trip__work {
+  display: block;
+}
+.trip--building .trip__terminal,
+.trip--planned .trip__terminal {
+  border-style: dashed;
+}
+.trip--building .trip__terminal::after,
+.trip--planned .trip__terminal::after,
+.trip--paused .trip__terminal::after {
+  display: none;
+}
+.trip--paused .trip__line {
+  opacity: 0.5;
+  box-shadow: none;
+}
+
 .project__body {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-  gap: var(--space-section);
+  gap: clamp(36px, 5vw, 64px);
   align-items: start;
 }
 @media (max-width: 860px) {
   .project__body {
     grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-8);
   }
 }
 .project__facts,
 .project__exits {
   display: grid;
-  gap: var(--space-4);
+  gap: 12px;
 }
 .project__facts {
-  gap: var(--space-8);
+  gap: 28px;
 }
+.project__none {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* An exit: a lit terminal in the line's colour. */
+.exit {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  min-height: 64px;
+  padding: 14px 18px;
+  border: 1px solid color-mix(in srgb, var(--c) 30%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--text);
+  text-decoration: none;
+  transition:
+    background var(--nt-slow),
+    border-color var(--nt-slow),
+    box-shadow var(--nt-slow),
+    transform var(--nt-slow) var(--nt-ease);
+}
+.exit:hover {
+  border-color: color-mix(in srgb, var(--c) 60%, transparent);
+  background: color-mix(in srgb, var(--c) 8%, var(--surface));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--c) 20%, transparent),
+    0 0 40px -6px color-mix(in srgb, var(--c) 45%, transparent);
+  transform: translateX(4px);
+}
+.exit__terminal {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border: 4px solid var(--c);
+  border-radius: 50%;
+  background: var(--ground);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--c) 45%, transparent);
+}
+.exit__terminal::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--c);
+}
+.exit__main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.exit__addr {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: var(--c);
+  overflow-wrap: anywhere;
+}
+.exit__note {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.exit__out {
+  display: inline-flex;
+  color: var(--text-muted);
+}
+.exit:hover .exit__out {
+  color: var(--text);
+}
+
 .facts {
   display: grid;
-  gap: var(--space-6);
+  gap: 20px;
   margin: 0;
 }
 .facts dt {
+  margin-bottom: 6px;
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: var(--space-2);
+  color: var(--text-dim);
 }
 .facts dd {
   margin: 0;
@@ -392,69 +1021,65 @@ a {
 .facts__tags {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: 6px;
 }
-
-/* An exit sign: every link that leaves the site. */
-.exit {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-6);
-  padding: var(--space-6) var(--space-8) var(--space-6) var(--space-6);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
-  color: var(--text);
-  text-decoration: none;
-  transition: box-shadow var(--duration-base) var(--ease-standard);
-}
-.exit:hover {
-  box-shadow: var(--shadow-md);
-}
-.exit__arrow {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-md);
-  background: var(--accent-tint);
-  color: var(--accent-tint-ink);
-}
-.exit__main {
-  display: grid;
-  gap: 1px;
-  min-width: 0;
-}
-.exit__addr {
+.facts__tag {
+  padding: 3px 9px;
+  border: 1px solid var(--divider-strong);
+  border-radius: 999px;
   font-family: var(--font-mono);
-  font-size: 14px;
-  overflow-wrap: anywhere;
-}
-.exit__note {
   font-size: 12px;
   color: var(--text-muted);
 }
-.exit__out {
-  color: var(--text-muted);
+
+/* "← All projects": back along the line to the board. */
+.back {
   display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color var(--nt-fast);
+}
+.back:hover {
+  color: var(--text);
+}
+.back__rail {
+  width: 32px;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, var(--accent) 0 6px, transparent 6px 10px);
+}
+.project__back {
+  margin: 0;
 }
 
 /* ── contact ──────────────────────────────────────────────────────────── */
+.contact .kicker,
+.text-page .kicker {
+  margin-bottom: -4px;
+}
 .contact-form {
   display: grid;
-  gap: var(--space-8);
+  gap: 22px;
   max-width: 640px;
 }
 .contact-form__row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-6);
+  gap: 16px;
 }
 @media (max-width: 600px) {
   .contact-form__row {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+.contact-form .fnw-input {
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
 }
 .contact-form .fnw-check {
   align-items: flex-start;
@@ -467,13 +1092,33 @@ a {
   position: absolute;
   left: -9999px;
 }
+.contact__rail {
+  margin-top: 6px;
+}
+.contact__note {
+  margin: 0;
+  max-width: 54ch;
+  color: var(--text-muted);
+}
 .contact__direct {
+  display: grid;
+  gap: 10px;
   margin: 0;
   color: var(--text-muted);
 }
+.contact__mail {
+  justify-self: start;
+  font-family: var(--font-mono);
+  font-size: clamp(17px, 2.2vw, 24px);
+  color: var(--text);
+  text-decoration-color: var(--accent-soft);
+  overflow-wrap: anywhere;
+}
+.contact__mail:hover {
+  text-decoration-color: var(--accent);
+}
 
-/* The proof-of-work box (ALTCHA): the widget reads these variables, set from the system's
-   tokens so it sits among the form's fields in both themes. */
+/* The proof-of-work box (ALTCHA): the widget reads these variables. */
 .proof {
   display: block;
   max-width: 640px;
@@ -481,7 +1126,7 @@ a {
   --altcha-border-radius: var(--radius-md);
   --altcha-checkbox-border-color: var(--border-control);
   --altcha-checkbox-outline-color: var(--focus-ring);
-  --altcha-color-base: var(--ground);
+  --altcha-color-base: var(--surface);
   --altcha-color-base-content: var(--text);
   --altcha-color-primary: var(--accent);
   --altcha-color-primary-content: var(--on-accent);
@@ -496,31 +1141,224 @@ a {
 /* ── 404: a line that stops ───────────────────────────────────────────── */
 .not-found {
   display: grid;
-  gap: var(--space-6);
-  padding-block: var(--space-section);
+  gap: 18px;
+  padding-block: clamp(28px, 6vw, 64px) var(--space-section);
 }
 .not-found h1 {
   margin: 0;
-  font-size: clamp(34px, 5vw, 42px);
+  max-width: 18ch;
+  font-weight: 500;
+  font-size: clamp(36px, 5.4vw, 64px);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
 }
 .not-found p {
   margin: 0;
 }
 .not-found__line {
-  width: 320px;
+  width: 360px;
   max-width: 100%;
   height: auto;
+  overflow: visible;
+}
+.not-found__glow {
+  fill: var(--accent);
+  opacity: 0.25;
+  filter: blur(6px);
 }
 .not-found__point {
   fill: var(--accent);
 }
+.not-found__eye {
+  fill: var(--train-core);
+}
 .not-found__route {
   fill: none;
-  stroke: var(--border-control);
-  stroke-width: 3;
+  stroke: var(--accent);
+  stroke-width: 5;
   stroke-linecap: round;
 }
 .not-found__route--gone {
-  stroke-dasharray: 2 9;
-  opacity: 0.6;
+  stroke-width: 3;
+  stroke-dasharray: 4 10;
+  opacity: 0.5;
+}
+.not-found__end {
+  fill: none;
+  stroke: var(--sodium);
+  stroke-width: 3;
+  stroke-dasharray: 3 4;
+}
+
+/* ── motion ───────────────────────────────────────────────────────────── */
+/* Other pages: their entrances play once per page per visit (src/components/Motion.tsx). <html>
+   gets fnw-calm from the head script before paint on a page already seen, and from <Motion>. The
+   home page's opening ignores it and plays on every visit. */
+.fnw-calm .fnw-enter,
+.fnw-calm .fnw-reveal.is-in {
+  animation: none;
+}
+/* <Motion> adds is-waiting before paint, and only to reveals below the fold, so without
+   JavaScript nothing is ever hidden. */
+.fnw-reveal.is-waiting {
+  opacity: 0;
+}
+.fnw-reveal.is-shown {
+  animation: none;
+}
+
+@keyframes nt-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes nt-drift {
+  to {
+    transform: translate(40vw, 20vh) scale(1.2);
+  }
+}
+@keyframes nt-rail {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  15%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+@keyframes nt-ring {
+  from {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(5);
+    opacity: 0;
+  }
+}
+@keyframes nt-blink {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.15;
+  }
+}
+@keyframes nt-draw-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes nt-pop {
+  0% {
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.5);
+  }
+}
+@keyframes nt-trip {
+  0% {
+    transform: translateX(-22px);
+    opacity: 0;
+  }
+  8%,
+  86% {
+    opacity: 1;
+  }
+  92%,
+  100% {
+    transform: translateX(100cqw);
+    opacity: 0;
+  }
+}
+@keyframes nt-trip-building {
+  0% {
+    transform: translateX(-22px);
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.3, 0.66, 0.55, 1);
+  }
+  8% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 1;
+  }
+  74%,
+  100% {
+    transform: translateX(calc(50cqw - 26px));
+    opacity: 0;
+  }
+}
+@keyframes nt-trip-pulse {
+  0%,
+  88% {
+    transform: scale(1);
+    opacity: 0;
+  }
+  89% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+/* Everything that moves stops under reduced motion: the base state is the finished page. */
+@media (prefers-reduced-motion: no-preference) {
+  .sky::after {
+    animation: nt-drift 38s ease-in-out infinite alternate;
+  }
+  .enter {
+    animation: nt-rise var(--nt-enter) var(--nt-ease) both;
+    animation-delay: calc(var(--d, 0) * 90ms);
+  }
+  .band__mover {
+    animation: nt-rail 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+
+  /* The trip on a project page draws once as the page opens; its train then runs. */
+  .trip__line,
+  .trip__rest {
+    animation: nt-draw-x var(--nt-draw) var(--nt-ease) both;
+    animation-delay: 300ms;
+  }
+  .trip__rest {
+    animation-delay: calc(300ms + var(--nt-draw) * 0.5);
+  }
+  .trip__terminal {
+    animation: nt-pop 600ms var(--nt-ease) both;
+    animation-delay: calc(300ms + var(--nt-draw) * 0.55);
+  }
+  .trip__ring {
+    animation: nt-ring 3.2s var(--ease-standard) infinite;
+  }
+  .trip__work i {
+    animation: nt-blink 1.1s steps(2, jump-none) infinite;
+  }
+  .trip__work i:nth-child(2) {
+    animation-delay: 0.55s;
+  }
+  .trip__work b {
+    animation: nt-blink 0.9s ease-in-out infinite alternate-reverse;
+  }
+  .trip--running .trip__train {
+    animation: nt-trip 4.2s linear infinite;
+    animation-delay: calc(300ms + var(--nt-draw));
+  }
+  .trip--running .trip__pulse {
+    animation: nt-trip-pulse 4.2s linear infinite;
+    animation-delay: calc(300ms + var(--nt-draw));
+  }
+  .trip--building .trip__train {
+    animation: nt-trip-building 5.4s linear infinite;
+    animation-delay: calc(300ms + var(--nt-draw));
+  }
 }

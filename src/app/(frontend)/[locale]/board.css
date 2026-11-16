@@ -1,0 +1,416 @@
+/* The departures board (src/components/site/Signs.tsx, Board; Night transit): a lit panel with
+   the visitor's local clock, one row per line in its colour, status as an icon, a word and a
+   sub-label, and a ticker of the short links. The island (HomeMotion) links rows to the map's
+   lines and sweeps the rows in; everything reads without it. */
+
+.board {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    180deg,
+    var(--surface),
+    color-mix(in srgb, var(--surface) 60%, var(--night))
+  );
+}
+/* Scan lines, faint as an old display. */
+.board::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.018) 0 1px,
+    transparent 1px 3px
+  );
+}
+.board__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 32px;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 24px clamp(16px, 3vw, 32px) 20px;
+  border-bottom: 1px solid var(--divider-strong);
+}
+.board__kicker {
+  margin: 0 0 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.board__title {
+  margin: 0;
+  font-weight: 500;
+  font-size: clamp(26px, 3.4vw, 40px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  scroll-margin-top: 16px;
+}
+
+.clock {
+  text-align: right;
+}
+.clock[hidden] {
+  display: none;
+}
+.clock time {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--sodium);
+  text-shadow: 0 0 22px var(--sodium-glow);
+  font-variant-numeric: tabular-nums;
+}
+.clock small {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+@media (max-width: 520px) {
+  .clock {
+    text-align: left;
+  }
+}
+
+.board__cols,
+.row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1.5fr) minmax(0, 1fr) 190px;
+  gap: 20px;
+  padding: 0 clamp(16px, 3vw, 32px);
+}
+.board__cols {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--divider);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.board__rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.row {
+  position: relative;
+  overflow: hidden;
+  padding-top: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--divider);
+  transition: background var(--nt-slow);
+}
+.row:last-child {
+  border-bottom: 0;
+}
+/* The line's own colour down the row's edge, lit with the row. */
+.row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--c);
+  box-shadow: 0 0 16px var(--c);
+  opacity: 0;
+  transition: opacity var(--nt-slow);
+}
+.row.is-active,
+.row:hover,
+.row:has(:focus-visible) {
+  background: color-mix(in srgb, var(--c) 7%, transparent);
+}
+.row.is-active::before,
+.row:hover::before,
+.row:has(:focus-visible)::before {
+  opacity: 1;
+}
+.row__no {
+  padding-top: 6px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 22px;
+  line-height: 1.2;
+  color: var(--c);
+  text-shadow: 0 0 16px color-mix(in srgb, var(--c) 55%, transparent);
+}
+.row__dest {
+  min-width: 0;
+}
+.row__dest a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 500;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  text-decoration: none;
+}
+.row__dest a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--c);
+}
+.row__dest p {
+  margin: 0;
+  max-width: 56ch;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+.row__addr {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.row__addr a {
+  display: flex;
+  align-items: center;
+  justify-self: start;
+  min-height: 44px;
+  color: var(--text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition: color var(--nt-fast);
+}
+.row__addr a:hover {
+  color: var(--c);
+}
+.row__out {
+  margin-left: 0.5em;
+}
+.row__stat {
+  padding-top: 13px;
+}
+.row__sub {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.row__sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--c) 22%, transparent),
+    transparent
+  );
+  opacity: 0;
+}
+
+@media (max-width: 760px) {
+  .board__cols {
+    display: none;
+  }
+  .row {
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 6px 14px;
+  }
+  .row__addr,
+  .row__stat {
+    grid-column: 2;
+  }
+  .row__no {
+    font-size: 18px;
+  }
+  .row__dest a {
+    font-size: 17px;
+  }
+  .row__stat {
+    padding-top: 2px;
+  }
+}
+
+/* ── status: an icon, a word and, on the board, a sub-label ───────────── */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.status__icon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  overflow: visible;
+}
+.status--running {
+  color: var(--running);
+}
+.status--building,
+.status--planned {
+  color: var(--building);
+}
+.status--paused {
+  color: var(--paused);
+}
+.status__pulse,
+.status__spin,
+.status__ring {
+  fill: none;
+  stroke: currentColor;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.status__pulse {
+  stroke-width: 1.5;
+  opacity: 0;
+}
+.status__spin {
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+}
+.status__ring {
+  stroke-width: 1.75;
+  stroke-dasharray: 2 2.5;
+}
+
+/* ── the ticker: the short links, as a departures crawl ───────────────── */
+.ticker {
+  overflow: hidden;
+  border-top: 1px solid var(--divider-strong);
+  background: rgba(0, 0, 0, 0.25);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.ticker__track {
+  display: flex;
+  width: max-content;
+}
+.ticker__copy {
+  padding: 12px 0;
+  white-space: nowrap;
+}
+.ticker b {
+  font-weight: 500;
+  color: var(--sodium);
+}
+.ticker__sep {
+  white-space: pre;
+}
+
+/* ── motion ───────────────────────────────────────────────────────────── */
+@keyframes board-sweep {
+  0% {
+    opacity: 1;
+    transform: translateX(-100%);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+@keyframes board-ticker {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes board-colon {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.25;
+  }
+}
+/* A smaller ring than the point's: it sits in a line of text. */
+@keyframes status-pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+@keyframes board-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .clock__colon {
+    animation: board-colon 1s steps(2, jump-none) infinite;
+  }
+  .status--running .status__pulse {
+    animation: status-pulse 2.4s var(--ease-standard) infinite;
+  }
+  .status--building .status__spin {
+    animation: board-spin 3s linear infinite;
+  }
+  .ticker__track {
+    animation: board-ticker var(--ticker-s, 42s) linear infinite;
+  }
+  .ticker:hover .ticker__track {
+    animation-play-state: paused;
+  }
+
+  /* Rows the visitor has not seen yet wait out of sight, then arrive one after another with a
+     light sweeping across each; rows already on screen only get the light. */
+  .board.is-pending .row > :not(.row__sweep) {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  .board.is-arrived .row > :not(.row__sweep) {
+    animation: nt-rise 700ms var(--nt-ease) both;
+    animation-delay: calc(var(--i, 0) * 140ms + var(--j, 0) * 60ms);
+  }
+  .board.is-arrived .row > .row__dest {
+    --j: 1;
+  }
+  .board.is-arrived .row > .row__addr {
+    --j: 2;
+  }
+  .board.is-arrived .row > .row__stat {
+    --j: 3;
+  }
+  .board:is(.is-arrived, .is-swept) .row__sweep {
+    animation: board-sweep 900ms var(--ease-standard) both;
+    animation-delay: calc(var(--i, 0) * 140ms);
+  }
+}
+
+/* Under reduced motion the ticker stands still: one copy, wrapped, so all of it can be read. */
+@media (prefers-reduced-motion: reduce) {
+  .ticker__track {
+    width: auto;
+    padding-inline: clamp(16px, 3vw, 32px);
+  }
+  .ticker__copy {
+    white-space: normal;
+  }
+  .ticker__copy + .ticker__copy {
+    display: none;
+  }
+}

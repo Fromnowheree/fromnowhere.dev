@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { headScript, isCalm, PLAYED_KEY, playedKey, readPlayed, themeFor } from '@/lib/motion'
+import { headScript, isCalm, PLAYED_KEY, playedKey, readPlayed } from '@/lib/motion'
 
 /**
- * Entrances play once per page per visit, and the theme follows the device. Two pieces of code make
- * that call: the head script before first paint, and <Motion> and <ThemeSync> once React is awake
- * (src/lib/motion.ts). They must agree, or a page would flash its entrance or its theme.
+ * The other pages' entrances play once per page per visit (the home page's opening plays on every
+ * visit and never reads this; tests/int/routeMap.int.spec.ts holds its stylesheet to that). Two
+ * pieces of code make the call: the head script before first paint, and <Motion> once React is
+ * awake (src/lib/motion.ts). They must agree, or a page would flash its entrance. The site is dark
+ * only, so nothing sets a theme.
  */
 
 describe('playedKey', () => {
@@ -24,13 +26,6 @@ describe('playedKey', () => {
   })
 })
 
-describe('themeFor', () => {
-  it('is light only when the device asks for it', () => {
-    expect(themeFor(stubMatchMedia({ light: true }))).toBe('light')
-    expect(themeFor(stubMatchMedia({ light: false }))).toBe('dark')
-  })
-})
-
 type Device = { light?: boolean; reduce?: boolean }
 
 const stubMatchMedia = ({ light = false, reduce = false }: Device) =>
@@ -45,10 +40,8 @@ type Storage = string | null | 'throws'
 /** Runs the head script against stubs and reports what it did to <html>. */
 const runHeadScript = (pathname: string, stored: Storage, device: Device) => {
   const classes = new Set<string>()
-  const html = {
-    dataset: { theme: 'dark' } as Record<string, string>,
-    classList: { add: (name: string) => classes.add(name) },
-  }
+  const dataset: Record<string, string> = {}
+  const html = { dataset, classList: { add: (name: string) => classes.add(name) } }
   const sessionStorage = {
     getItem: (key: string) => {
       if (stored === 'throws') throw new Error('SecurityError')
@@ -61,17 +54,17 @@ const runHeadScript = (pathname: string, stored: Storage, device: Device) => {
     sessionStorage,
     stubMatchMedia(device),
   )
-  return { theme: html.dataset.theme, calm: classes.has('fnw-calm') }
+  return { calm: classes.has('fnw-calm'), classes: [...classes], dataset }
 }
 
-/** What <ThemeSync> and <Motion> decide for the same page, through the very helpers they call. */
+/** What <Motion> decides for the same page, through the very helpers it calls. */
 const reactDecides = (pathname: string, stored: Storage, device: Device) => {
   const mm = stubMatchMedia(device)
   const played = readPlayed(() => {
     if (stored === 'throws') throw new Error('SecurityError')
     return stored
   })
-  return { theme: themeFor(mm), calm: isCalm(pathname, played, mm) }
+  return isCalm(pathname, played, mm)
 }
 
 describe('readPlayed and isCalm', () => {
@@ -110,17 +103,23 @@ describe('the head script', () => {
   ]
   const devices: Device[] = [{}, { light: true }, { reduce: true }, { light: true, reduce: true }]
 
-  it('sets fnw-calm and data-theme exactly as <Motion> and <ThemeSync> would', () => {
-    for (const pathname of paths) {
-      for (const stored of stores) {
-        for (const device of devices) {
+  it('sets fnw-calm exactly as <Motion> would', () => {
+    for (const pathname of paths)
+      for (const stored of stores)
+        for (const device of devices)
           expect(
-            runHeadScript(pathname, stored, device),
+            runHeadScript(pathname, stored, device).calm,
             `${pathname} ${stored} ${JSON.stringify(device)}`,
-          ).toEqual(reactDecides(pathname, stored, device))
-        }
-      }
+          ).toBe(reactDecides(pathname, stored, device))
+  })
+
+  it('sets no theme and nothing but fnw-calm, whatever the device asks for', () => {
+    for (const device of devices) {
+      const result = runHeadScript('/en/contact', null, device)
+      expect(result.dataset).toEqual({})
+      expect(result.classes.filter((name) => name !== 'fnw-calm')).toEqual([])
     }
+    expect(headScript).not.toMatch(/prefers-color-scheme|theme/)
   })
 
   it('keeps a page calm in the other language once it has played', () => {
@@ -129,10 +128,8 @@ describe('the head script', () => {
     expect(runHeadScript('/en', stored, {}).calm).toBe(false)
   })
 
-  it('still follows the device when sessionStorage is unavailable', () => {
-    expect(runHeadScript('/en', 'throws', { light: true, reduce: true })).toEqual({
-      theme: 'light',
-      calm: true,
-    })
+  it('still follows reduced motion when sessionStorage is unavailable', () => {
+    expect(runHeadScript('/en', 'throws', { reduce: true }).calm).toBe(true)
+    expect(runHeadScript('/en', 'throws', {}).calm).toBe(false)
   })
 })

@@ -21,23 +21,24 @@ clinic layer (blocks, services, team, locations, brand colour, Tailwind, booking
 
 ## 2. Stack (check package.json before trusting prose)
 
-| Concern  | Choice                                                                                                                                                                                                                                       |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Runtime  | Node **26** (`.nvmrc`), pnpm **12.20.0** pinned by `packageManager`, enforced by `pnpm-workspace.yaml` (`pmOnFail: error`, `engineStrict`, `strictDepBuilds`, a three-day `minimumReleaseAge`)                                               |
-| App      | Next.js 16 (App Router, RSC, Server Actions), React 19, `output: 'standalone'`                                                                                                                                                               |
-| CMS      | Payload 3 in the same app: editor at `/admin`, REST at `/api`. **GraphQL is off**                                                                                                                                                            |
-| Database | PostgreSQL 17 (`@payloadcms/db-postgres`)                                                                                                                                                                                                    |
-| i18n     | `next-intl` 4 with `[locale]` routing (en main, hr), `messages/*.json`; Payload `localization` (en, hr) and a bilingual admin                                                                                                                |
-| Styling  | The **Fromnowhere design system**: `design/` (README, patterns, motion, logo, tokens) and `src/styles/fnw/` (`tokens.css`, `bundle.css`), copied as fnwygo does; the site's own layer in `src/app/(frontend)/[locale]/site.css`. No Tailwind |
-| Mail     | Contact form: its own `nodemailer` relay over `CONTACT_SMTP_*`. Admin mail: `SMTP_*`                                                                                                                                                         |
-| Spam     | `altcha` + `altcha-lib` (self-hosted proof of work), honeypot, rate limit, signed fill-in time (`src/lib/relay/`)                                                                                                                            |
-| Tests    | Vitest 5 (`tests/int`, against a real Postgres), Playwright (`tests/e2e`, not in CI)                                                                                                                                                         |
-| Deploy   | `Dockerfile` (built in CI, never on the server), `compose.yml` (+ `compose.stats.yml`), `caddy/` (+ `caddy/sites/` for the other sites on the server), `scripts/` (first admin, age-encrypted backups, restore)                              |
+| Concern  | Choice                                                                                                                                                                                                                                                                                               |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Runtime  | Node **26** (`.nvmrc`), pnpm **12.20.0** pinned by `packageManager`, enforced by `pnpm-workspace.yaml` (`pmOnFail: error`, `engineStrict`, `strictDepBuilds`, a three-day `minimumReleaseAge`)                                                                                                       |
+| App      | Next.js 16 (App Router, RSC, Server Actions), React 19, `output: 'standalone'`                                                                                                                                                                                                                       |
+| CMS      | Payload 3 in the same app: editor at `/admin`, REST at `/api`. **GraphQL is off**                                                                                                                                                                                                                    |
+| Database | PostgreSQL 17 (`@payloadcms/db-postgres`)                                                                                                                                                                                                                                                            |
+| i18n     | `next-intl` 4 with `[locale]` routing (en main, hr), `messages/*.json`; Payload `localization` (en, hr) and a bilingual admin                                                                                                                                                                        |
+| Styling  | The **Fromnowhere design system**: `design/` (README, patterns, motion, logo, tokens) and `src/styles/fnw/` (`tokens.css`, `bundle.css`), copied as fnwygo does; over it the site's **Night transit** layer in `src/app/(frontend)/[locale]/` (`site.css`, `routemap.css`, `board.css`). No Tailwind |
+| Mail     | Contact form: its own `nodemailer` relay over `CONTACT_SMTP_*`. Admin mail: `SMTP_*`                                                                                                                                                                                                                 |
+| Spam     | `altcha` + `altcha-lib` (self-hosted proof of work), honeypot, rate limit, signed fill-in time (`src/lib/relay/`)                                                                                                                                                                                    |
+| Tests    | Vitest 5 (`tests/int`, against a real Postgres), Playwright (`tests/e2e`, not in CI)                                                                                                                                                                                                                 |
+| Deploy   | `Dockerfile` (built in CI, never on the server), `compose.yml` (+ `compose.stats.yml`), `caddy/` (+ `caddy/sites/` for the other sites on the server), `scripts/` (first admin, age-encrypted backups, restore)                                                                                      |
 
 Layout: `src/payload.config.ts` wires everything; `src/collections/` (Projects, Pages,
 ShortLinks, Media, Users), `src/globals/Studio.ts`, `src/fields/`, `src/components/` (`fnw.tsx`
-the system's components, `site/` the site's chrome and signs, `contact/` the form, `admin/`),
-`src/lib/` (`links.ts` the link rule, `payload.ts` every query, `shortLinks.ts`, `relay/`),
+the system's components, `site/` the site's chrome, map, board and signs, with `HomeMotion.tsx`
+the home page's one motion island, `contact/` the form, `admin/`), `src/lib/` (`links.ts` the link
+rule, `payload.ts` every query, `routeMap.ts` the map's geometry, `shortLinks.ts`, `relay/`),
 `src/i18n/`, `src/proxy.ts`, `src/app/(frontend)/[locale]/(site)/` (home `page.tsx`,
 `projects/[slug]`, `contact`, `[slug]` for text pages), `src/app/(frontend)/pick-language/`
 (addresses without a language, and short links), `src/app/(frontend)/og/` (share cards),
@@ -86,32 +87,75 @@ podman rm -f -v fnw-e2e-pg
 rm -rf "${TMPDIR:-/tmp}/fnw-e2e-media"
 ```
 
-`tests/e2e/visual.e2e.spec.ts` writes screenshots to `test-results/phase1/` (or `VISUAL_DIR`)
-for looking at by eye; it asserts nothing about pixels.
+`tests/e2e/visual.e2e.spec.ts` writes screenshots to `test-results/night/` (or `VISUAL_DIR`)
+for looking at by eye beside `docs/prototypes/night-transit.html`; it asserts nothing about
+pixels.
 
 ## 4. Rules
 
 ### Design
 
-- **The studio site never steps outside the design system** (unlike fnwygo's broadcast look,
-  which was a deliberate exception): every colour, size, space, radius, duration and easing is a
-  token (`var(--surface)`, `var(--space-4)`, `var(--duration-slow)`). Read `design/README.md`,
-  `design/patterns.md` ("Studio and portfolio") and `design/motion.md` before UI work. Its
-  uniqueness comes from wayfinding built out of the mark: the route map, the board, exit plates,
-  windows (vision, "Signature pieces").
-- **A quiet station, loud destinations.** Another project's colours, type or imagery appear only
-  inside a framed window on its project page, never in the site's chrome.
-- **The accent is a line, a point or a glow, never a flood.** Status is an icon and a word, never
-  colour alone. Inter 400 and 500 only, no italics. Layouts left-aligned, never a centred hero.
-- **Motion** uses the system's `.fnw-enter` / `.fnw-reveal` (played by `src/components/Motion.tsx`
-  once per page per visit) and the motion tokens; `transform` and `opacity` only; everything stops
-  under `prefers-reduced-motion`. No counting numbers, typewriter or split-flap effects. A page
-  counts as played in both languages (`playedKey`, `src/lib/motion.ts`), so EN↔HR never replays.
+- **The direction is Night transit**: the studio is a transit station at night. The approved
+  prototype is [`docs/prototypes/night-transit.html`](docs/prototypes/night-transit.html); open
+  it beside the site before UI work. It is built on the design system (`design/`,
+  `src/styles/fnw/`: its components, spacing, type and motion tokens still apply) with the
+  site's own layer over it: `site.css` (the night palette, the sky, the chrome, the pages),
+  `routemap.css` (the map), `board.css` (the departures board, status, the ticker). Every colour,
+  size and duration is a token; add one to `site.css`'s `:root` rather than a raw value. Its
+  signature pieces: the headline whose full stop is the point, the route map, the board with the
+  visitor's clock, the ticker of short links, lit terminals, windows.
+- **The palette** (`site.css`, over the system's tokens so its fields and alerts take it too):
+  `--night` (the page), `--ground`, `--surface`, `--surface-2`, `--track` (the casing under
+  every line), `--text`, `--text-muted`, `--text-dim` (small mono labels, 4.5:1), `--accent`
+  (the point, violet), `--sodium` (street light: the clock, work lights, the ticker),
+  `--train-core`, `--running`, `--building`. The sky (`.sky`, in `[locale]/layout.tsx`, behind
+  every page): a faint grid, a violet haze and a sodium glow from below.
+- **Each line has its own colour**, from its line number through six tokens, `--line-1` …
+  `--line-6`, repeating after six (`lineColour` in `src/lib/routeMap.ts`; no schema field). It is
+  set as `--c` on everything of that line: its map line, terminal and trains, its board row, and
+  its project page (kicker point, trip, exits).
+- **Dark only.** `color-scheme: dark` and `viewport.colorScheme`; there is no light theme and
+  nothing switches one.
+- **Light, not paint.** Glows, halos and lit edges show what is lit (a line, a terminal, the
+  point, the clock); solid fills stay on small marks (a line number, a terminal's core). Status
+  is an icon, a word and a sub-label ("Running · Departs every visit"), never colour alone.
+  Inter 400 and 500 only, no italics; JetBrains Mono (self-hosted in `public/fonts/`, OFL in
+  `src/assets/fonts/`) for labels, numbers, addresses and the clock. Layouts left-aligned, never
+  a centred hero.
+- **Loud destinations stay in their windows.** Another project's own colours, type or imagery
+  appear only inside its window on its project page; line colours are the station's.
 - **The route map** (`src/lib/routeMap.ts`, `src/components/site/RouteMap.tsx`, `routemap.css`)
-  is server-rendered HTML and `aria-hidden` SVG, with no client JavaScript and no `style`
-  attributes; lighting is CSS `:has()` only. **The wide map holds at most six lines**
-  (`MAP.wideMax`): with more, it is the vertical rail at every width and board rows no longer
-  light it.
+  is rendered whole by the server, both layouts (wide, and tall for a phone below 700px of map
+  width, chosen by a container query), for 1 to 12 lines (`MAP.maxLines`; with more there is no
+  map and the board lists them all; past six, cards drop their summary). The drawing is
+  `aria-hidden`; each terminal's card is one link to the project's page here, named "Line 02,
+  Giogio, Running", and the whole card is its target. The board is the accessible list.
+- **Motion** (every animation is declared inside `@media (prefers-reduced-motion:
+no-preference)`, which `tests/int/routeMap.int.spec.ts` checks for all three stylesheets):
+  - **The home page's opening plays on every visit** (a load, a soft navigation back, the other
+    language): CSS on the map's insertion, under `.map:not(.is-settled)`, never keyed on
+    `fnw-calm`. The point appears, lines draw out of it one after another, each terminal lights
+    and pulses, its card slides in. `HomeMotion` marks the map settled afterwards, so a layout
+    that appears on resize does not draw again.
+  - **Ambient motion always runs**: trains (one Web Animation each, set off once their line is
+    drawn, a pulse at the terminal on each arrival, creeping up to the frontier on a line under
+    construction), the point's rings, work lights, the ticker, the contact band's moving point,
+    the drifting haze, the clock's colons. Trains pause while the tab is hidden or the map is
+    off screen.
+  - **Lighting**: pointing at or focusing a line, a terminal or a board row lights that line on
+    the map and the board, dims the others and speeds its trains up (`HomeMotion`).
+  - **Reduced motion**: everything is static and fully drawn; no trains, pulses, ticker or haze
+    (the ticker wraps instead). The clock still ticks.
+  - **Progressive enhancement**: without JavaScript the map, board and ticker are all there and
+    every link works; `HomeMotion` only adds. No per-frame loop. The clock shows only with
+    JavaScript (the server cannot know the visitor's time).
+  - Other pages keep the system's `.fnw-enter` / `.fnw-reveal`, played by
+    `src/components/Motion.tsx` once per page per visit (`fnw-calm`, `playedKey`: a page counts
+    as played in both languages); a project page's trip draws on each load.
+  - Transforms, opacity and stroke dashes only. No counting numbers, typewriter or split-flap.
+- **Accessibility holds the design**: a visible 2px focus ring (`--focus`), every control at
+  least 44px tall, no sideways scroll at 320px, the page centred. The map is never read twice:
+  its drawing, stop labels and card details are `aria-hidden`, its links stay focusable.
 - **Page transitions**: in this App Router site a soft navigation animates only through React's
   `<ViewTransition>` (`src/components/site/PageTransition.tsx`, keyed on the pathname around
   `.site-page`); CSS `@view-transition` (`transition.css`) covers full document loads only. The
@@ -150,6 +194,9 @@ for looking at by eye; it asserts nothing about pixels.
   prefers the page.
 - **Nothing is invented for a visitor.** An empty field renders nothing; links to About and
   Privacy appear only while those pages are published; the form shows only while it can send.
+  The tally is counted from the published projects, the ticker lists the short links that lead
+  somewhere public (`getShortLinks`), and the board's sub-labels say what a status means ("Departs
+  every visit", "Not in service yet"), never a time or a latency.
 - **Windows** (`src/components/site/Window.tsx`) are a real, still capture of a destination's
   published first screen on a phone (4:5), taken with `pnpm capture:windows` and listed in
   `src/seed/windowSeeds.ts`. Never a demo, seed data, a preview, an iframe or a hand-made
@@ -210,6 +257,10 @@ for enum".
    (point, lines, plates, hover lighting a line, dashed lines under construction, drawn once per
    visit), the windows' plumbing (frame, `windowAddress`, capture script, seed; no window seeded
    until a destination is published), and the page transition with focus on `#content`.
+   **Night transit** (16 November 2026, [`docs/prototypes/night-transit.html`](docs/prototypes/night-transit.html))
+   replaced the still look: dark only, line colours, the map drawn and run with trains, the
+   departures board with the clock and the ticker; `docs/phase-1.md`'s map, rail, plates and
+   once-per-visit draw are history.
 4. The status check (a Payload job pinging each address every 5 minutes; the board shows real
    status) and share cards with the project's line lit.
 5. About text, Caddy and DNS for fromnowhere.dev, the shared Caddy for the other sites, launch.
@@ -224,10 +275,11 @@ for enum".
   database and edits show at once.
 - **Share cards** read `src/assets/fonts/Inter-Regular.ttf` (Satori takes TTF, not WOFF2);
   `next.config.ts` traces it into the standalone build.
-- **The theme**: dark is primary; the head script (`headScript` in `src/lib/motion.ts`, rendered
-  by `[locale]/layout.tsx`) switches `data-theme` to light when the device asks for it, before
-  paint, and decides whether entrances play. EN↔HR remounts the root layout and React resets
-  `<html>`'s attributes, so `ThemeSync` sets the theme again in a layout effect.
+- **Dark only, and the head script**: there is no theme to set. The head script (`headScript` in
+  `src/lib/motion.ts`, rendered by `[locale]/layout.tsx`) only decides, before paint, whether the
+  other pages' entrances play (`fnw-calm`); the home page's opening ignores it.
+- **The sky shows through `<body>`**: the page's colour is on `<html>` and `body` is transparent,
+  or the body's own background would cover the `z-index: -1` sky (as it did in the prototype).
 - **Seeding the second language of an array** needs the row ids of the first, or Payload replaces
   the rows (`src/seed/index.ts`).
 - **A test that needs an empty install** uses its own database (`tests/helpers/freshDatabase.ts`).

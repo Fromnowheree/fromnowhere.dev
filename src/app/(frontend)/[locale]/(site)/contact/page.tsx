@@ -39,12 +39,16 @@ export default async function ContactPage({ params }: Props) {
         <p className="page-head__lead fnw-enter" style={{ '--i': 1 } as React.CSSProperties}>
           {t('lead')}
         </p>
+        {/* The home page's contact band, continued: a point running along a dashed rail. */}
+        <span className="band__rail contact__rail" aria-hidden="true">
+          <span className="band__mover" />
+        </span>
       </header>
 
       {formToken ? (
         <>
           <noscript>
-            <p className="fnw-muted">{tForm('needsScript')}</p>
+            <p className="contact__note">{tForm('needsScript')}</p>
             <style>{'.contact-form{display:none}'}</style>
           </noscript>
           <ContactForm
@@ -53,12 +57,15 @@ export default async function ContactPage({ params }: Props) {
           />
         </>
       ) : (
-        <p className="fnw-muted">{t('noForm')}</p>
+        <p className="contact__note">{t('noForm')}</p>
       )}
 
       {studio.email && (
         <p className="contact__direct">
-          {t('writeDirectly')} <a href={`mailto:${studio.email}`}>{studio.email}</a>
+          {t('writeDirectly')}{' '}
+          <a className="contact__mail" href={`mailto:${studio.email}`}>
+            {studio.email}
+          </a>
         </p>
       )}
     </article>

@@ -7,89 +7,94 @@ import type { Locale } from '@/i18n/locales'
 import { displayAddress } from '@/lib/links'
 import { getPublishedIndex, getStudio } from '@/lib/payload'
 
-/** Tile + FNW, the primary lockup (design/logo.md). `full` adds FROMNOWHERE under the letters. */
-export function Lockup({ size = 28, full = false }: { size?: number; full?: boolean }) {
-  return (
-    <span className="fnw-lockup" style={{ '--s': `${size}px` } as React.CSSProperties}>
-      <Mark size={size} />
-      {full ? (
-        <span className="fnw-lockup__stack">
-          <span className="fnw-lockup__fnw">FNW</span>
-          <span className="fnw-lockup__name">Fromnowhere</span>
-        </span>
-      ) : (
-        <span className="fnw-lockup__fnw">FNW</span>
-      )}
-    </span>
-  )
-}
-
-/** The studio pattern's Nav (design/patterns.md): the 28px lockup, a few links, one action. */
+/**
+ * The header: the tile and FNW (the letters give way on a phone), Projects and About, the
+ * language pill and one action. Every control is a 44px target. It is held still while pages
+ * change (`view-transition-name` in site.css).
+ */
 export async function SiteHeader({ locale }: { locale: Locale }) {
   const [t, index] = await Promise.all([
     getTranslations({ locale, namespace: 'nav' }),
     getPublishedIndex(),
   ])
   return (
-    <header className="fnw-nav site-nav wrap">
+    <header className="site-nav wrap">
       <Link className="fnw-nav__brand" href="/" aria-label={t('home')}>
-        <Lockup />
+        <Mark size={36} />
+        <span className="site-nav__fnw">FNW</span>
       </Link>
-      <nav aria-label={t('main')}>
-        <ul className="fnw-nav__links">
+      <nav className="site-nav__links" aria-label={t('main')}>
+        <ul>
           <li>
             <Link href="/#projects">{t('projects')}</Link>
           </li>
           {index.pages.has('about') && (
-            <li>
+            <li className="site-nav__about">
               <Link href="/about">{t('about')}</Link>
             </li>
           )}
         </ul>
       </nav>
-      <div className="fnw-nav__actions">
-        <LanguageSwitch />
-        <Link className="fnw-btn fnw-btn--primary" href="/contact">
-          {t('contact')}
-        </Link>
-      </div>
+      <LanguageSwitch />
+      <Link className="btn" href="/contact">
+        {t('contact')}
+      </Link>
     </header>
   )
 }
 
-/** The studio's own footer: the full lockup, the contact line, profiles. No attribution: this is
- * where the attribution on every other site points. */
+/**
+ * The footer: the mark and the name, the studio's address, its pages and its profiles elsewhere.
+ * No attribution: this is where the attribution on every other site points. Links to About and
+ * Privacy appear only while those pages are published.
+ */
 export async function SiteFooter({ locale }: { locale: Locale }) {
-  const [t, studio, index] = await Promise.all([
+  const [t, tNav, studio, index] = await Promise.all([
     getTranslations({ locale, namespace: 'footer' }),
+    getTranslations({ locale, namespace: 'nav' }),
     getStudio(locale),
     getPublishedIndex(),
   ])
   const profiles = studio.profiles ?? []
   return (
-    <footer className="fnw-footer site-footer wrap" aria-label={t('label')}>
-      <div className="fnw-footer__main site-footer__id">
-        <Lockup size={44} full />
-        {studio.email && (
-          <a className="site-footer__mail" href={`mailto:${studio.email}`}>
-            {studio.email}
-          </a>
-        )}
-      </div>
-      <ul className="fnw-footer__links">
-        {profiles.map((profile) => (
-          <li key={profile.id ?? profile.url}>
-            <a href={profile.url} rel="me noopener noreferrer" title={displayAddress(profile.url)}>
-              {profile.label}
-            </a>
-          </li>
-        ))}
-        {index.pages.has('privacy') && (
+    <footer className="site-footer" aria-label={t('label')}>
+      <div className="wrap site-footer__bar">
+        <span className="site-footer__id">
+          <Mark size={16} variant="mono" />
+          Fromnowhere, {new Date().getFullYear()}
+        </span>
+        <ul className="site-footer__links">
+          {studio.email && (
+            <li>
+              <a href={`mailto:${studio.email}`}>{studio.email}</a>
+            </li>
+          )}
+          {profiles.map((profile) => (
+            <li key={profile.id ?? profile.url}>
+              <a
+                href={profile.url}
+                rel="me noopener noreferrer"
+                title={displayAddress(profile.url)}
+              >
+                {profile.label}
+              </a>
+            </li>
+          ))}
+          {index.pages.has('about') && (
+            <li>
+              <Link href="/about">{tNav('about')}</Link>
+            </li>
+          )}
+          {index.pages.has('privacy') && (
+            <li>
+              <Link href="/privacy">{t('privacy')}</Link>
+            </li>
+          )}
           <li>
-            <Link href="/privacy">{t('privacy')}</Link>
+            <Link href="/contact">{t('contact')}</Link>
           </li>
-        )}
-      </ul>
+        </ul>
+      </div>
     </footer>
   )
 }

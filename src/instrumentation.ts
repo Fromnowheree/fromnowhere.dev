@@ -9,13 +9,17 @@
  * the containers in no particular order and the app can come up before Postgres. Ended, the
  * container is started again (compose.yml, `restart: unless-stopped`) until it succeeds, and the
  * cause is in `docker compose logs app`.
+ *
+ * Booted here with `cron: true`, this server also runs the status check every 5 minutes
+ * (src/jobs/checkStatus.ts) unless STATUS_CHECKS is "off" (the end-to-end tests turn it off so
+ * nothing on the network changes what they see).
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME !== 'nodejs') return
   const { getPayload } = await import('payload')
   const { default: config } = await import('@payload-config')
   try {
-    await getPayload({ config })
+    await getPayload({ config, cron: process.env.STATUS_CHECKS !== 'off' })
   } catch (error) {
     if (process.env.NODE_ENV !== 'production') throw error
     console.error('Payload could not start, so the server ends and is started again.', error)

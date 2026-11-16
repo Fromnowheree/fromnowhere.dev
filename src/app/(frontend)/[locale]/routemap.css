@@ -76,6 +76,17 @@
   stroke-width: calc(var(--lw) * 0.75);
   opacity: 0.7;
 }
+/* Delayed: built and lit, its trains held; the terminal's core and ring turn to street light. */
+.line--delayed .line__glow {
+  opacity: 0.18;
+}
+.line--delayed .line__core {
+  fill: var(--delayed);
+}
+.line--delayed .line__pulse {
+  stroke: var(--delayed);
+  opacity: 0.85;
+}
 .line--paused .line__main {
   opacity: 0.55;
 }
@@ -515,6 +526,9 @@
   }
   .line__hazard {
     animation: map-hazard 0.9s ease-in-out infinite alternate;
+  }
+  .line--delayed .line__pulse {
+    animation: nt-blink 1.2s steps(2, jump-none) infinite;
   }
 
   /* The opening, on every visit to the home page: the point appears, the lines draw out of it one

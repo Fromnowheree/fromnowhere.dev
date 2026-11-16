@@ -2,7 +2,8 @@ import { ImageResponse } from 'next/og'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { shareCardSize } from '@/lib/shareCard'
+import { MAP, routeMap, type LineState } from '@/lib/routeMap'
+import { CARD_PALETTE, cardLineColour, shareCardSize } from '@/lib/shareCard'
 
 // Bundled with the app (src/assets/fonts, SIL OFL), so rendering never fetches from the network.
 // Satori reads TTF but not WOFF2, so this is a TTF copy of the site's Inter. Regular only: the
@@ -13,36 +14,181 @@ const fonts = [
   { name: 'Inter', data: interRegular, weight: 400 as const, style: 'normal' as const },
 ]
 
-// The dark theme's tokens (src/styles/fnw/tokens.css): dark is the brand's primary theme.
-const ground = '#161826'
-const surface = '#232532'
-const text = '#e9e9ed'
-const muted = '#b2b6ca'
-const accent = '#9184d9'
-const route = '#595d6c'
+const P = CARD_PALETTE
 
-/** Shorter titles get bigger type. */
+/** One line of the map on a card: its number, how it is drawn, and whether it is lit. */
+export type CardLine = { line: number; state: LineState; stops: number; lit: boolean }
+
+/** Shorter titles get bigger type; the title has the left half of the card. */
 const titleSize = (title: string) =>
-  title.length <= 24 ? 76 : title.length <= 40 ? 64 : title.length <= 60 ? 56 : 48
+  title.length <= 18 ? 72 : title.length <= 32 ? 60 : title.length <= 56 ? 50 : 42
 
-/** Three lines hold ~100 characters at the smallest size; cut longer titles between words. */
+/** Four lines hold ~100 characters at the smallest size; cut longer titles between words. */
 const fitTitle = (title: string) =>
   title.length <= 100
     ? title
     : `${title.slice(0, title.lastIndexOf(' ', 96)).replace(/[\s,:;–-]+$/, '')}…`
 
+/** The map's box on the card: the right side, the lines' terminals near its right edge. */
+const BOX = { left: 548, top: 36, width: 616, height: 558 }
+
 /**
- * The card for a shared link, drawn as the route map in miniature: the point on the left, a line
- * leaving it, and the page's title where the line arrives. The monogram's plates sit top left.
+ * The route map as one SVG, cropped just past the terminals (the labels are the site's HTML and
+ * have no place here). Lit lines carry their colour, a glow and a train; the others stay as
+ * faint tracks, so a project's card shows its own line leaving the point among the rest.
+ */
+function CardMap({ lines }: { lines: CardLine[] }) {
+  const geometry = routeMap(lines.map(({ state, stops }) => ({ state, stops })))
+  if (!geometry) return null
+  const map = geometry.wide
+  const L = MAP.wide
+  const cropWidth = L.terminalX + L.terminal * 3
+  const scale = Math.min(BOX.width / cropWidth, BOX.height / map.height)
+  const width = Math.round(cropWidth * scale)
+  const height = Math.round(map.height * scale)
+  const { x: ox, y: oy } = map.origin
+
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox={`0 0 ${cropWidth} ${map.height}`}
+      style={{
+        position: 'absolute',
+        left: BOX.left + (BOX.width - width),
+        top: BOX.top + Math.round((BOX.height - height) / 2),
+      }}
+    >
+      {map.lines.map((line, i) => (
+        <path
+          key={`casing-${i}`}
+          d={line.d}
+          fill="none"
+          stroke={P.track}
+          strokeWidth={L.stroke + 6}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ))}
+      {map.lines.map((line, i) => {
+        const { lit, state } = lines[i]
+        const colour = cardLineColour(lines[i].line)
+        const built = line.built ? `${line.built.length} ${line.length}` : undefined
+        const rest = line.built?.dashes ?? line.dashes
+        const { x, y } = line.terminal
+        const opacity = lit ? 1 : 0.24
+        const trainAt = (line.built?.length ?? line.length) * 0.62
+        return (
+          <g key={`line-${i}`} opacity={opacity}>
+            {lit && state !== 'planned' && (
+              <path
+                d={line.d}
+                fill="none"
+                stroke={colour}
+                strokeOpacity={0.28}
+                strokeWidth={L.stroke * 3.4}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeDasharray={built}
+              />
+            )}
+            {state !== 'planned' && (
+              <path
+                d={line.d}
+                fill="none"
+                stroke={colour}
+                strokeWidth={L.stroke}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeDasharray={built}
+              />
+            )}
+            {rest && (
+              <path
+                d={line.d}
+                fill="none"
+                stroke={colour}
+                strokeOpacity={0.6}
+                strokeWidth={L.stroke * 0.6}
+                strokeDasharray={rest}
+              />
+            )}
+            {line.stops.map((stop) => (
+              <circle
+                key={`${stop.x} ${stop.y}`}
+                cx={stop.x}
+                cy={stop.y}
+                r={L.stroke * 0.95}
+                fill={P.ground}
+                stroke={colour}
+                strokeWidth={L.stroke * 0.55}
+              />
+            ))}
+            {lit && state !== 'planned' && (
+              <>
+                <path
+                  d={line.d}
+                  fill="none"
+                  stroke={colour}
+                  strokeOpacity={0.55}
+                  strokeWidth={L.stroke * 2.4}
+                  strokeLinecap="round"
+                  strokeDasharray={`${L.train} ${Math.ceil(line.length * 2)}`}
+                  strokeDashoffset={-trainAt}
+                />
+                <path
+                  d={line.d}
+                  fill="none"
+                  stroke={P.trainCore}
+                  strokeWidth={L.stroke * 0.9}
+                  strokeLinecap="round"
+                  strokeDasharray={`${L.train} ${Math.ceil(line.length * 2)}`}
+                  strokeDashoffset={-trainAt}
+                />
+              </>
+            )}
+            {lit && <circle cx={x} cy={y} r={L.terminal * 2.6} fill={colour} fillOpacity={0.16} />}
+            <circle
+              cx={x}
+              cy={y}
+              r={L.terminal}
+              fill={P.ground}
+              stroke={colour}
+              strokeWidth={L.stroke * 0.75}
+              strokeDasharray={state === 'building' || state === 'planned' ? '5 5' : undefined}
+            />
+            {state === 'running' && <circle cx={x} cy={y} r={L.terminal * 0.38} fill={colour} />}
+          </g>
+        )
+      })}
+      <circle cx={ox} cy={oy} r={64} fill={P.accent} fillOpacity={0.12} />
+      <circle cx={ox} cy={oy} r={34} fill={P.accent} fillOpacity={0.2} />
+      <circle cx={ox} cy={oy} r={12} fill={P.accent} />
+      <circle cx={ox} cy={oy} r={4.5} fill={P.trainCore} />
+    </svg>
+  )
+}
+
+/**
+ * The card for a shared link, drawn from the route map: the studio's mark top left, the page's
+ * kicker and title on the left, and on the right the map's lines leaving the point. A project's
+ * card lights its own line (in its colour, with a train on it) and leaves the others faint; every
+ * other page lights them all.
  */
 export function renderShareCard({
   title,
   kicker,
   domain,
+  lines,
+  accent,
 }: {
   title: string
   kicker: string
   domain: string
+  /** The published projects in line order; empty draws no map. */
+  lines: CardLine[]
+  /** The kicker's colour: the project's line, or the point's violet. */
+  accent?: string
 }) {
   title = fitTitle(title)
   const plate = (left: number, top: number, width: number, height: number) => (
@@ -54,10 +200,11 @@ export function renderShareCard({
         width,
         height,
         borderRadius: 2,
-        backgroundColor: text,
+        backgroundColor: P.text,
       }}
     />
   )
+  const mark = accent ?? P.accent
   return new ImageResponse(
     <div
       style={{
@@ -65,47 +212,52 @@ export function renderShareCard({
         height: '100%',
         display: 'flex',
         position: 'relative',
-        backgroundColor: ground,
-        backgroundImage: `radial-gradient(circle at 0% 0%, ${surface}, ${ground} 70%)`,
+        backgroundColor: P.night,
+        backgroundImage: [
+          'radial-gradient(ellipse 70% 80% at 18% 8%, rgba(120, 100, 255, 0.22), rgba(5, 6, 15, 0) 70%)',
+          'radial-gradient(ellipse 90% 50% at 50% 115%, rgba(255, 160, 60, 0.12), rgba(5, 6, 15, 0) 70%)',
+        ].join(', '),
         fontFamily: 'Inter',
-        color: text,
+        color: P.text,
       }}
     >
-      {/* The monogram on its tile: 64-unit geometry at 1.25 (design/logo.md). */}
+      <CardMap lines={lines} />
+
+      {/* The monogram on its tile: 64-unit geometry at 1.0 (design/logo.md). */}
       <div
         style={{
           position: 'absolute',
           left: 72,
           top: 64,
-          width: 107,
-          height: 107,
-          borderRadius: 19,
-          backgroundColor: surface,
+          width: 86,
+          height: 86,
+          borderRadius: 15,
+          backgroundColor: P.surface2,
           display: 'flex',
         }}
       >
         <div
           style={{
             position: 'absolute',
-            left: 13,
-            top: 13,
-            width: 80,
-            height: 80,
+            left: 11,
+            top: 11,
+            width: 64,
+            height: 64,
             display: 'flex',
           }}
         >
-          {plate(17.5, 12.5, 13.75, 55)}
-          {plate(36.25, 12.5, 28.75, 13.75)}
-          {plate(36.25, 36.25, 21.25, 13.75)}
+          {plate(14, 10, 11, 44)}
+          {plate(29, 10, 23, 11)}
+          {plate(29, 29, 17, 11)}
           <div
             style={{
               position: 'absolute',
-              left: 36.25,
-              top: 53.75,
-              width: 13.75,
-              height: 13.75,
+              left: 29,
+              top: 43,
+              width: 11,
+              height: 11,
               borderRadius: 999,
-              backgroundColor: accent,
+              backgroundColor: P.accent,
             }}
           />
         </div>
@@ -113,9 +265,9 @@ export function renderShareCard({
       <div
         style={{
           position: 'absolute',
-          left: 200,
-          top: 98,
-          fontSize: 40,
+          left: 178,
+          top: 88,
+          fontSize: 34,
           letterSpacing: 2.4,
           display: 'flex',
         }}
@@ -123,50 +275,44 @@ export function renderShareCard({
         FNW
       </div>
 
-      {/* The point and the line leaving it. */}
       <div
         style={{
           position: 'absolute',
           left: 72,
-          top: 330,
-          width: 36,
-          height: 36,
-          borderRadius: 999,
-          backgroundColor: accent,
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          left: 108,
-          top: 346,
-          width: 120,
-          height: 5,
-          borderRadius: 3,
-          backgroundColor: route,
-        }}
-      />
-
-      <div
-        style={{
-          position: 'absolute',
-          left: 260,
-          right: 72,
-          top: 250,
-          bottom: 120,
+          width: 456,
+          top: 196,
+          bottom: 116,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          gap: 16,
+          gap: 18,
         }}
       >
-        <div style={{ fontSize: 24, letterSpacing: 2.4, color: muted, display: 'flex' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+            fontSize: 22,
+            letterSpacing: 2.6,
+            color: P.muted,
+          }}
+        >
+          <div
+            style={{
+              width: 12,
+              height: 12,
+              borderRadius: 999,
+              backgroundColor: mark,
+              boxShadow: `0 0 14px ${mark}`,
+            }}
+          />
           {kicker.toUpperCase()}
         </div>
         <div
           style={{
             fontSize: titleSize(title),
-            lineHeight: 1.08,
+            lineHeight: 1.06,
             letterSpacing: -1.5,
             display: 'flex',
           }}
@@ -180,8 +326,9 @@ export function renderShareCard({
           position: 'absolute',
           left: 72,
           bottom: 56,
-          fontSize: 26,
-          color: muted,
+          fontSize: 24,
+          letterSpacing: 0.5,
+          color: P.dim,
           display: 'flex',
         }}
       >

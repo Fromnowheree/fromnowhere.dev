@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
+import { CARD_PALETTE, cardLineColour } from '@/lib/shareCard'
+
 import {
   LINE_COLOURS,
   lineColour,
@@ -286,6 +288,8 @@ describe('trains', () => {
     expect(trainsFor('building', 0)).toBe(1)
     expect(trainsFor('planned', 2)).toBe(0)
     expect(trainsFor('paused', 2)).toBe(0)
+    // A delayed line's trains are held at the point until its address answers again.
+    expect(trainsFor('delayed', 3)).toBe(0)
   })
 
   it('take longer on a longer line, each line at its own pace', () => {
@@ -356,6 +360,23 @@ describe('the stylesheets', () => {
       expect(css, name).not.toMatch(/prefers-color-scheme|data-theme/)
     }
     expect(sheets['site.css']).toMatch(/:root\s*\{[^}]*color-scheme:\s*dark/)
+  })
+
+  it('gives the share cards the stylesheet’s own night colours', () => {
+    const token = (name: string) =>
+      new RegExp(`--${name}:\\s*(#[0-9a-f]{6});`).exec(sheets['site.css'])?.[1]
+    expect(CARD_PALETTE.lines).toEqual(
+      Array.from({ length: LINE_COLOURS }, (_, k) => token(`line-${k + 1}`)),
+    )
+    expect(CARD_PALETTE.night).toBe(token('night'))
+    expect(CARD_PALETTE.ground).toBe(token('ground'))
+    expect(CARD_PALETTE.track).toBe(token('track'))
+    expect(CARD_PALETTE.text).toBe(token('text'))
+    expect(CARD_PALETTE.accent).toBe(token('accent'))
+    expect(CARD_PALETTE.dim).toBe(token('text-dim'))
+    expect(CARD_PALETTE.trainCore).toBe(token('train-core'))
+    expect(cardLineColour(2)).toBe(token('line-2'))
+    expect(cardLineColour(8)).toBe(token('line-2'))
   })
 
   it('defines the six line colours that lineColour names', () => {

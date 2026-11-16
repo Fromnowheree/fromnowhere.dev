@@ -35,10 +35,11 @@ clinic layer (blocks, services, team, locations, brand colour, Tailwind, booking
 | Deploy   | `Dockerfile` (built in CI, never on the server), `compose.yml` (+ `compose.stats.yml`), `caddy/` (+ `caddy/sites/` for the other sites on the server), `scripts/` (first admin, age-encrypted backups, restore)                                                                                      |
 
 Layout: `src/payload.config.ts` wires everything; `src/collections/` (Projects, Pages,
-ShortLinks, Media, Users), `src/globals/Studio.ts`, `src/fields/`, `src/components/` (`fnw.tsx`
+ShortLinks, StatusChecks, Media, Users), `src/jobs/` (the status check), `src/globals/Studio.ts`, `src/fields/`, `src/components/` (`fnw.tsx`
 the system's components, `site/` the site's chrome, map, board and signs, with `HomeMotion.tsx`
 the home page's one motion island, `contact/` the form, `admin/`), `src/lib/` (`links.ts` the link
-rule, `payload.ts` every query, `routeMap.ts` the map's geometry, `shortLinks.ts`, `relay/`),
+rule, `payload.ts` every query, `routeMap.ts` the map's geometry, `status.ts` a line's live status, `probe.ts` one knock on an
+address, `shortLinks.ts`, `relay/`),
 `src/i18n/`, `src/proxy.ts`, `src/app/(frontend)/[locale]/(site)/` (home `page.tsx`,
 `projects/[slug]`, `contact`, `[slug]` for text pages), `src/app/(frontend)/pick-language/`
 (addresses without a language, and short links), `src/app/(frontend)/og/` (share cards),
@@ -192,6 +193,19 @@ no-preference)`, which `tests/int/routeMap.int.spec.ts` checks for all three sty
   `pick-language`; `isShortAlias` keeps the languages and the paths the site answers itself out.
   A short link and a page never share a word (both refused at save time), and pick-language
   prefers the page.
+- **Live status** (Phase 2): every 5 minutes a Payload job (`src/jobs/checkStatus.ts`, queue
+  `status`) knocks on every address of every published project (`src/lib/probe.ts`: GET, status
+  line only, redirects followed by hand, public https names only, 10 s) and writes one row per
+  address to `status-checks` (read-only in the admin; the job alone writes, and clears rows of
+  addresses no published project has). Any answer below 500 counts. The site reads them through
+  `getProjects`/`getProject`, which return a `LiveProject` (`service`, `unanswered`); components
+  use `serviceOf(project)`, never `project.status`. A **running** line whose first address missed
+  two checks in a row is **Delayed** (its trains held, its terminal and status in `--delayed`,
+  "Not answering just now"); a further stop that is quiet says "No answer" beside it and on its
+  exit. One miss is a blip; a check older than 30 minutes says nothing, and the editor's status
+  stands. Only `running` can become delayed. The cron starts only where Payload boots with
+  `cron: true` (`src/instrumentation.ts`, unless `STATUS_CHECKS=off`, which the end-to-end tests
+  set), never in a build, a test or a script.
 - **Nothing is invented for a visitor.** An empty field renders nothing; links to About and
   Privacy appear only while those pages are published; the form shows only while it can send.
   The tally is counted from the published projects, the ticker lists the short links that lead
@@ -261,8 +275,9 @@ for enum".
    replaced the still look: dark only, line colours, the map drawn and run with trains, the
    departures board with the clock and the ticker; `docs/phase-1.md`'s map, rail, plates and
    once-per-visit draw are history.
-4. The status check (a Payload job pinging each address every 5 minutes; the board shows real
-   status) and share cards with the project's line lit.
+4. **Done (Phase 2, 16 November 2026):** the status check (a Payload job knocking on each
+   address every 5 minutes; the board, map, tally and project pages show Delayed and quiet
+   stops) and share cards drawn from the route map with the project's line lit.
 5. About text, Caddy and DNS for fromnowhere.dev, the shared Caddy for the other sites, launch.
 
 ## 7. Gotchas
@@ -274,7 +289,13 @@ for enum".
 - **Pages render per request** (`dynamic = 'force-dynamic'`), so the image builds without a
   database and edits show at once.
 - **Share cards** read `src/assets/fonts/Inter-Regular.ttf` (Satori takes TTF, not WOFF2);
-  `next.config.ts` traces it into the standalone build.
+  `next.config.ts` traces it into the standalone build. They draw the wide route map from
+  `routeMap.ts` with the night colours as plain values (`CARD_PALETTE` in `src/lib/shareCard.ts`,
+  checked against `site.css` by `tests/int/routeMap.int.spec.ts`), and use the editor's status,
+  not the live one: chat apps keep a card for days. Bump `CARD_VERSION` when the card changes.
+- **The status check in development** runs too (the dev server boots with `cron: true`): it
+  knocks on the real addresses and the dev board shows what it hears. `STATUS_CHECKS=off` in
+  `.env` stops it.
 - **Dark only, and the head script**: there is no theme to set. The head script (`headScript` in
   `src/lib/motion.ts`, rendered by `[locale]/layout.tsx`) only decides, before paint, whether the
   other pages' entrances play (`fnw-calm`); the home page's opening ignores it.

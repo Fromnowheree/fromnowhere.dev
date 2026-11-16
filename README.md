@@ -63,12 +63,13 @@ CI fails a schema change that has no migration (AGENTS.md, "Migrations").
 
 ## What lives in the admin
 
-| Admin section         | What it holds                                                                                                                                                                                                                                               |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Content → Projects    | Each published project is a line: its number, status (anything but Running draws it dashed), kind, addresses (the first is where the line ends), one sentence, the story, what it is built with, a window picture. A draft is hidden (mtnet.hr waits there) |
-| Content → Pages       | Text pages: About, Privacy, anything like them, at `/<language>/<slug>`                                                                                                                                                                                     |
-| Content → Short links | `fromnowhere.dev/<word>` to a project or an address: `/ygo`, `/giogio`, `/nmt`, `/gati`                                                                                                                                                                     |
-| Settings → Studio     | The home page's headline and lede, the e-mail address, profiles elsewhere, search defaults, the statistics switch                                                                                                                                           |
+| Admin section            | What it holds                                                                                                                                                                                                                                               |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Content → Projects       | Each published project is a line: its number, status (anything but Running draws it dashed), kind, addresses (the first is where the line ends), one sentence, the story, what it is built with, a window picture. A draft is hidden (mtnet.hr waits there) |
+| Content → Pages          | Text pages: About, Privacy, anything like them, at `/<language>/<slug>`                                                                                                                                                                                     |
+| Content → Short links    | `fromnowhere.dev/<word>` to a project or an address: `/ygo`, `/giogio`, `/nmt`, `/gati`                                                                                                                                                                     |
+| Settings → Studio        | The home page's headline and lede, the e-mail address, profiles elsewhere, search defaults, the statistics switch                                                                                                                                           |
+| Settings → Status checks | Read only: what the status check last heard from each address (answered, HTTP status, time, misses in a row)                                                                                                                                                |
 
 ## Addresses
 
@@ -77,6 +78,15 @@ both, so the EN / HR switch keeps the visitor on the page. An address without a 
 through `src/proxy.ts` to `pick-language`, which first checks whether it is one word naming a
 short link (and redirects there), and otherwise picks the visitor's language (their earlier
 choice, then their browser's, then English).
+
+## The status check
+
+Every 5 minutes the server knocks on each address of every published project and keeps what it
+heard in Settings → Status checks. A running project whose first address misses two checks in a
+row shows as Delayed on the board, the map and its page until it answers again; a quiet further
+address says "No answer". It needs outbound HTTPS from the app container, and `STATUS_CHECKS=off`
+in `.env` stops it (the board then shows the statuses as set). A project that is not live yet is
+set to Building or Planned, not Running, or it will show as Delayed.
 
 ## The contact form
 

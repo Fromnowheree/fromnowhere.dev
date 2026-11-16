@@ -16,7 +16,8 @@
  * HTML labels sit on the SVG at any width.
  */
 
-export type LineState = 'running' | 'building' | 'planned' | 'paused'
+/** A line's live status (src/lib/status.ts): delayed is a running line whose terminal is not answering. */
+export type LineState = 'running' | 'delayed' | 'building' | 'planned' | 'paused'
 
 export const MAP = {
   maxLines: 12,
@@ -377,8 +378,9 @@ export const routeMap = (lines: MapLineInput[]): RouteMapGeometry | null => {
 }
 
 /**
- * How many trains a line runs: none on a line that is not built or not running, one creeping up
- * to the frontier of a line under construction, two or three (one per address) on a running one.
+ * How many trains a line runs: none on a line that is not built or not running (a delayed line's
+ * trains are held), one creeping up to the frontier of a line under construction, two or three
+ * (one per address) on a running one.
  */
 export const trainsFor = (state: LineState, addresses: number): number =>
   state === 'running' ? Math.min(3, Math.max(2, addresses)) : state === 'building' ? 1 : 0

@@ -10,6 +10,7 @@ import { asLocale } from '@/i18n/server'
 import { pageMetadata } from '@/lib/metadata'
 import { getProjects, getShortLinks, getStudio } from '@/lib/payload'
 import { serverUrl } from '@/lib/serverUrl'
+import { serviceOf, type Service } from '@/lib/status'
 
 type Props = { params: Promise<{ locale: string }> }
 
@@ -44,12 +45,16 @@ export default async function Home({ params }: Props) {
 
   // The headline's own full stop gives way to the point.
   const headline = (studio.headline || 'Fromnowhere').replace(/[.。]\s*$/, '')
-  const running = projects.filter((project) => project.status === 'running').length
-  const building = projects.filter((p) => p.status === 'building' || p.status === 'planned').length
-  const paused = projects.filter((project) => project.status === 'paused').length
+  const count = (...states: Service[]) =>
+    projects.filter((project) => states.includes(serviceOf(project))).length
+  const running = count('running')
+  const delayed = count('delayed')
+  const building = count('building', 'planned')
+  const paused = count('paused')
   const tally = [
     { label: t('tallyLines'), count: projects.length },
     { label: t('tallyRunning'), count: running },
+    ...(delayed > 0 ? [{ label: t('tallyDelayed'), count: delayed }] : []),
     ...(building > 0 || paused === 0 ? [{ label: t('tallyBuilding'), count: building }] : []),
     ...(paused > 0 ? [{ label: t('tallyPaused'), count: paused }] : []),
   ]

@@ -19,6 +19,7 @@
     "tally": "Linije ukratko",
     "tallyLines": "Linije",
     "tallyRunning": "U prometu",
+    "tallyDelayed": "Kasni",
     "tallyBuilding": "U izgradnji",
     "tallyPaused": "Obustavljeno",
     "contactKicker": "Javite se",
@@ -46,16 +47,19 @@
     "here": "Njegova stranica ovdje",
     "sub": {
       "running": "Polazi pri svakom posjetu",
+      "delayed": "Trenutačno ne odgovara",
       "building": "Još nije u prometu",
       "planned": "Još nije u prometu",
       "paused": "Promet obustavljen"
     },
     "tickerIntro": "<b>Kratke poveznice</b> rade u traci za adresu",
     "tickerHere": "njegova stranica ovdje",
-    "tickerOutro": "<b>Svaka linija</b> kreće iz iste točke"
+    "tickerOutro": "<b>Svaka linija</b> kreće iz iste točke",
+    "quiet": "Bez odgovora"
   },
   "status": {
     "running": "Radi",
+    "delayed": "Kasni",
     "building": "U izradi",
     "planned": "Planirano",
     "paused": "Pauzirano"
@@ -74,7 +78,8 @@
     "addresses": "Adrese",
     "noAddress": "Ova linija još nema svoju adresu. Zasad završava ovdje.",
     "allProjects": "Svi projekti",
-    "window": "Pogled na odredište"
+    "window": "Pogled na odredište",
+    "notAnswering": "Trenutačno ne odgovara"
   },
   "footer": {
     "label": "Podnožje",

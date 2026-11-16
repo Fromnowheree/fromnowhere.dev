@@ -60,6 +60,8 @@ services:
       # true once, on the first start, to fill the empty database with the starting content
       # (src/seed/index.ts). It never overwrites anything.
       PAYLOAD_SEED: ${PAYLOAD_SEED:-false}
+      # The status check every 5 minutes (src/jobs/checkStatus.ts); "off" stops it.
+      STATUS_CHECKS: ${STATUS_CHECKS:-on}
       # Read by scripts/create-admin.sh at provisioning.
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       # The contact form's send-only mail account (README, "The contact form").

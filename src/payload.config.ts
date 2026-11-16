@@ -13,9 +13,11 @@ import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { Projects } from './collections/Projects'
 import { ShortLinks } from './collections/ShortLinks'
+import { StatusChecks } from './collections/StatusChecks'
 import { Users } from './collections/Users'
 import { richTextLinkRule } from './fields/link'
 import { Studio } from './globals/Studio'
+import { checkStatusTask } from './jobs/checkStatus'
 import { defaultLocale, localeNames, locales } from './i18n/locales'
 import { siteOrigins } from './lib/siteOrigins'
 import { migrations } from './migrations'
@@ -70,7 +72,7 @@ export default buildConfig({
     defaultLocale,
     fallback: true,
   },
-  collections: [Projects, Pages, ShortLinks, Media, Users],
+  collections: [Projects, Pages, ShortLinks, StatusChecks, Media, Users],
   globals: [Studio],
   editor: lexicalEditor({
     features: ({ defaultFeatures }) => [
@@ -120,6 +122,20 @@ export default buildConfig({
         transportOptions: adminTransport,
       })
     : undefined,
+  // The status check (src/jobs/checkStatus.ts) is scheduled every 5 minutes on the `status` queue.
+  // Every minute the server queues it when due and runs what is queued; that cron starts only
+  // where Payload is booted with `cron: true` (src/instrumentation.ts, unless STATUS_CHECKS is
+  // "off"), never in a build, a test or a script.
+  jobs: {
+    tasks: [checkStatusTask],
+    autoRun: [{ cron: '0 * * * * *', queue: 'status', limit: 1 }],
+    deleteJobOnComplete: true,
+    access: {
+      run: ({ req }) => Boolean(req.user),
+      queue: ({ req }) => Boolean(req.user),
+      cancel: ({ req }) => Boolean(req.user),
+    },
+  },
   sharp,
   onInit: async (payload) => {
     if (process.env.PAYLOAD_SEED === 'true') await seed(payload)

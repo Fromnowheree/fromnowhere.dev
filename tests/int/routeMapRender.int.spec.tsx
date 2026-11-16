@@ -9,6 +9,7 @@ import { RouteMap } from '@/components/site/RouteMap'
 import { Board } from '@/components/site/Signs'
 import type { Locale } from '@/i18n/locales'
 import type { ShortLinkSign } from '@/lib/payload'
+import type { LiveProject } from '@/lib/status'
 import type { Project } from '@/payload-types'
 
 /**
@@ -189,6 +190,23 @@ describe('the route map', () => {
     }
   })
 
+  it('holds a delayed line’s trains, and lights its terminal under the street light', async () => {
+    const live: LiveProject[] = seeded.map((p) =>
+      p.slug === 'gati' ? { ...p, service: 'delayed', unanswered: ['https://www.gati.hr'] } : p,
+    )
+    const markup = html(await RouteMap({ projects: live, locale: 'en' }))
+    for (const svg of elements(markup, /<svg\b[^>]*>/)) {
+      const [gati] = elements(svg, /<g class="line line--delayed"[^>]*>/)
+      expect(gati).toMatch(/data-line="gati"/)
+      expect(gati).toMatch(/class="line__main" d="M/)
+      expect(gati).toMatch(/class="line__core"/)
+      expect(gati).not.toMatch(/class="train"/)
+    }
+    const [card] = elements(markup, /<div class="term term--delayed"[^>]*>/)
+    expect(card).toMatch(/data-line="gati"/)
+    expect(spoken(card)).toBe('Line 04, Gati, Delayed')
+  })
+
   it('colours each line, its terminal card, by its line number', async () => {
     const markup = html(await RouteMap({ projects: seeded, locale: 'en' }))
     for (const [index, p] of seeded.entries()) {
@@ -298,6 +316,30 @@ describe('the departures board', () => {
     expect(visible(rows[0])).toContain(`${en.status.running} ${en.board.sub.running}`)
     expect(rows[2]).toMatch(/<span class="status status--building"><svg class="status__icon"/)
     expect(visible(rows[2])).toContain(`${en.status.building} ${en.board.sub.building}`)
+  })
+
+  it('shows a delayed line as Delayed, and names each further stop that is not answering', async () => {
+    const live: LiveProject[] = seeded.map((p) =>
+      p.slug === 'giogio'
+        ? {
+            ...p,
+            service: 'delayed',
+            unanswered: ['https://giogio.music', 'https://presstart.giogio.music'],
+          }
+        : p,
+    )
+    const markup = html(
+      await Board({ projects: live, shortLinks: [], host: 'fromnowhere.dev', locale: 'en' }),
+    )
+    const rows = elements(markup, /<li class="row"[^>]*>/)
+    expect(rows[1]).toMatch(/data-state="delayed"/)
+    expect(rows[1]).toMatch(/<span class="status status--delayed"><svg class="status__icon"/)
+    expect(visible(rows[1])).toContain(`${en.status.delayed} ${en.board.sub.delayed}`)
+    // The first address's silence is the status already; a further stop's is said beside it.
+    const quiet = elements(rows[1], /<a class="is-quiet"[^>]*>/)
+    expect(quiet.map((a) => hrefs(a)[0])).toEqual(['https://presstart.giogio.music'])
+    expect(spoken(quiet[0])).toBe(`presstart.giogio.music ${en.board.quiet}`)
+    expect(rows[0]).toMatch(/data-state="running"/)
   })
 
   it('runs a ticker of the short links, hidden from assistive technology', async () => {

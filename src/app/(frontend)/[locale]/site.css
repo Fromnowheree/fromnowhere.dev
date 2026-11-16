@@ -68,6 +68,8 @@
   --running: #7cf0b5;
   --building: #ffb347;
   --paused: var(--text-muted);
+  /* A running line whose address is not answering: held under the street light. */
+  --delayed: var(--sodium);
   --focus: #ffffff;
 
   /* The system's tokens, in the night's colours. */
@@ -907,6 +909,18 @@ a {
 .trip--paused .trip__terminal::after {
   display: none;
 }
+.trip--delayed .trip__terminal::after {
+  background: var(--delayed);
+}
+/* Delayed: the train held at the platform, the terminal's ring blinking under the street light. */
+.trip--delayed .trip__train {
+  left: 10%;
+  opacity: 1;
+}
+.trip--delayed .trip__pulse {
+  border-color: var(--delayed);
+  opacity: 0.9;
+}
 .trip--paused .trip__line {
   opacity: 0.5;
   box-shadow: none;
@@ -993,6 +1007,23 @@ a {
 .exit__note {
   font-size: 13px;
   color: var(--text-muted);
+}
+.exit__quiet {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--delayed);
+}
+.exit__quiet::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--delayed);
+  box-shadow: 0 0 8px var(--delayed);
+  vertical-align: 1px;
 }
 .exit__out {
   display: inline-flex;
@@ -1360,5 +1391,9 @@ a {
   .trip--building .trip__train {
     animation: nt-trip-building 5.4s linear infinite;
     animation-delay: calc(300ms + var(--nt-draw));
+  }
+  .trip--delayed .trip__pulse,
+  .exit__quiet::before {
+    animation: nt-blink 1.2s steps(2, jump-none) infinite;
   }
 }

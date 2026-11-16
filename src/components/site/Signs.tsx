@@ -9,13 +9,14 @@ import { lineNumber } from '@/lib/format'
 import { displayAddress, projectHref } from '@/lib/links'
 import type { ShortLinkSign } from '@/lib/payload'
 import { lineColour } from '@/lib/routeMap'
-import type { Project } from '@/payload-types'
+import { serviceOf, type LiveProject, type Service } from '@/lib/status'
 
-type Status = Project['status']
+type Status = Service
 
 /**
  * The status icon on its own, in the current colour: a dot with a ring that pulses while running,
- * a dashed ring that turns while being built, an open ring while planned, two bars while paused.
+ * a ring blinking round a held dot while delayed (the line runs, its address is not answering), a
+ * dashed ring that turns while being built, an open ring while planned, two bars while paused.
  * The motion is CSS (board.css) and stops under reduced motion.
  */
 export function StatusIcon({ status }: { status: Status }) {
@@ -25,6 +26,12 @@ export function StatusIcon({ status }: { status: Status }) {
         <>
           <circle className="status__pulse" cx="8" cy="8" r="4" />
           <circle cx="8" cy="8" r="4" fill="currentColor" />
+        </>
+      )}
+      {status === 'delayed' && (
+        <>
+          <circle className="status__blink" cx="8" cy="8" r="5.5" />
+          <circle cx="8" cy="8" r="2.5" fill="currentColor" />
         </>
       )}
       {status === 'building' && <circle className="status__spin" cx="8" cy="8" r="5" />}
@@ -57,19 +64,23 @@ export function StatusTag({ status, label }: { status: Status; label: string }) 
 export async function ExitPlate({
   href,
   label,
+  quiet = false,
   locale,
 }: {
   href: string
   label?: string | null
+  /** The status check heard nothing from it: the exit says so, and still leads there. */
+  quiet?: boolean
   locale: Locale
 }) {
   const t = await getTranslations({ locale, namespace: 'project' })
   return (
-    <a className="exit" href={href} rel="noopener noreferrer">
+    <a className={quiet ? 'exit exit--quiet' : 'exit'} href={href} rel="noopener noreferrer">
       <span className="exit__terminal" aria-hidden="true" />
       <span className="exit__main">
         <span className="exit__addr">{displayAddress(href)}</span>
         <span className="exit__note">{label || t('leaves')}</span>
+        {quiet && <span className="exit__quiet">{t('notAnswering')}</span>}
       </span>
       <span className="exit__out" aria-hidden="true">
         <Icon name="arrow-up-right" size={18} />
@@ -96,7 +107,7 @@ export async function Board({
   host,
   locale,
 }: {
-  projects: Project[]
+  projects: LiveProject[]
   shortLinks: ShortLinkSign[]
   /** The site's host as a sign shows it, e.g. "fromnowhere.dev". */
   host: string
@@ -152,11 +163,20 @@ export async function Board({
           const number = lineNumber(project.line)
           const addresses = project.addresses ?? []
           const href = projectHref(project.slug ?? '')
+          const status = serviceOf(project)
+          // Addresses not answering, said beside each; the first one's silence is the row's
+          // status already when the line is delayed.
+          const quiet = new Set(
+            (project.unanswered ?? []).filter(
+              (url) => !(status === 'delayed' && url === addresses[0]?.url),
+            ),
+          )
           return (
             <li
               key={project.id}
               className="row"
               data-line={project.slug}
+              data-state={status}
               style={{ '--c': lineColour(project.line), '--i': i } as React.CSSProperties}
             >
               <span className="row__sweep" aria-hidden="true" />
@@ -171,8 +191,14 @@ export async function Board({
               <div className="row__addr">
                 {addresses.length > 0 ? (
                   addresses.map((address) => (
-                    <a key={address.id ?? address.url} href={address.url} rel="noopener noreferrer">
+                    <a
+                      key={address.id ?? address.url}
+                      className={quiet.has(address.url) ? 'is-quiet' : undefined}
+                      href={address.url}
+                      rel="noopener noreferrer"
+                    >
                       {displayAddress(address.url)}
+                      {quiet.has(address.url) && <span className="row__quiet">{t('quiet')}</span>}
                       {tick}
                     </a>
                   ))
@@ -181,8 +207,8 @@ export async function Board({
                 )}
               </div>
               <div className="row__stat">
-                <StatusTag status={project.status} label={tStatus(project.status)} />
-                <span className="row__sub">{t(`sub.${project.status}`)}</span>
+                <StatusTag status={status} label={tStatus(status)} />
+                <span className="row__sub">{t(`sub.${status}`)}</span>
               </div>
             </li>
           )

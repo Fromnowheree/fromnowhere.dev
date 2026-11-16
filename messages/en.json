@@ -19,6 +19,7 @@
     "tally": "The lines at a glance",
     "tallyLines": "Lines",
     "tallyRunning": "Running",
+    "tallyDelayed": "Delayed",
     "tallyBuilding": "Under construction",
     "tallyPaused": "Paused",
     "contactKicker": "Get in touch",
@@ -46,16 +47,19 @@
     "here": "Its page here",
     "sub": {
       "running": "Departs every visit",
+      "delayed": "Not answering just now",
       "building": "Not in service yet",
       "planned": "Not in service yet",
       "paused": "Service paused"
     },
     "tickerIntro": "<b>Short links</b> work in the address bar",
     "tickerHere": "its page here",
-    "tickerOutro": "<b>Every line</b> leaves from the same point"
+    "tickerOutro": "<b>Every line</b> leaves from the same point",
+    "quiet": "No answer"
   },
   "status": {
     "running": "Running",
+    "delayed": "Delayed",
     "building": "Building",
     "planned": "Planned",
     "paused": "Paused"
@@ -74,7 +78,8 @@
     "addresses": "Addresses",
     "noAddress": "This line has no address of its own yet. It ends here for now.",
     "allProjects": "All projects",
-    "window": "A glimpse of the destination"
+    "window": "A glimpse of the destination",
+    "notAnswering": "Not answering just now"
   },
   "footer": {
     "label": "Footer",

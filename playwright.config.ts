@@ -90,6 +90,8 @@ export default defineConfig({
           PAYLOAD_SECRET: process.env.PAYLOAD_SECRET || 'e2e-only-secret',
           SITE_URL: url,
           MEDIA_DIR: process.env.MEDIA_DIR!,
+          // No knocking on the real addresses: the specs write the checks they need.
+          STATUS_CHECKS: 'off',
         },
       }
     : {

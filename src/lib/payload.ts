@@ -5,6 +5,7 @@ import { cache } from 'react'
 import { defaultLocale, locales, type Locale } from '@/i18n/locales'
 import type { Project } from '@/payload-types'
 import { isSlug, projectHref, type PublishedIndex } from './links'
+import { withService, type AddressCheck, type LiveProject } from './status'
 
 export const getPayloadClient = () => getPayload({ config })
 
@@ -31,28 +32,64 @@ export const getServedLocales = async (): Promise<Locale[]> => [
 /** The main language: where a visitor lands when nothing says which they want. */
 export const getMainLanguage = async (): Promise<Locale> => defaultLocale
 
-/** Every published project, in line order. */
-export const getProjects = cache(async (locale: Locale) => {
-  const { docs } = await (
-    await getPayloadClient()
-  ).find({ collection: 'projects', where: published, sort: 'line', depth: 1, limit: 99, locale })
-  return docs
+/**
+ * What the status check last heard from each address (src/jobs/checkStatus.ts), by address. An
+ * address it has not checked is simply absent; a failure to read them leaves the board as the
+ * editor set it rather than breaking the page.
+ */
+export const getStatusChecks = cache(async (): Promise<Map<string, AddressCheck>> => {
+  try {
+    const { docs } = await (
+      await getPayloadClient()
+    ).find({
+      collection: 'status-checks',
+      depth: 0,
+      limit: 1000,
+      pagination: false,
+      select: { url: true, failures: true, checkedAt: true },
+    })
+    return new Map(
+      docs.map((doc) => [doc.url, { failures: doc.failures ?? 0, checkedAt: doc.checkedAt }]),
+    )
+  } catch (error) {
+    console.error('The status checks could not be read; the board shows the set statuses.', error)
+    return new Map()
+  }
 })
 
-/** One published project, or null. */
-export const getProject = cache(async (slug: string, locale: Locale) => {
-  if (!isSlug(slug)) return null
-  const { docs } = await (
-    await getPayloadClient()
-  ).find({
-    collection: 'projects',
-    where: { and: [{ slug: { equals: slug } }, published] },
-    depth: 2,
-    limit: 1,
-    locale,
-  })
-  return docs[0] ?? null
+/** Every published project, in line order, with its live status (src/lib/status.ts). */
+export const getProjects = cache(async (locale: Locale): Promise<LiveProject[]> => {
+  const [{ docs }, checks] = await Promise.all([
+    (await getPayloadClient()).find({
+      collection: 'projects',
+      where: published,
+      sort: 'line',
+      depth: 1,
+      limit: 99,
+      locale,
+    }),
+    getStatusChecks(),
+  ])
+  return docs.map((project) => withService(project, checks))
 })
+
+/** One published project with its live status, or null. */
+export const getProject = cache(
+  async (slug: string, locale: Locale): Promise<LiveProject | null> => {
+    if (!isSlug(slug)) return null
+    const [{ docs }, checks] = await Promise.all([
+      (await getPayloadClient()).find({
+        collection: 'projects',
+        where: { and: [{ slug: { equals: slug } }, published] },
+        depth: 2,
+        limit: 1,
+        locale,
+      }),
+      getStatusChecks(),
+    ])
+    return docs[0] ? withService(docs[0], checks) : null
+  },
+)
 
 /** One published page, or null. */
 export const getPage = cache(async (slug: string, locale: Locale) => {

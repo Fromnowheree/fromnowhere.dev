@@ -13,7 +13,7 @@ import {
   type MapLayout,
   type MapLine,
 } from '@/lib/routeMap'
-import type { Project } from '@/payload-types'
+import { serviceOf, type LiveProject } from '@/lib/status'
 
 type Kind = 'wide' | 'tall'
 
@@ -34,7 +34,7 @@ function MapSvg({
 }: {
   kind: Kind
   layout: MapLayout
-  projects: Project[]
+  projects: LiveProject[]
 }) {
   const soft = `map-soft-${kind}`
   const halo = `map-halo-${kind}`
@@ -123,11 +123,11 @@ function MapLineGroup({
 }: {
   line: MapLine
   index: number
-  project: Project
+  project: LiveProject
   layout: MapLayout
   soft: string
 }) {
-  const state = project.status
+  const state = serviceOf(project)
   const drawn = line.built?.length ?? line.length
   const trains = trainsFor(state, project.addresses?.length ?? 0)
   const builtDash = line.built ? `${line.built.length} ${line.length}` : undefined
@@ -208,7 +208,7 @@ function MapLineGroup({
       )}
       <circle className="line__pulse" cx={x} cy={y} r={layout.terminal} />
       <circle className="line__terminal" cx={x} cy={y} r={layout.terminal} />
-      {state === 'running' && (
+      {(state === 'running' || state === 'delayed') && (
         <circle className="line__core" cx={x} cy={y} r={layout.terminal * 0.38} />
       )}
       <path className="line__hit" d={line.d} />
@@ -230,10 +230,10 @@ function MapLineGroup({
  * One async component with synchronous children only, so `renderToStaticMarkup` renders it in the
  * tests. With no projects, or more than the map can draw, it renders nothing.
  */
-export async function RouteMap({ projects, locale }: { projects: Project[]; locale: Locale }) {
+export async function RouteMap({ projects, locale }: { projects: LiveProject[]; locale: Locale }) {
   const geometry = routeMap(
     projects.map((project) => ({
-      state: project.status,
+      state: serviceOf(project),
       stops: Math.max(0, (project.addresses?.length ?? 0) - 1),
     })),
   )
@@ -294,7 +294,7 @@ export async function RouteMap({ projects, locale }: { projects: Project[]; loca
           {projects.map((project, i) => {
             const number = lineNumber(project.line)
             const addresses = project.addresses ?? []
-            const state = project.status
+            const state = serviceOf(project)
             return (
               <div
                 key={project.id}

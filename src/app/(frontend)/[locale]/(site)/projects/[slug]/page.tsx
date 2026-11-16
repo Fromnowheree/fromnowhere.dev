@@ -13,6 +13,7 @@ import { displayAddress, projectHref } from '@/lib/links'
 import { pageMetadata } from '@/lib/metadata'
 import { getProject, getPublishedIndex } from '@/lib/payload'
 import { lineColour } from '@/lib/routeMap'
+import { serviceOf } from '@/lib/status'
 
 type Props = { params: Promise<{ locale: string; slug: string }> }
 
@@ -53,7 +54,8 @@ export default async function ProjectPage({ params }: Props) {
   const started = project.started
     ? format.dateTime(new Date(project.started), { month: 'long', year: 'numeric' })
     : null
-  const status = project.status
+  const status = serviceOf(project)
+  const quiet = new Set(project.unanswered ?? [])
 
   return (
     <article className="project" style={{ '--c': lineColour(project.line) } as React.CSSProperties}>
@@ -111,6 +113,7 @@ export default async function ProjectPage({ params }: Props) {
                   key={address.id ?? address.url}
                   href={address.url}
                   label={address.label}
+                  quiet={quiet.has(address.url)}
                   locale={locale}
                 />
               ))

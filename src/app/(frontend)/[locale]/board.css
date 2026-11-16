@@ -195,6 +195,17 @@
 .row__out {
   margin-left: 0.5em;
 }
+/* An address the status check hears nothing from: dimmed, and said in words beside it. */
+.row__addr a.is-quiet {
+  color: var(--text-muted);
+}
+.row__quiet {
+  margin-left: 0.75em;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--delayed);
+}
 .row__stat {
   padding-top: 13px;
 }
@@ -268,12 +279,16 @@
 .status--planned {
   color: var(--building);
 }
+.status--delayed {
+  color: var(--delayed);
+}
 .status--paused {
   color: var(--paused);
 }
 .status__pulse,
 .status__spin,
-.status__ring {
+.status__ring,
+.status__blink {
   fill: none;
   stroke: currentColor;
   transform-box: fill-box;
@@ -286,6 +301,9 @@
 .status__spin {
   stroke-width: 2;
   stroke-dasharray: 4 3;
+}
+.status__blink {
+  stroke-width: 1.75;
 }
 .status__ring {
   stroke-width: 1.75;
@@ -368,6 +386,9 @@
   }
   .status--building .status__spin {
     animation: board-spin 3s linear infinite;
+  }
+  .status--delayed .status__blink {
+    animation: nt-blink 1.2s steps(2, jump-none) infinite;
   }
   .ticker__track {
     animation: board-ticker var(--ticker-s, 42s) linear infinite;

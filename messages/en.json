@@ -1,0 +1,132 @@
+{
+  "common": {
+    "skipToContent": "Skip to content",
+    "studio": "Fromnowhere",
+    "studioLine": "An independent software studio"
+  },
+  "nav": {
+    "main": "Main",
+    "projects": "Projects",
+    "about": "About",
+    "contact": "Get in touch",
+    "home": "Fromnowhere home page"
+  },
+  "language": {
+    "label": "Language"
+  },
+  "home": {
+    "kicker": "fromnowhere.dev",
+    "boardKicker": "Projects",
+    "boardTitle": "Where each line goes",
+    "mapLabel": "Route map from Fromnowhere to every project",
+    "origin": "You are here",
+    "contactKicker": "Get in touch",
+    "contactTitle": "Something to build?",
+    "contactLead": "Tell me what it is. I’ll reply myself.",
+    "contactAction": "Write to me",
+    "empty": "No projects are published yet."
+  },
+  "board": {
+    "line": "Line",
+    "destination": "Destination",
+    "what": "What it is",
+    "address": "Address",
+    "status": "Status",
+    "here": "Its page here"
+  },
+  "status": {
+    "running": "Running",
+    "building": "Building",
+    "planned": "Planned",
+    "paused": "Paused"
+  },
+  "kind": {
+    "product": "Product",
+    "community": "Community",
+    "music": "Music",
+    "client": "Client work"
+  },
+  "project": {
+    "line": "Line {number}",
+    "leaves": "Leaves fromnowhere.dev",
+    "builtWith": "Built with",
+    "started": "Started",
+    "addresses": "Addresses",
+    "noAddress": "This line has no address of its own yet. It ends here for now.",
+    "allProjects": "All projects",
+    "window": "A look at the destination"
+  },
+  "footer": {
+    "label": "Footer",
+    "privacy": "Privacy",
+    "elsewhere": "Elsewhere"
+  },
+  "contact": {
+    "title": "Get in touch",
+    "lead": "A project, a question or an idea. Write a few lines and I’ll reply by e-mail.",
+    "writeDirectly": "Or write directly to",
+    "noForm": "The form is not available right now. Write to the address below instead."
+  },
+  "form": {
+    "name": "Name",
+    "email": "E-mail",
+    "message": "Message",
+    "website": "Website",
+    "consent": "My details may be used to answer this message (<privacy>privacy</privacy>).",
+    "submit": "Send the message",
+    "sending": "Sending…",
+    "sent": "Your message has been sent",
+    "sentDetail": "Thank you. I’ll reply to {email}.",
+    "fixFields": "Check the marked fields.",
+    "needsScript": "This form needs JavaScript, which is off in your browser.",
+    "reach": {
+      "email": "Write to {email} instead."
+    },
+    "refused": {
+      "failed": "Your message could not be sent.",
+      "notDelivered": "The mail server did not accept your message, so it has not been sent.",
+      "unavailable": "Sending through this form is not switched on, so your message has not been sent.",
+      "tooMany": "Too many messages have come from your connection, so this one has not been sent. Try again later.",
+      "tooFast": "The form was sent faster than it can be filled in, so the message has not been sent. Check it and send it again.",
+      "stale": "This page has been open too long, so the message has not been sent. Reload the page and send it again.",
+      "alreadySent": "This form has already sent a message, so this one has not been sent. Reload the page to send another.",
+      "proofMissing": "The check above the button had not finished, so the message has not been sent. Wait a moment and send it again.",
+      "proofExpired": "The check above the button had expired, so the message has not been sent. Send it again.",
+      "busy": "The form is very busy right now, so your message has not been sent."
+    },
+    "errors": {
+      "name": "Enter your name.",
+      "email": "Enter your e-mail address, so I can reply.",
+      "emailInvalid": "That e-mail address does not look right.",
+      "message": "Write a message.",
+      "consent": "Tick the box, so I may answer."
+    },
+    "proof": {
+      "label": "I am not a robot",
+      "loading": "Loading…",
+      "verify": "Check",
+      "verifying": "Checking…",
+      "verified": "Checked",
+      "verificationRequired": "Wait for the check to finish.",
+      "waitAlert": "Checking… please wait.",
+      "error": "The check failed. Try again later.",
+      "expired": "The check expired. Try again.",
+      "reload": "Try again"
+    }
+  },
+  "mail": {
+    "subject": "fromnowhere.dev: a message from {name}",
+    "intro": "A message from the contact form on fromnowhere.dev. Reply to this e-mail to answer: your reply goes to {email}.",
+    "name": "Name",
+    "email": "E-mail",
+    "language": "Page language",
+    "message": "Message",
+    "none": "not given",
+    "footer": "The website kept no copy of this message; this e-mail is the only one."
+  },
+  "notFound": {
+    "title": "This line doesn’t go anywhere",
+    "text": "The page you are looking for does not exist or has moved.",
+    "home": "Back to the start"
+  }
+}

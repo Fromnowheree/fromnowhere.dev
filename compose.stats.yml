@@ -1,0 +1,53 @@
+# Visitor statistics (Umami, cookieless), optional and off by default. Use it on top of compose.yml:
+#
+#   docker compose -f compose.yml -f compose.stats.yml up -d
+#   ./scripts/stats-admin.sh          # replaces Umami's default admin password, printed once
+#
+# or put COMPOSE_FILE=compose.yml:compose.stats.yml in .env so every command includes it.
+#
+# A file of its own rather than a compose profile, so that its secrets can be REQUIRED: compose
+# checks `${VAR:?}` in every service of the files it reads, including services whose profile is
+# off, so a required secret on a profiled service would stop every server without statistics from
+# starting at all. Here compose refuses to start Umami without an APP_SECRET and a database
+# password, instead of starting it with empty ones.
+#
+# Umami publishes no port. Caddy serves the tracker on the site's own domain and the dashboard on
+# STATS_DOMAIN (caddy/Caddyfile); set STATS_DOMAIN only after scripts/stats-admin.sh has run.
+
+services:
+  db:
+    environment:
+      # Used by db/init/01-umami.sh for Umami's own login (not a superuser).
+      UMAMI_DB_PASSWORD: ${UMAMI_DB_PASSWORD:?set UMAMI_DB_PASSWORD in .env (openssl rand -hex 32)}
+
+  umami:
+    image: ghcr.io/umami-software/umami:3.4.0
+    restart: unless-stopped
+    # As compose.yml's services: 3 files of 10 MB.
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    environment:
+      # Its own role, which can't open the site's database.
+      DATABASE_URL: postgresql://umami:${UMAMI_DB_PASSWORD:?set UMAMI_DB_PASSWORD in .env (openssl rand -hex 32)}@db:5432/umami
+      # Signs Umami's sessions; empty would make them forgeable.
+      APP_SECRET: ${UMAMI_APP_SECRET:?set UMAMI_APP_SECRET in .env (openssl rand -hex 32)}
+      # Caddy replaces this header with the visitor's real IP; other IP headers could be spoofed.
+      CLIENT_IP_HEADER: x-forwarded-for
+      DISABLE_TELEMETRY: '1'
+    # It runs as its own unprivileged user and needs no capability.
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    # Umami's own liveness endpoint, with the curl its image ships.
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', '-o', '/dev/null', 'http://127.0.0.1:3000/api/heartbeat']
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    depends_on:
+      db:
+        condition: service_healthy

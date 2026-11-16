@@ -1,0 +1,596 @@
+<title>fromnowhere.dev Vision</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Barlow+Condensed:wght@600&family=Archivo:wdth,wght@62..125,700..800&display=swap">
+<style>
+/* Layout: the Fromnowhere studio pattern. Left-aligned, asymmetric, numbered sections, 1120px max.
+   Tokens are the Fromnowhere system's own (fnwygo/src/styles/fnw/tokens.css). Dark first. */
+:root {
+  color-scheme: dark;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --space-1: 2.8px; --space-2: 5.6px; --space-3: 8.4px; --space-4: 11.2px;
+  --space-6: 16.8px; --space-8: 22.4px; --space-section: 64px; --space-page: 96px;
+  --radius-sm: 4px; --radius-tag: 6px; --radius-md: 8px; --radius-lg: 14px;
+  --duration-fast: 120ms; --duration-base: 180ms; --duration-slow: 280ms; --duration-slower: 480ms; --duration-stagger: 60ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1); --ease-enter: cubic-bezier(0, 0, 0.2, 1); --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --ground: #161826; --surface: #232532; --text: #e9e9ed; --text-muted: #b2b6ca;
+  --accent: #9184d9; --accent-text: #9184d9; --link: #d2cefd;
+  --accent-tint: #2b2741; --accent-tint-ink: #f5f4ff;
+  --tag-neutral: #3f424d; --tag-neutral-ink: #f3f5fe;
+  --divider: rgba(233, 233, 237, 0.16); --border-control: #75798c;
+  --route: #595d6c; --route-planned: #3f424d;
+  --success: #67d2cc; --success-tint: #083230; --warning: #e0b771; --warning-tint: #37290f;
+  --section: #262a60; --section-glow: #353b80; --section-ink: #e9e9ed; --section-muted: #cfd3e5;
+  --shadow-sm: 0 0 0 1px #3f424d; --shadow-md: 0 0 0 1px #595d6c, 0 6px 18px rgba(0, 0, 0, 0.55);
+  --logo-tile: #232532; --logo-plate: #e9e9ed; --logo-point: #9184d9;
+  --selection: rgba(145, 132, 217, 0.3);
+  /* Windows into other worlds: the only place these colours appear */
+  --ygo-deep: #10121d; --ygo-plate: #232532; --ygo-live: #ff6a5c; --ygo-ink: #e9e9ed;
+  --gio-ink: #0d0d0c; --gio-paper: #ecebe6; --gio-release: #21c372;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --ground: #f3f5fe; --surface: #e4e7f5; --text: #292b31; --text-muted: #595d6c;
+    --accent: #796cbf; --accent-text: #5d5294; --link: #5d5294;
+    --accent-tint: #e7e5fe; --accent-tint-ink: #423a6a;
+    --tag-neutral: #cfd3e5; --tag-neutral-ink: #292b31;
+    --divider: #cfd3e5; --border-control: #75798c;
+    --route: #9397ab; --route-planned: #cfd3e5;
+    --success: #006d68; --success-tint: #d7f2ef; --warning: #7b5200; --warning-tint: #f5ead7;
+    --shadow-sm: 0 0 0 1px #cfd3e5; --shadow-md: 0 0 0 1px #cfd3e5, 0 6px 18px rgba(41, 43, 49, 0.1);
+    --logo-tile: #f3f5fe; --logo-plate: #292b31; --logo-point: #796cbf;
+    --selection: rgba(121, 108, 191, 0.25);
+  }
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --ground: #f3f5fe; --surface: #e4e7f5; --text: #292b31; --text-muted: #595d6c;
+  --accent: #796cbf; --accent-text: #5d5294; --link: #5d5294;
+  --accent-tint: #e7e5fe; --accent-tint-ink: #423a6a;
+  --tag-neutral: #cfd3e5; --tag-neutral-ink: #292b31;
+  --divider: #cfd3e5; --border-control: #75798c;
+  --route: #9397ab; --route-planned: #cfd3e5;
+  --success: #006d68; --success-tint: #d7f2ef; --warning: #7b5200; --warning-tint: #f5ead7;
+  --shadow-sm: 0 0 0 1px #cfd3e5; --shadow-md: 0 0 0 1px #cfd3e5, 0 6px 18px rgba(41, 43, 49, 0.1);
+  --logo-tile: #f3f5fe; --logo-plate: #292b31; --logo-point: #796cbf;
+  --selection: rgba(121, 108, 191, 0.25);
+}
+
+* { box-sizing: border-box; }
+::selection { background: var(--selection); }
+body {
+  background: var(--ground); color: var(--text);
+  font: 400 15px/1.55 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 1120px;
+  padding-left: max(22.4px, env(safe-area-inset-left, 0px));
+  padding-right: max(22.4px, env(safe-area-inset-right, 0px));
+}
+@media (max-width: 520px) {
+  .wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+}
+h1, h2, h3, h4 { font-weight: 500; margin: 0; text-wrap: balance; letter-spacing: -0.015em; }
+h1 { font-size: clamp(34px, 6vw, 56px); line-height: 1.05; letter-spacing: -0.03em; max-width: 22ch; }
+h2 { font-size: clamp(25px, 3.4vw, 32px); line-height: 1.15; }
+h3 { font-size: 17px; line-height: 1.35; }
+p { margin: 0; text-wrap: pretty; }
+a { color: var(--link); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
+code, .mono { font-family: var(--font-mono); font-size: 13px; }
+.kicker { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--link); }
+.muted { color: var(--text-muted); }
+.lede { font-size: 17px; line-height: 1.5; color: var(--text-muted); max-width: 54ch; }
+
+/* Rules fade to transparent over 48px at both ends */
+.rule { height: 1px; border: 0; margin: 0; background: linear-gradient(90deg, transparent, var(--divider) 48px, var(--divider) calc(100% - 48px), transparent); }
+
+/* Nav */
+.nav { display: flex; align-items: center; justify-content: space-between; gap: var(--space-6); padding-block: var(--space-8); flex-wrap: wrap; }
+.lockup { display: inline-flex; align-items: center; gap: 5.3px; color: var(--text); text-decoration: none; }
+.lockup svg { width: 28px; height: 28px; display: block; }
+.lockup span { font-weight: 500; font-size: 12.9px; letter-spacing: 0.06em; line-height: 1; }
+.nav__meta { font-size: 13px; color: var(--text-muted); display: flex; gap: var(--space-4); align-items: center; flex-wrap: wrap; }
+.tag { display: inline-flex; align-items: center; gap: var(--space-2); font-size: 11px; font-weight: 500; line-height: 1; padding: 5px 7px; border-radius: var(--radius-tag); background: var(--tag-neutral); color: var(--tag-neutral-ink); white-space: nowrap; }
+.tag--accent { background: var(--accent-tint); color: var(--accent-tint-ink); }
+.tag--live { background: var(--success-tint); color: var(--success); }
+.tag--build { background: var(--warning-tint); color: var(--warning); }
+.tag svg { width: 12px; height: 12px; }
+
+main { display: grid; gap: var(--space-section); padding-bottom: var(--space-page); }
+
+/* Hero */
+.hero { display: grid; gap: var(--space-8); padding-top: var(--space-8); }
+.hero__copy { display: grid; gap: var(--space-6); }
+.enter { animation: enter var(--duration-slow) var(--ease-enter) both; animation-delay: calc(var(--i, 0) * var(--duration-stagger)); }
+@keyframes enter { from { opacity: 0; transform: translateY(8px); } }
+
+/* Route map */
+.map { position: relative; border-radius: var(--radius-lg); padding: var(--space-8); background: radial-gradient(120% 140% at 0% 0%, var(--surface), var(--ground) 62%); box-shadow: var(--shadow-sm); }
+.map__wide { display: block; width: 100%; height: auto; overflow: visible; }
+.map__caption { margin-top: var(--space-6); font-size: 13px; color: var(--text-muted); display: flex; gap: var(--space-6); flex-wrap: wrap; }
+.map__caption span { display: inline-flex; align-items: center; gap: var(--space-3); }
+.key { width: 26px; height: 3px; border-radius: 2px; background: var(--route); display: inline-block; }
+.key--lit { background: var(--accent); }
+.key--planned { background: repeating-linear-gradient(90deg, var(--route) 0 6px, transparent 6px 11px); }
+
+.route { fill: none; stroke: var(--route); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; transition: stroke var(--duration-base) var(--ease-standard), opacity var(--duration-base) var(--ease-standard); }
+.route--planned { stroke: var(--route); stroke-dasharray: 7 7; opacity: 0.7; }
+.draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw var(--duration-slower) var(--ease-settle) forwards; animation-delay: calc(240ms + var(--i, 0) * var(--duration-stagger)); }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.plate rect { fill: var(--surface); stroke: var(--divider); stroke-width: 1; transition: stroke var(--duration-base) var(--ease-standard); }
+.plate text { font-family: var(--font-sans); }
+.plate .p-name { font-size: 15px; font-weight: 500; fill: var(--text); }
+.plate .p-addr { font-size: 12px; fill: var(--text-muted); font-family: var(--font-mono); }
+.plate .p-num { font-size: 11px; fill: var(--text-muted); font-family: var(--font-mono); }
+.plate--planned rect { fill: none; stroke: var(--route-planned); stroke-dasharray: 4 4; }
+.plate--planned .p-name { fill: var(--text-muted); font-weight: 400; }
+.plate { cursor: pointer; outline: none; }
+.stop { fill: var(--ground); stroke: var(--route); stroke-width: 3; transition: stroke var(--duration-base) var(--ease-standard); }
+.origin-ring { fill: var(--ground); }
+.origin { fill: var(--accent); }
+.origin-label { font: 500 11px var(--font-sans); letter-spacing: 0.1em; fill: var(--text-muted); text-transform: uppercase; }
+.stop-label { font: 400 11px var(--font-mono); fill: var(--text-muted); }
+
+.map[data-lit] .route:not(.is-lit) { opacity: 0.35; }
+.route.is-lit { stroke: var(--accent); opacity: 1; }
+.stop.is-lit { stroke: var(--accent); }
+.plate.is-lit rect { stroke: var(--accent); }
+
+/* Narrow: the same map as a rail */
+.map__rail { display: none; list-style: none; margin: 0; padding: 0 0 0 38px; position: relative; }
+.map__rail::before { content: ""; position: absolute; left: 11px; top: 26px; bottom: 26px; width: 3px; background: var(--route); border-radius: 2px; }
+.map__rail .rail-origin { position: absolute; left: 1px; top: -4px; width: 23px; height: 23px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 5px var(--ground); }
+.map__rail li { position: relative; padding: var(--space-4) var(--space-6); margin-top: var(--space-6); background: var(--surface); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); display: grid; gap: 2px; }
+.map__rail li:first-of-type { margin-top: 34px; }
+.map__rail li::before { content: ""; position: absolute; left: -27px; top: 50%; width: 27px; height: 3px; background: var(--route); }
+.map__rail li.planned { background: none; box-shadow: 0 0 0 1px var(--route-planned); color: var(--text-muted); }
+.map__rail li.planned::before { background: repeating-linear-gradient(90deg, var(--route) 0 5px, transparent 5px 9px); }
+.map__rail .r-name { font-weight: 500; }
+.map__rail .r-addr { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  .map__wide { display: none; }
+  .map__rail { display: block; }
+}
+
+/* Sections */
+section { display: grid; gap: var(--space-8); }
+.shead { display: grid; gap: var(--space-3); }
+.shead .num { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); }
+.shead .row { display: flex; align-items: baseline; gap: var(--space-6); }
+.prose { display: grid; gap: var(--space-6); max-width: 62ch; }
+.prose p { color: var(--text); }
+
+.split { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: var(--space-section); align-items: start; }
+@media (max-width: 860px) { .split { grid-template-columns: minmax(0, 1fr); gap: var(--space-8); } }
+
+/* Siblings comparison */
+.siblings { display: grid; gap: var(--space-4); }
+.sib { display: grid; grid-template-columns: 9.5em minmax(0, 1fr); gap: var(--space-6); padding-block: var(--space-6); align-items: baseline; }
+.sib + .sib { border-top: 1px solid transparent; background-image: linear-gradient(90deg, transparent, var(--divider) 48px, var(--divider) calc(100% - 48px), transparent); background-size: 100% 1px; background-repeat: no-repeat; }
+.sib .who { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); overflow-wrap: anywhere; }
+.sib .what { display: grid; gap: var(--space-2); }
+.sib .what b { font-weight: 500; }
+.sib--this .who { color: var(--accent-text); }
+@media (max-width: 520px) { .sib { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); } }
+
+/* Band */
+.band { border-radius: var(--radius-lg); background: radial-gradient(90% 140% at 0% 0%, var(--section-glow), var(--section) 70%); color: var(--section-ink); padding: clamp(28px, 5vw, 48px) clamp(22px, 5vw, 48px); display: grid; gap: var(--space-6); }
+.band h2 { font-size: clamp(30px, 5vw, 42px); max-width: 18ch; letter-spacing: -0.02em; }
+.band p { color: var(--section-muted); max-width: 54ch; font-size: 16px; }
+
+/* Signature pieces */
+.pieces { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+@media (max-width: 760px) { .pieces { grid-template-columns: minmax(0, 1fr); } }
+.piece { border-radius: var(--radius-lg); background: radial-gradient(130% 120% at 0% 0%, var(--surface), var(--ground) 75%); box-shadow: var(--shadow-sm); padding: var(--space-8); display: grid; gap: var(--space-6); align-content: start; }
+.piece__demo { min-height: 120px; display: grid; align-items: center; }
+.piece p { color: var(--text-muted); }
+.piece .label { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+
+/* Exit plate demo */
+.exit { display: inline-grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-6); padding: var(--space-6) var(--space-8); border-radius: var(--radius-md); background: var(--ground); box-shadow: var(--shadow-sm); color: var(--text); text-decoration: none; transition: box-shadow var(--duration-base) var(--ease-standard); max-width: 100%; }
+.exit:hover { box-shadow: var(--shadow-md); }
+.exit .ex-arrow { width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--radius-md); background: var(--accent-tint); color: var(--accent-tint-ink); }
+.exit .ex-arrow svg { width: 20px; height: 20px; }
+.exit .ex-main { display: grid; gap: 1px; min-width: 0; }
+.exit .ex-addr { font-family: var(--font-mono); font-size: 14px; overflow-wrap: anywhere; }
+.exit .ex-note { font-size: 12px; color: var(--text-muted); }
+.exit .ex-out { color: var(--text-muted); width: 16px; height: 16px; }
+
+/* Short links demo */
+.shortlinks { display: grid; gap: var(--space-3); font-family: var(--font-mono); font-size: 13px; }
+.shortlinks div { display: flex; gap: var(--space-4); align-items: center; flex-wrap: wrap; }
+.shortlinks .from { color: var(--text); }
+.shortlinks .arrow { color: var(--accent); }
+.shortlinks .to { color: var(--text-muted); }
+
+/* Windows (postcards) */
+.windows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+@media (max-width: 560px) { .windows { grid-template-columns: minmax(0, 1fr); } }
+.window { border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden; display: grid; grid-template-rows: auto 1fr; background: var(--ground); }
+.window__bar { display: flex; justify-content: space-between; align-items: center; padding: var(--space-3) var(--space-4); font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); border-bottom: 1px solid var(--divider); gap: var(--space-4); }
+.window__view { position: relative; min-height: 132px; overflow: hidden; }
+.w-ygo { background: var(--ygo-deep); display: grid; align-content: end; padding: 14px; }
+.w-ygo::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(233,233,237,0.035) 0 1px, transparent 1px 3px); }
+.w-ygo .lt { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); background: var(--ygo-plate); color: var(--ygo-ink); }
+.w-ygo .lt .tally { background: var(--ygo-live); color: var(--ygo-deep); font: 600 13px/1 'Barlow Condensed', 'Arial Narrow', sans-serif; letter-spacing: 0.06em; padding: 9px 9px; display: grid; place-items: center; text-transform: uppercase; }
+.w-ygo .lt .t { padding: 7px 10px; display: grid; gap: 2px; min-width: 0; }
+.w-ygo .lt .t b { font: 600 18px/1 'Barlow Condensed', 'Arial Narrow', sans-serif; text-transform: uppercase; letter-spacing: 0.02em; }
+.w-ygo .lt .t span { font: 400 11px/1.2 var(--font-mono); color: #b2b6ca; }
+.w-gio { background: var(--gio-ink); padding: 14px; display: grid; align-content: center; }
+.w-gio .sheet { background: var(--gio-paper); color: var(--gio-ink); padding: 12px 14px 16px; transform: rotate(-2deg); clip-path: polygon(0 4%, 6% 0, 14% 3%, 26% 0, 38% 2%, 51% 0, 63% 3%, 77% 0, 88% 2%, 100% 0, 100% 100%, 0 100%); display: grid; gap: 6px; max-width: 90%; }
+.w-gio .sheet small { font: 400 10px/1 var(--font-mono); letter-spacing: 0.04em; }
+.w-gio .sheet b { font: 800 22px/0.95 'Archivo', 'Arial Black', sans-serif; font-stretch: 62%; text-transform: uppercase; letter-spacing: 0.01em; }
+.w-gio .sheet i { font-style: normal; display: inline-block; width: 46px; height: 8px; background: var(--gio-release); }
+
+/* Departures board */
+.board-wrap { overflow-x: auto; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); background: var(--surface); }
+table.board { width: 100%; min-width: 720px; border-collapse: collapse; font-size: 14px; }
+.board th { text-align: left; font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: var(--space-6) var(--space-6) var(--space-4); white-space: nowrap; }
+.board td { padding: var(--space-6); vertical-align: top; border-top: 1px solid var(--divider); }
+.board tbody tr { transition: background var(--duration-fast) var(--ease-standard); }
+.board tbody tr:hover, .board tbody tr:focus-within { background: color-mix(in srgb, var(--surface), var(--text) 5%); }
+.board .ln { font-family: var(--font-mono); color: var(--text-muted); font-variant-numeric: tabular-nums; width: 3.2em; }
+.board .nm { font-weight: 500; white-space: nowrap; }
+.board .addr { font-family: var(--font-mono); font-size: 13px; color: var(--link); }
+.board .addr div + div { color: var(--text-muted); }
+.board .what { color: var(--text-muted); max-width: 34ch; }
+.board-note { font-size: 13px; color: var(--text-muted); }
+
+/* Site map */
+.pages { display: grid; gap: 0; }
+.pg { display: grid; grid-template-columns: 13em minmax(0, 1fr); gap: var(--space-8); padding-block: var(--space-6); }
+.pg + .pg { background-image: linear-gradient(90deg, transparent, var(--divider) 48px, var(--divider) calc(100% - 48px), transparent); background-size: 100% 1px; background-repeat: no-repeat; }
+.pg code { color: var(--link); overflow-wrap: anywhere; }
+.pg .d { display: grid; gap: var(--space-2); }
+.pg .d b { font-weight: 500; }
+.pg .d span { color: var(--text-muted); }
+@media (max-width: 600px) { .pg { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); } }
+
+/* Model + stack tables */
+.tbl-wrap { overflow-x: auto; }
+table.plain { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 560px; }
+.plain th { text-align: left; font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: 0 var(--space-6) var(--space-4) 0; }
+.plain td { padding: var(--space-4) var(--space-6) var(--space-4) 0; vertical-align: top; border-top: 1px solid var(--divider); }
+.plain td:first-child { font-weight: 500; white-space: nowrap; }
+.plain td.m { color: var(--text-muted); }
+
+/* Steps */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); counter-reset: s; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 2.4em minmax(0, 1fr); gap: var(--space-4); padding: var(--space-6) var(--space-8) var(--space-6) var(--space-6); background: var(--surface); border-radius: var(--radius-md); }
+.steps li::before { content: counter(s, decimal-leading-zero); font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); padding-top: 2px; }
+.steps li.now::before { color: var(--accent-text); }
+.steps .s { display: grid; gap: var(--space-2); }
+.steps .s b { font-weight: 500; }
+.steps .s span { color: var(--text-muted); }
+
+/* Questions */
+.qs { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-6); max-width: 70ch; }
+.qs li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: var(--space-4); }
+.qs svg { width: 20px; height: 20px; color: var(--accent); margin-top: 1px; }
+.qs b { font-weight: 500; }
+.qs span { color: var(--text-muted); display: block; }
+
+footer { padding-block: var(--space-8) var(--space-page); display: flex; gap: var(--space-6); align-items: center; justify-content: space-between; flex-wrap: wrap; color: var(--text-muted); font-size: 13px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .enter { animation: none; }
+  .draw { animation: none; stroke-dashoffset: 0; }
+  * { transition: none !important; }
+}
+</style>
+
+<div class="wrap">
+  <header class="nav">
+    <a class="lockup" href="#top" aria-label="Fromnowhere">
+      <svg viewBox="-10.67 -10.67 85.33 85.33" aria-hidden="true">
+        <rect x="-10.67" y="-10.67" width="85.33" height="85.33" rx="15.36" fill="var(--logo-tile)"/>
+        <rect x="14" y="10" width="11" height="44" rx="1.5" fill="var(--logo-plate)"/>
+        <rect x="29" y="10" width="23" height="11" rx="1.5" fill="var(--logo-plate)"/>
+        <rect x="29" y="29" width="17" height="11" rx="1.5" fill="var(--logo-plate)"/>
+        <circle cx="34.5" cy="48.5" r="5.5" fill="var(--logo-point)"/>
+      </svg>
+      <span>FNW</span>
+    </a>
+    <div class="nav__meta"><span>Vision for fromnowhere.dev</span><span class="tag">Draft 3 · 16 Nov 2026</span></div>
+  </header>
+</div>
+
+<main class="wrap" id="top">
+
+  <div class="hero">
+    <div class="hero__copy">
+      <span class="kicker enter" style="--i:0">The concept: Origin</span>
+      <h1 class="enter" style="--i:1">Every project starts at the same point</h1>
+      <p class="lede enter" style="--i:2">In the FNW mark, the point under the F marks the place everything starts from. On fromnowhere.dev that point becomes the home page. One line leaves it for each project, and the site’s job is to show where each line goes, then send you there.</p>
+    </div>
+
+    <div class="map enter" style="--i:3" id="map">
+      <svg class="map__wide" viewBox="0 0 1040 400" role="img" aria-labelledby="map-title">
+        <title id="map-title">Route map: from the Fromnowhere point to four projects, with one more line under construction</title>
+        <!-- routes: horizontal, 45° bend, horizontal -->
+        <path class="route draw" data-line="ygo" pathLength="1" style="--i:0" d="M60 200 H180 L320 60 H700"/>
+        <path class="route draw" data-line="gio" pathLength="1" style="--i:1" d="M60 200 H220 L290 130 H700"/>
+        <path class="route route--planned" data-line="nmt" d="M60 200 H220 L290 270 H700"/>
+        <path class="route draw" data-line="gati" pathLength="1" style="--i:3" d="M60 200 H180 L320 340 H700"/>
+        <path class="route route--planned" d="M60 200 H640"/>
+        <!-- stops along the giogio line: its three sites -->
+        <circle class="stop" data-line="gio" cx="430" cy="130" r="6"/>
+        <circle class="stop" data-line="gio" cx="560" cy="130" r="6"/>
+        <text class="stop-label" x="430" y="114" text-anchor="middle">prod.</text>
+        <text class="stop-label" x="560" y="114" text-anchor="middle">presstart.</text>
+        <circle class="stop" data-line="nmt" cx="500" cy="270" r="6"/>
+        <text class="stop-label" x="500" y="296" text-anchor="middle">clinic sites</text>
+        <!-- origin -->
+        <circle class="origin-ring" cx="44" cy="200" r="26"/>
+        <circle class="origin" cx="44" cy="200" r="19"/>
+        <text class="origin-label" x="20" y="252">fromnowhere.dev</text>
+        <!-- plates -->
+        <g class="plate" data-line="ygo" tabindex="0" role="link" aria-label="Locals, yugioh.fromnowhere.dev">
+          <rect x="700" y="34" width="320" height="52" rx="8"/>
+          <text class="p-num" x="716" y="66">01</text>
+          <text class="p-name" x="746" y="57">Locals</text>
+          <text class="p-addr" x="746" y="75">yugioh.fromnowhere.dev</text>
+        </g>
+        <g class="plate" data-line="gio" tabindex="0" role="link" aria-label="Giogio, giogio.music">
+          <rect x="700" y="104" width="320" height="52" rx="8"/>
+          <text class="p-num" x="716" y="136">02</text>
+          <text class="p-name" x="746" y="127">Giogio</text>
+          <text class="p-addr" x="746" y="145">giogio.music</text>
+        </g>
+        <g class="plate" data-line="nmt" tabindex="0" role="link" aria-label="Nowhere’s Medical Toolbox, medical.fromnowhere.dev">
+          <rect x="700" y="244" width="320" height="52" rx="8"/>
+          <text class="p-num" x="716" y="276">03</text>
+          <text class="p-name" x="746" y="267">Nowhere’s Medical Toolbox</text>
+          <text class="p-addr" x="746" y="285">medical.fromnowhere.dev</text>
+        </g>
+        <g class="plate" data-line="gati" tabindex="0" role="link" aria-label="Gati, gati.hr">
+          <rect x="700" y="314" width="320" height="52" rx="8"/>
+          <text class="p-num" x="716" y="346">04</text>
+          <text class="p-name" x="746" y="337">Gati</text>
+          <text class="p-addr" x="746" y="355">gati.hr</text>
+        </g>
+        <g class="plate plate--planned">
+          <rect x="652" y="176" width="200" height="48" rx="8"/>
+          <text class="p-name" x="668" y="205">Next line</text>
+        </g>
+      </svg>
+
+      <ul class="map__rail" aria-label="Projects">
+        <span class="rail-origin" aria-hidden="true"></span>
+        <li><span class="r-name">Locals</span><span class="r-addr">yugioh.fromnowhere.dev</span></li>
+        <li><span class="r-name">Giogio</span><span class="r-addr">giogio.music · prod. · presstart.</span></li>
+        <li class="planned"><span class="r-name">Nowhere’s Medical Toolbox</span><span class="r-addr">medical.fromnowhere.dev, coming later</span></li>
+        <li><span class="r-name">Gati</span><span class="r-addr">gati.hr</span></li>
+        <li class="planned"><span class="r-name">Next line</span><span class="r-addr">under construction</span></li>
+      </ul>
+
+      <div class="map__caption">
+        <span><i class="key"></i>A project</span>
+        <span><i class="key key--lit"></i>The one you’re pointing at</span>
+        <span><i class="key key--planned"></i>Under construction</span>
+        <span>Dots on a line are its other sites</span>
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <div class="shead"><div class="row"><span class="num">01</span><span class="kicker">The idea</span></div><h2>A crossroad that looks like one</h2></div>
+    <div class="split">
+      <div class="prose">
+        <p>Your two favourite sites each wear a costume taken from their own world. That’s what makes them memorable, and it’s what fromnowhere.dev needs too.</p>
+        <p>The studio site has one constraint the others don’t: it’s the home of the Fromnowhere system, so it can’t step outside it the way ygo did. The answer is a costume the mark already wears. Separate plates on one platform, a single point where things start: that’s wayfinding. Transit maps, departure boards and signage plates are exactly what a crossroad looks like.</p>
+        <p class="muted">So the site reads as a small station. Calm, exact and dark, with clear signs, and lines leaving for very different places.</p>
+      </div>
+      <div class="siblings">
+        <div class="sib"><span class="who">yugioh.fromnowhere.dev</span><div class="what"><b>A tournament broadcast</b><span class="muted">Lower thirds, slates, tally red, stingers between pages, a results crawl.</span></div></div>
+        <div class="sib"><span class="who">giogio.music</span><div class="what"><b>A collage and a diary</b><span class="muted">Photocopy grain, a cassette J-card, torn sheets, gig posters, a carbon-copy booking slip.</span></div></div>
+        <div class="sib sib--this"><span class="who">fromnowhere.dev</span><div class="what"><b>A route map and a departures board</b><span class="muted">One point, lines leaving it, signage plates at every exit. Taken straight from the mark.</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="band">
+    <span class="kicker" style="color: var(--section-muted)">The rule that holds it together</span>
+    <h2>A quiet station, loud destinations</h2>
+    <p>fromnowhere.dev stays calm so the places it leads to can be as loud as they like. Their colours and type appear only inside their own framed windows, never on the station itself.</p>
+  </div>
+
+  <section>
+    <div class="shead"><div class="row"><span class="num">02</span><span class="kicker">Signature pieces</span></div><h2>Five things only this site has</h2></div>
+    <div class="pieces">
+      <div class="piece">
+        <span class="label">The route map</span>
+        <h3>The home page hero</h3>
+        <p>The point on the left, one line per project, each ending at a plate with its address. Lines are neutral at rest. The one you hover or focus turns accent, since in this system the accent is a line or a point. Lines draw out from the point once per visit, at the brand’s slow settle. Projects still being built are dashed, the way transit maps mark lines under construction. Try the map above.</p>
+      </div>
+      <div class="piece">
+        <span class="label">The departures board</span>
+        <h3>The project index</h3>
+        <p>A table with line, destination, what it is, address and status. The status is real: a small job checks every address every few minutes, so “Running” means the site answered. No split-flap animation. The system rules out counting and typewriter effects, and a board that sits still reads as more trustworthy anyway.</p>
+      </div>
+      <div class="piece">
+        <span class="label">Exit plates</span>
+        <h3>You always know when you’re leaving</h3>
+        <div class="piece__demo">
+          <a class="exit" href="#top" onclick="return false">
+            <span class="ex-arrow"><svg viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M40 128h176M144 56l72 72-72 72"/></svg></span>
+            <span class="ex-main"><span class="ex-addr">giogio.music</span><span class="ex-note">Leaves fromnowhere.dev</span></span>
+            <svg class="ex-out" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M64 192 192 64M88 64h104v104"/></svg>
+          </a>
+        </div>
+        <p>Every link that leaves the site is a signage plate with an arrow, the address and a plain “Leaves fromnowhere.dev”.</p>
+      </div>
+      <div class="piece">
+        <span class="label">Short links</span>
+        <h3>The crossroad works in the address bar too</h3>
+        <div class="piece__demo shortlinks">
+          <div><span class="from">fromnowhere.dev/ygo</span><span class="arrow">→</span><span class="to">yugioh.fromnowhere.dev</span></div>
+          <div><span class="from">fromnowhere.dev/giogio</span><span class="arrow">→</span><span class="to">giogio.music</span></div>
+          <div><span class="from">fromnowhere.dev/nmt</span><span class="arrow">→</span><span class="to">medical.fromnowhere.dev</span></div>
+          <div><span class="from">fromnowhere.dev/gati</span><span class="arrow">→</span><span class="to">gati.hr</span></div>
+        </div>
+        <p>Every project gets a short address that redirects to its real home, managed in the CMS. Good for Discord, business cards and saying out loud.</p>
+      </div>
+    </div>
+
+    <div class="piece">
+      <span class="label">Windows</span>
+      <h3>A framed look at where each line goes</h3>
+      <p style="max-width: 62ch">Each project page has one window: a small framed glimpse of the destination in its own costume. This is the only place another brand’s colours and type show up on fromnowhere.dev, and the frame keeps them contained. Two sketches:</p>
+      <div class="windows">
+        <div class="window">
+          <div class="window__bar"><span>yugioh.fromnowhere.dev</span><span>01</span></div>
+          <div class="window__view w-ygo">
+            <div class="lt"><span class="tally">Live</span><span class="t"><b>Round 3 of 5</b><span>Pairings are up · 14:20</span></span></div>
+          </div>
+        </div>
+        <div class="window">
+          <div class="window__bar"><span>giogio.music</span><span>02</span></div>
+          <div class="window__view w-gio">
+            <div class="sheet"><small>New single</small><b>Samo pare kurvo</b><i aria-hidden="true"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead"><div class="row"><span class="num">03</span><span class="kicker">Destinations</span></div><h2>The board on launch day</h2></div>
+    <div class="board-wrap">
+      <table class="board">
+        <thead><tr><th>Line</th><th>Destination</th><th>What it is</th><th>Address</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr data-line="ygo"><td class="ln">01</td><td class="nm">Locals</td><td class="what">In-person Yu-Gi-Oh! events: seasons, standings, a gallery, and a Discord bot that runs the day.</td><td class="addr"><div>yugioh.fromnowhere.dev</div></td><td><span class="tag tag--live"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="4" fill="currentColor"/></svg>Running</span></td></tr>
+          <tr data-line="gio"><td class="ln">02</td><td class="nm">Giogio</td><td class="what">An artist’s site, a producer’s site, and an album you can play as a pixel game.</td><td class="addr"><div>giogio.music</div><div>prod.giogio.music</div><div>presstart.giogio.music</div></td><td><span class="tag tag--live"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="4" fill="currentColor"/></svg>Running</span></td></tr>
+          <tr data-line="nmt"><td class="ln">03</td><td class="nm">Nowhere’s Medical Toolbox</td><td class="what">An on-premise system for clinics: charts, diary, patient records, plus the website product clinics can buy on its own. Until its showcase exists, the line ends at its project page here.</td><td class="addr"><div>fromnowhere.dev/projects/nmt</div><div>later: medical.fromnowhere.dev</div></td><td><span class="tag tag--build"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/></svg>Building</span></td></tr>
+          <tr data-line="gati"><td class="ln">04</td><td class="nm">Gati</td><td class="what">Website and CMS for a homeopathy practice in Varaždin.</td><td class="addr"><div>gati.hr</div></td><td><span class="tag tag--live"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="4" fill="currentColor"/></svg>Running</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="board-note">Statuses here are placeholders. On the site they come from the status check. Hover a row and its line lights up on the map, the same as on the real home page.</p>
+  </section>
+
+  <section>
+    <div class="shead"><div class="row"><span class="num">04</span><span class="kicker">Pages</span></div><h2>A small site with clear signs</h2></div>
+    <div class="pages">
+      <div class="pg"><code>/</code><div class="d"><b>Home</b><span>Lockup, one sentence, the route map, the departures board, the band, the newest notes, a contact line.</span></div></div>
+      <div class="pg"><code>/projects/[slug]</code><div class="d"><b>One page per project</b><span>What it is and who it’s for, what was built, the stack, its window, its exit plate. Client sites get the same page, which works as a case study.</span></div></div>
+      <div class="pg"><code>/about</code><div class="d"><b>About Fromnowhere</b><span>Who’s behind it and how the work gets made, including the design system every line shares. Written as “I”, per the brand voice.</span></div></div>
+      <div class="pg"><code>/contact</code><div class="d"><b>Get in touch</b><span>A short form that relays to your inbox and keeps no copy, plus the plain address.</span></div></div>
+      <div class="pg"><code>/notes</code><div class="d"><b>Notes, later</b><span>Short dated notes on what’s being built. Hidden until there are at least three.</span></div></div>
+      <div class="pg"><code>/[short]</code><div class="d"><b>Short links</b><span>Redirects such as /ygo and /giogio, stored in the CMS. They work the same in both languages.</span></div></div>
+      <div class="pg"><code>/en/… /hr/…</code><div class="d"><b>Two languages</b><span>Every page under /en and /hr, the rest of the address the same in both. The bare fromnowhere.dev picks the visitor’s language (their earlier choice, then their browser’s, then English). An EN / HR switch in the nav keeps you on the same page.</span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead"><div class="row"><span class="num">05</span><span class="kicker">Content</span></div><h2>What lives in Payload</h2></div>
+    <div class="tbl-wrap">
+      <table class="plain">
+        <thead><tr><th>Collection</th><th>Holds</th></tr></thead>
+        <tbody>
+          <tr><td>Projects</td><td class="m">Name, slug, line number, one sentence, kind (product, community, music, client), addresses with labels, status override (building, planned, paused), started, stack tags, story, window image, short link, order on the map.</td></tr>
+          <tr><td>Short links</td><td class="m">Alias and target. Each project adds its own automatically; extra ones can be added by hand.</td></tr>
+          <tr><td>Status checks</td><td class="m">Hidden. Each address’s last answer, response time and last check, written by a scheduled job every 5 minutes.</td></tr>
+          <tr><td>Notes</td><td class="m">Title, date, body, related project.</td></tr>
+          <tr><td>Inquiries</td><td class="m">Contact form messages, if you want a copy kept. The default is relay only.</td></tr>
+          <tr><td>Studio (global)</td><td class="m">Hero sentence, about text, contact address, profiles, SEO defaults.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead"><div class="row"><span class="num">06</span><span class="kicker">Stack</span></div><h2>The usual, on purpose</h2></div>
+    <div class="tbl-wrap">
+      <table class="plain">
+        <thead><tr><th>Part</th><th>Choice</th></tr></thead>
+        <tbody>
+          <tr><td>App</td><td class="m">Next.js 16 (App Router) with Payload 3 in the same app, admin at <code>/admin</code>, Node with pnpm.</td></tr>
+          <tr><td>Data</td><td class="m">Postgres 17. Uploads on disk in a volume.</td></tr>
+          <tr><td>Serving</td><td class="m">Docker compose and Caddy with automatic HTTPS, Umami for cookieless stats. The scaffold started as a copy of NMT-PublicWeb, the most finished of the siblings: its infrastructure, hardening, language routing and contact relay, with the clinic layer replaced.</td></tr>
+          <tr><td>Design</td><td class="m">The Fromnowhere system, ported as fnwygo does it: <code>tokens.css</code> and <code>bundle.css</code> in <code>src/styles/fnw</code>, Inter in <code>public/fonts</code>, the React components from <code>fnw.tsx</code>. Site-only pieces (map, board, plates, windows) built from the same tokens.</td></tr>
+          <tr><td>Languages</td><td class="m">English and Croatian. Payload’s localization (en, hr, falling back to en) for content, next-intl for interface strings, as NMT already does. hreflang links between the pairs.</td></tr>
+          <tr><td>Motion</td><td class="m">The logo assembles once, lines draw once per visit, the board rows reveal on scroll, cross-page view transitions with the nav held still. Everything stops under reduced motion.</td></tr>
+          <tr><td>Domains</td><td class="m">fromnowhere.dev and www go to this app. yugioh.fromnowhere.dev and, later, medical.fromnowhere.dev stay separate apps; the map only links to them.</td></tr>
+          <tr><td>Hosting</td><td class="m">One Fromnowhere server for the fromnowhere.dev family, with one shared Caddy in front of every app on it. Client sites like gati.hr keep their own servers. Images are built in CI, not on the server.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead"><div class="row"><span class="num">07</span><span class="kicker">Build order</span></div><h2>From vision to launch</h2></div>
+    <ol class="steps">
+      <li><div class="s"><b>Agree on this vision</b><span>Done, 16 Nov 2026. Hosting is the last open decision.</span></div></li>
+      <li><div class="s"><b>Scaffold, content model and project pages</b><span>Done, 16 Nov 2026. NMT-PublicWeb’s base, the design system, Projects, Pages, Short links and the Studio global seeded with the four lines; home with the board, project pages with exit plates, text pages, contact, share cards.</span></div></li>
+      <li class="now"><div class="s"><b>The route map and windows</b><span>Next. The map on the home page, with hover lighting a line and dashed lines under construction; window pictures on project pages; the page transition.</span></div></li>
+      <li><div class="s"><b>Live status and share images</b><span>The status job and a live board. Share images drawn from the route map with that project’s line lit.</span></div></li>
+      <li><div class="s"><b>About, contact, launch</b><span>The remaining pages, Caddy and DNS for fromnowhere.dev, then the short links go out.</span></div></li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="shead"><div class="row"><span class="num">08</span><span class="kicker">Decisions</span></div><h2>Settled so far</h2></div>
+    <div class="tbl-wrap">
+      <table class="plain">
+        <tbody>
+          <tr><td>Lines at launch</td><td class="m">Locals, Giogio, Nowhere’s Medical Toolbox, Gati. mtnet.hr was a prototype and stays off the map for now; it can be added later as a hidden project switched on.</td></tr>
+          <tr><td>NMT showcase</td><td class="m">A separate project, built later. Until then NMT’s line is dashed and ends at a full project page here; /nmt points there and moves to medical.fromnowhere.dev the day it launches.</td></tr>
+          <tr><td>Languages</td><td class="m">English and Croatian from launch.</td></tr>
+          <tr><td>Who’s behind it</td><td class="m">The about page says who you are.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead"><div class="row"><span class="num">09</span><span class="kicker">Open questions</span></div><h2>What’s still open</h2></div>
+    <ul class="qs">
+      <li><svg viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" aria-hidden="true"><circle cx="128" cy="128" r="96"/><path d="M104 104a24 24 0 1 1 32 22.6c-5 1.8-8 6.5-8 11.4v6"/><circle cx="128" cy="180" r="6" fill="currentColor" stroke="none"/></svg><div><b>Where does it run?</b><span>Proposed: one Fromnowhere server with a shared Caddy for fromnowhere.dev, yugioh. and later medical.; client sites on their own servers. Waiting on your go-ahead.</span></div></li>
+      <li><svg viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" aria-hidden="true"><circle cx="128" cy="128" r="96"/><path d="M104 104a24 24 0 1 1 32 22.6c-5 1.8-8 6.5-8 11.4v6"/><circle cx="128" cy="180" r="6" fill="currentColor" stroke="none"/></svg><div><b>Anything else on the map?</b><span>The Fromnowhere design system itself, or OpenRAC? Both can wait.</span></div></li>
+    </ul>
+  </section>
+
+</main>
+
+<div class="wrap"><hr class="rule"></div>
+<footer class="wrap">
+  <a class="lockup" href="#top" aria-label="Fromnowhere">
+    <svg viewBox="-10.67 -10.67 85.33 85.33" aria-hidden="true">
+      <rect x="-10.67" y="-10.67" width="85.33" height="85.33" rx="15.36" fill="var(--logo-tile)"/>
+      <rect x="14" y="10" width="11" height="44" rx="1.5" fill="var(--logo-plate)"/>
+      <rect x="29" y="10" width="23" height="11" rx="1.5" fill="var(--logo-plate)"/>
+      <rect x="29" y="29" width="17" height="11" rx="1.5" fill="var(--logo-plate)"/>
+      <circle cx="34.5" cy="48.5" r="5.5" fill="var(--logo-point)"/>
+    </svg>
+    <span>FNW</span>
+  </a>
+  <span>Vision, draft 3. Scaffold built; next is the route map.</span>
+</footer>
+
+<script>
+(() => {
+  const map = document.getElementById('map');
+  const routes = map.querySelectorAll('[data-line]');
+  const light = (line) => {
+    if (line) map.dataset.lit = line; else delete map.dataset.lit;
+    routes.forEach((el) => el.classList.toggle('is-lit', !!line && el.dataset.line === line));
+  };
+  const bind = (el) => {
+    const line = el.dataset.line;
+    el.addEventListener('mouseenter', () => light(line));
+    el.addEventListener('mouseleave', () => light(null));
+    el.addEventListener('focusin', () => light(line));
+    el.addEventListener('focusout', () => light(null));
+  };
+  map.querySelectorAll('.plate[data-line]').forEach(bind);
+  document.querySelectorAll('.board tbody tr[data-line]').forEach(bind);
+})();
+</script>

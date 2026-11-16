@@ -1,0 +1,160 @@
+name: CI
+
+# TWO HOSTS RUN THIS FILE. Development happens on the self-hosted Forgejo (git.home), whose
+# runner costs nothing; Forgejo push-mirrors every branch and tag to GitHub, where a private
+# repository on the free plan has few Actions minutes. Both hosts see every push, so the split is
+# one condition on the checks job: a branch push runs on Forgejo, a v* tag (the release) runs on
+# GitHub. Never commit on GitHub directly: the mirror overwrites it.
+#
+# - Every branch push runs ONE job of checks: install, lint, Prettier, types, the shell scripts,
+#   a check that the migrations, generated types and admin import map match the schema, the
+#   Caddy template and the integration tests against a real Postgres.
+# - A pull request from a branch of this repository is skipped, because the push of that branch
+#   has already run the same checks on the same commit. (A fork's pull request still runs.)
+# - The image is built only for a version tag (v*), on GitHub, after the checks pass, and is not
+#   pushed to any registry yet.
+# - The Playwright suite is not run here: it needs a browser download and minutes of a dev server.
+#   Run it locally before tagging a release (README, "Checks").
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  pull_request:
+
+# One run per ref: a new push cancels the superseded run instead of queueing behind it. Tags are
+# never cancelled, so a release build always finishes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  checks:
+    name: Checks
+    # Which host runs this push: see the top of the file.
+    if: >-
+      (github.event_name == 'push' &&
+        (github.server_url == 'https://github.com') == startsWith(github.ref, 'refs/tags/')) ||
+      (github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name != github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: ci
+        ports:
+          - 5432:5432
+        # Without a health check the tests start before initdb has finished.
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    # Not secrets: a database that exists only for this job, and a placeholder signing secret.
+    env:
+      DATABASE_URL: postgres://postgres:ci@127.0.0.1:5432/postgres
+      PAYLOAD_SECRET: ci-placeholder-not-a-real-secret
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Reads the version from "packageManager" in package.json (pnpm 12.20.0). Must precede
+      # setup-node so that `cache: pnpm` can find pnpm.
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      # The Node major comes from .nvmrc, the one place it is stated.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Formatting
+        run: pnpm exec prettier --check .
+
+      - name: Types
+        run: pnpm exec tsc --noEmit
+
+      # Production applies migrations and never pushes, so a schema change without its migration
+      # would pass every other check and then be missing on the server. `migrate:create`
+      # diffs the config against the last migration's .json snapshot and, with --skip-empty,
+      # writes nothing when they match; the generated types and admin import map must likewise
+      # be current. Any file this step writes or changes means something was not committed. None
+      # of the three commands connects to the database.
+      - name: Migrations and generated files match the schema
+        run: |
+          pnpm payload migrate:create schema_check --skip-empty
+          pnpm generate:types
+          pnpm generate:importmap
+          changed="$(git status --porcelain -- src/migrations src/payload-types.ts 'src/app/(payload)/admin/importMap.js')"
+          if [ -n "$changed" ]; then
+            echo "$changed"
+            echo "::error::The schema changed without its migration, types or import map (AGENTS.md, Migrations)"
+            exit 1
+          fi
+
+      # shellcheck is preinstalled on the runner; the scripts run on the server.
+      - name: Shell scripts
+        run: shellcheck scripts/*.sh db/init/*.sh
+
+      # The Caddy template must parse. `caddy validate`
+      # provisions the config without starting servers or asking for certificates.
+      #
+      # The files are copied in (`docker cp`), never bind-mounted: on the Forgejo runner the job
+      # runs in a container and Docker is the HOST's daemon, which cannot see the job's checkout
+      # ("mkdir /workspace: permission denied"). A copy goes through the API and works on both.
+      - name: Caddy template
+        run: |
+          image="$(sed -n "s/^ *image: \(docker.io\/library\/caddy:.*\)$/\1/p" compose.yml)"
+          sites="$(mktemp -d)/sites"
+          mkdir "$sites"
+          cid="$(docker create -e SITE_DOMAIN=example.com -e STATS_DOMAIN= "$image" \
+            caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile)"
+          docker cp caddy/Caddyfile "$cid:/etc/caddy/Caddyfile"
+          docker cp "$sites" "$cid:/etc/caddy/"
+          rc=0
+          docker start -a "$cid" || rc=$?
+          docker rm -f -v "$cid" >/dev/null
+          if [ "$rc" -ne 0 ]; then echo "::error::Caddy template invalid"; exit "$rc"; fi
+
+      # The backup tests encrypt for real, with age.
+      - name: Install age
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age
+
+      - name: Integration tests
+        run: pnpm test:int
+
+  image:
+    name: Image
+    needs: checks
+    if: startsWith(github.ref, 'refs/tags/v') && github.server_url == 'https://github.com'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Built and kept on the runner only: there is no registry yet. Publishing it (and pulling
+      # it on the VPS by digest) is a later step; until then a release is built locally the same
+      # way (Dockerfile header) and loaded onto the VPS.
+      - name: Build
+        run: |
+          docker build \
+            --build-arg APP_VERSION="${GITHUB_REF_NAME#v}" \
+            --build-arg APP_COMMIT="${GITHUB_SHA}" \
+            --tag "fromnowhere-web:${GITHUB_REF_NAME#v}" .
+          docker image inspect "fromnowhere-web:${GITHUB_REF_NAME#v}" \
+            --format '{{index .Config.Labels "org.opencontainers.image.version"}} {{index .Config.Labels "org.opencontainers.image.revision"}}'

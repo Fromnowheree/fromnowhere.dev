@@ -1,0 +1,1292 @@
+/* Fromnowhere — component layer. Load after tokens.css. Every class is prefixed fnw-; every value comes from a token. */
+
+/* ── base ─────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  margin: 0 0 var(--space-2);
+  text-wrap: balance;
+}
+h1 {
+  font-size: 42px;
+}
+h2 {
+  font-size: 32px;
+}
+h3 {
+  font-size: 25px;
+}
+h4 {
+  font-size: 20px;
+  line-height: 1.2;
+}
+h5 {
+  font-size: 16px;
+  line-height: 1.2;
+}
+h6 {
+  font-size: 13px;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+p {
+  margin: 0 0 var(--space-3);
+  text-wrap: pretty;
+}
+a {
+  color: var(--link);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+a:hover {
+  text-decoration-thickness: 2px;
+}
+img {
+  display: block;
+  max-width: 100%;
+}
+figure {
+  margin: 0;
+}
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+::selection {
+  background: var(--selection);
+}
+.fnw-muted {
+  color: var(--text-muted);
+}
+.fnw-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── icon ─────────────────────────────────────────────────────────────── */
+.fnw-icon {
+  display: inline-block;
+  flex: none;
+  vertical-align: -0.15em;
+}
+
+/* ── logo: mark, tile, lockup ─────────────────────────────────────────── */
+.fnw-tile {
+  --s: 48px;
+  --g: var(--logo-tile);
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: var(--s);
+  height: var(--s);
+  border-radius: var(--radius-tile);
+  background: var(--logo-tile);
+  box-shadow: var(--shadow-sm);
+}
+.fnw-tile .fnw-mark {
+  width: 75%;
+  height: 75%;
+}
+.fnw-mark {
+  display: block;
+  color: var(--logo-plate);
+  overflow: visible;
+}
+.fnw-mark .p {
+  fill: currentColor;
+}
+.fnw-mark .pt {
+  fill: var(--logo-point);
+  stroke: var(--g);
+  stroke-width: 3;
+}
+.fnw-tile--accent {
+  --g: var(--accent-900);
+  background: var(--accent-900);
+  box-shadow: none;
+}
+.fnw-tile--accent .fnw-mark {
+  color: var(--accent-200);
+}
+.fnw-tile--accent .pt {
+  fill: var(--accent-300);
+}
+.fnw-tile--flat,
+.fnw-tile--mono {
+  --g: var(--ground);
+  background: transparent;
+  box-shadow: none;
+}
+.fnw-tile--mono .fnw-mark {
+  color: currentColor;
+}
+.fnw-tile--mono {
+  color: var(--logo-plate);
+}
+.fnw-lockup {
+  --s: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--s) * 0.19);
+  color: var(--text);
+  text-decoration: none;
+}
+.fnw-lockup__fnw {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: calc(var(--s) * 0.46);
+  letter-spacing: 0.06em;
+  line-height: 1;
+  color: var(--text);
+}
+.fnw-lockup__stack {
+  display: grid;
+  gap: calc(var(--s) * 0.07);
+}
+.fnw-lockup__stack .fnw-lockup__fnw {
+  font-size: calc(var(--s) * 0.4);
+}
+.fnw-lockup__name {
+  font-size: calc(var(--s) * 0.19);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+/* ── buttons ──────────────────────────────────────────────────────────── */
+.fnw-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  font: inherit;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.2;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  padding: var(--space-2) calc(var(--space-3) * 1.2);
+  border-radius: var(--radius-md);
+}
+.fnw-btn:disabled,
+.fnw-btn[aria-disabled='true'] {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.fnw-btn--primary {
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+.fnw-btn--primary:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.fnw-btn--primary:active {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.fnw-btn--secondary {
+  border-color: var(--divider);
+}
+.fnw-btn--secondary:hover {
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+}
+.fnw-btn--secondary:active {
+  background: color-mix(in srgb, var(--text) 14%, transparent);
+}
+.fnw-btn--ghost {
+  color: var(--accent-text);
+  padding-inline: var(--space-1);
+}
+.fnw-btn--ghost:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.fnw-btn--ghost:active {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.fnw-btn--danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.fnw-btn--danger:hover {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+.fnw-btn--danger:active {
+  background: color-mix(in srgb, var(--danger) 22%, transparent);
+}
+.fnw-btn--icon {
+  width: var(--size-control);
+  height: var(--size-control);
+  padding: 0;
+}
+.fnw-btn--icon.fnw-btn--ghost {
+  padding: 0;
+}
+.fnw-btn--block {
+  width: 100%;
+}
+
+/* ── tags ─────────────────────────────────────────────────────────────── */
+.fnw-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  padding: 3px 10px;
+  border-radius: var(--radius-tag);
+  white-space: nowrap;
+}
+.fnw-tag--accent {
+  background: var(--accent-tint-strong);
+  color: var(--accent-tint-ink);
+}
+.fnw-tag--neutral {
+  background: var(--tag-neutral);
+  color: var(--tag-neutral-ink);
+}
+.fnw-tag--outline {
+  box-shadow: inset 0 0 0 1px var(--accent);
+  color: var(--accent-text);
+}
+.fnw-tag--success {
+  background: var(--success-tint);
+  color: var(--success);
+}
+.fnw-tag--warning {
+  background: var(--warning-tint);
+  color: var(--warning);
+}
+.fnw-tag--danger {
+  background: var(--danger-tint);
+  color: var(--danger);
+}
+
+/* ── forms ────────────────────────────────────────────────────────────── */
+.fnw-field {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.fnw-field__label {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--text-muted);
+}
+.fnw-field__opt {
+  color: var(--text-muted);
+}
+.fnw-field__hint,
+.fnw-field__error {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+.fnw-field__error {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--danger);
+}
+.fnw-input {
+  width: 100%;
+  min-height: var(--size-control);
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text);
+  caret-color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-md);
+}
+.fnw-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+.fnw-input:hover {
+  border-color: var(--text-muted);
+}
+.fnw-input:focus-visible {
+  border-color: var(--accent);
+  outline-offset: 0;
+}
+.fnw-input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+.fnw-input:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+textarea.fnw-input {
+  min-height: 90px;
+  resize: vertical;
+}
+.fnw-select {
+  position: relative;
+  display: block;
+}
+.fnw-select__el {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 32px;
+  cursor: pointer;
+}
+.fnw-select__caret {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--text-muted);
+}
+
+.fnw-check,
+.fnw-radio,
+.fnw-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.fnw-check input,
+.fnw-radio input,
+.fnw-switch input,
+.fnw-seg__opt input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  pointer-events: none;
+}
+.fnw-check:has(input:disabled),
+.fnw-radio:has(input:disabled),
+.fnw-switch:has(input:disabled) {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+.fnw-check__box {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-control);
+  color: transparent;
+}
+.fnw-check:hover .fnw-check__box {
+  border-color: var(--accent);
+}
+.fnw-check input:checked + .fnw-check__box {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.fnw-check input:focus-visible + .fnw-check__box {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.fnw-radio__dot {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: var(--radius-round);
+  border: 1.5px solid var(--border-control);
+}
+.fnw-radio:hover .fnw-radio__dot {
+  border-color: var(--accent);
+}
+.fnw-radio input:checked + .fnw-radio__dot {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: inset 0 0 0 3.5px var(--ground);
+}
+.fnw-radio input:focus-visible + .fnw-radio__dot {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.fnw-switch__track {
+  width: 32px;
+  height: 18px;
+  flex: none;
+  border-radius: 9px;
+  border: 1.5px solid var(--border-control);
+  position: relative;
+}
+.fnw-switch__track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  border-radius: var(--radius-round);
+  background: var(--text-muted);
+}
+.fnw-switch:hover .fnw-switch__track {
+  border-color: var(--accent);
+}
+.fnw-switch input:checked + .fnw-switch__track {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.fnw-switch input:checked + .fnw-switch__track::after {
+  transform: translateX(14px);
+  background: var(--on-accent);
+}
+.fnw-switch input:focus-visible + .fnw-switch__track {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.fnw-seg {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-md);
+}
+.fnw-seg__opt {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  font-size: 13px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.fnw-seg__opt + .fnw-seg__opt {
+  border-left: 1px solid var(--divider);
+}
+.fnw-seg__opt:has(input:checked) {
+  color: var(--accent-text);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.fnw-seg__opt:not(:has(input:checked)):hover {
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+}
+.fnw-seg__opt:has(input:focus-visible) {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/* ── rules — fade to transparent over 48px at both ends ───────────────── */
+.fnw-rule {
+  height: 1px;
+  border: 0;
+  margin: var(--space-4) 0;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--divider) 48px,
+    var(--divider) calc(100% - 48px),
+    transparent
+  );
+}
+
+/* ── navigation ───────────────────────────────────────────────────────── */
+.fnw-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-8);
+  padding: var(--space-3) var(--space-4);
+}
+.fnw-nav__brand {
+  margin-right: auto;
+  display: inline-flex;
+  align-items: center;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 18px;
+}
+.fnw-nav__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fnw-nav__links a {
+  color: var(--text);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+.fnw-nav__links a:hover,
+.fnw-nav__links a[aria-current='page'] {
+  color: var(--accent-text);
+}
+.fnw-nav__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.fnw-tabs {
+  display: flex;
+  gap: var(--space-6);
+  overflow-x: auto;
+  background: linear-gradient(
+      to right,
+      transparent,
+      var(--divider) 48px,
+      var(--divider) calc(100% - 48px),
+      transparent
+    )
+    no-repeat bottom / 100% 1px;
+}
+.fnw-tab {
+  appearance: none;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--text-muted);
+  padding: var(--space-3) 0 calc(var(--space-3) + 2px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.fnw-tab:hover {
+  color: var(--text);
+}
+.fnw-tab[aria-selected='true'] {
+  color: var(--accent-text);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+.fnw-tab:focus-visible {
+  outline-offset: -2px;
+  border-radius: var(--radius-sm);
+}
+
+.fnw-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4) var(--space-8);
+  padding: var(--space-8) var(--space-4);
+  font-size: 13px;
+  color: var(--text-muted);
+  background: linear-gradient(
+      to right,
+      transparent,
+      var(--divider) 48px,
+      var(--divider) calc(100% - 48px),
+      transparent
+    )
+    no-repeat top / 100% 1px;
+}
+.fnw-footer__main {
+  margin-right: auto;
+}
+.fnw-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fnw-footer a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+.fnw-footer a:hover {
+  color: var(--text);
+}
+.fnw-footer__by {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── layout: hero, section heading, card, panel, band ─────────────────── */
+.fnw-hero {
+  display: grid;
+  gap: var(--space-8);
+  padding: var(--space-section) var(--space-8);
+  border-radius: var(--radius-lg);
+  background: radial-gradient(90% 120% at 10% 0%, var(--surface), var(--ground) 65%);
+  box-shadow: var(--shadow-sm);
+}
+.fnw-hero__text {
+  display: grid;
+  gap: var(--space-4);
+}
+.fnw-hero__title {
+  font-size: 42px;
+  margin: 0;
+  max-width: 22ch;
+}
+.fnw-hero__lede {
+  margin: 0;
+  color: var(--text-muted);
+  max-width: 52ch;
+}
+.fnw-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.fnw-kicker {
+  font-size: 11px;
+  line-height: 1.3;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--link);
+  margin: 0 0 var(--space-3);
+}
+.fnw-section-head {
+  display: grid;
+  gap: var(--space-4);
+}
+.fnw-section-head .fnw-kicker {
+  margin: 0;
+}
+.fnw-section-head__title {
+  margin: 0;
+}
+.fnw-section-head__lede {
+  margin: 0;
+  max-width: 56ch;
+  color: var(--text-muted);
+}
+
+.fnw-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  min-width: 0;
+}
+a.fnw-card:hover {
+  box-shadow: var(--shadow-md);
+}
+.fnw-card__kicker {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--link);
+}
+.fnw-card__title {
+  font-weight: 500;
+  font-size: 17px;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+.fnw-card__body {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  flex: 1;
+}
+.fnw-card__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.fnw-card--panel {
+  padding: var(--space-8);
+  gap: var(--space-4);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  background: radial-gradient(120% 100% at 0% 0%, var(--surface), var(--ground) 70%);
+}
+.fnw-elev-sm {
+  box-shadow: var(--shadow-sm);
+}
+.fnw-elev-md {
+  box-shadow: var(--shadow-md);
+}
+.fnw-elev-lg {
+  box-shadow: var(--shadow-lg);
+}
+.fnw-band {
+  background: radial-gradient(70% 140% at 0% 0%, var(--section-glow), var(--section) 70%);
+  color: var(--text);
+  padding: var(--space-section) var(--space-8);
+}
+
+/* ── table ────────────────────────────────────────────────────────────── */
+.fnw-table-wrap {
+  overflow-x: auto;
+}
+.fnw-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.fnw-table caption {
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-muted);
+  padding-bottom: var(--space-2);
+}
+.fnw-table th {
+  text-align: left;
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: var(--space-2);
+}
+.fnw-table td {
+  padding: var(--space-2);
+}
+.fnw-table .is-end {
+  text-align: right;
+}
+.fnw-table .is-mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.fnw-table thead tr {
+  background: linear-gradient(
+      to right,
+      transparent,
+      var(--divider) 48px,
+      var(--divider) calc(100% - 48px),
+      transparent
+    )
+    no-repeat bottom / 100% 1px;
+}
+.fnw-table tbody tr {
+  background: linear-gradient(
+      to right,
+      transparent,
+      color-mix(in srgb, var(--text) 8%, transparent) 48px,
+      color-mix(in srgb, var(--text) 8%, transparent) calc(100% - 48px),
+      transparent
+    )
+    no-repeat bottom / 100% 1px;
+}
+.fnw-table tbody tr:hover {
+  background:
+    linear-gradient(
+        color-mix(in srgb, var(--text) 4%, transparent),
+        color-mix(in srgb, var(--text) 4%, transparent)
+      )
+      no-repeat 0 0 / 100% 100%,
+    linear-gradient(
+        to right,
+        transparent,
+        color-mix(in srgb, var(--text) 8%, transparent) 48px,
+        color-mix(in srgb, var(--text) 8%, transparent) calc(100% - 48px),
+        transparent
+      )
+      no-repeat bottom / 100% 1px;
+}
+
+/* ── dialog ───────────────────────────────────────────────────────────── */
+.fnw-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: var(--scrim);
+}
+.fnw-dialog {
+  width: min(440px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6) var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  color: var(--text);
+}
+.fnw-dialog__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.fnw-dialog__title {
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  margin: 0;
+  margin-right: auto;
+}
+.fnw-dialog__body {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.fnw-dialog__body > :last-child {
+  margin-bottom: 0;
+}
+.fnw-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* ── alert ────────────────────────────────────────────────────────────── */
+.fnw-alert {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--accent-tint);
+  color: var(--text);
+  font-size: 14px;
+}
+.fnw-alert__icon {
+  margin-top: 1px;
+  color: var(--accent-text);
+}
+.fnw-alert__title {
+  font-weight: 500;
+  margin: 0 0 2px;
+}
+.fnw-alert__body {
+  margin: 0;
+  color: var(--text);
+}
+.fnw-alert--success {
+  background: var(--success-tint);
+}
+.fnw-alert--success .fnw-alert__icon {
+  color: var(--success);
+}
+.fnw-alert--warning {
+  background: var(--warning-tint);
+}
+.fnw-alert--warning .fnw-alert__icon {
+  color: var(--warning);
+}
+.fnw-alert--danger {
+  background: var(--danger-tint);
+}
+.fnw-alert--danger .fnw-alert__icon {
+  color: var(--danger);
+}
+.fnw-alert .fnw-btn--icon {
+  width: 28px;
+  height: 28px;
+  margin: -4px -6px 0 0;
+  color: var(--text-muted);
+}
+
+/* ── avatar ───────────────────────────────────────────────────────────── */
+.fnw-avatar {
+  --s: 40px;
+  width: var(--s);
+  height: var(--s);
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--radius-round);
+  background: var(--accent-tint);
+  color: var(--accent-tint-ink);
+  font-weight: 500;
+  font-size: calc(var(--s) * 0.38);
+  letter-spacing: 0.02em;
+  line-height: 1;
+  box-shadow: var(--shadow-sm);
+}
+.fnw-avatar--square {
+  border-radius: var(--radius-lg);
+}
+.fnw-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.fnw-avatar-group {
+  display: inline-flex;
+}
+.fnw-avatar-group .fnw-avatar + .fnw-avatar {
+  margin-left: calc(var(--s) * -0.25);
+  box-shadow: 0 0 0 2px var(--ground);
+}
+
+/* ── code ─────────────────────────────────────────────────────────────── */
+.fnw-code {
+  font-family: var(--font-mono);
+  font-size: 0.87em;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  color: var(--text);
+}
+.fnw-codeblock {
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.fnw-codeblock__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-4);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: linear-gradient(
+      to right,
+      transparent,
+      var(--divider) 48px,
+      var(--divider) calc(100% - 48px),
+      transparent
+    )
+    no-repeat bottom / 100% 1px;
+}
+.fnw-codeblock__head > span {
+  margin-right: auto;
+}
+.fnw-codeblock__head .fnw-btn {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+}
+.fnw-codeblock pre {
+  margin: 0;
+  padding: var(--space-4);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+/* ── photo ────────────────────────────────────────────────────────────── */
+.fnw-photo {
+  display: grid;
+  gap: var(--space-1);
+}
+.fnw-photo img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+}
+.fnw-photo--lighten img {
+  mix-blend-mode: lighten;
+  background-color: transparent;
+}
+[data-theme='light'] .fnw-photo--lighten img {
+  mix-blend-mode: normal;
+}
+.fnw-photo figcaption {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+/* ══ motion ═══════════════════════════════════════════════════════════════
+   Parts arrive separately and settle with the gaps intact. Short travel,
+   decelerating curves, no bounce. Exits are faster than entrances.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* — state transitions — */
+.fnw-btn,
+.fnw-input,
+.fnw-nav__links a,
+.fnw-footer a,
+.fnw-tag,
+a.fnw-card,
+.fnw-select__caret,
+a {
+  transition-property: color, background-color, border-color, box-shadow, text-decoration-thickness;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+.fnw-tab,
+.fnw-seg__opt,
+.fnw-check__box,
+.fnw-radio__dot,
+.fnw-switch__track {
+  transition-property: color, background-color, border-color, box-shadow;
+  transition-duration: var(--duration-base);
+  transition-timing-function: var(--ease-standard);
+}
+a.fnw-card {
+  transition-duration: var(--duration-base);
+}
+.fnw-switch__track::after {
+  transition:
+    transform var(--duration-base) var(--ease-standard),
+    background-color var(--duration-base) var(--ease-standard);
+}
+.fnw-check__box .fnw-icon {
+  transform: scale(0.5);
+  opacity: 0;
+  transition:
+    transform var(--duration-base) var(--ease-settle),
+    opacity var(--duration-fast) var(--ease-standard);
+}
+.fnw-check input:checked + .fnw-check__box .fnw-icon {
+  transform: none;
+  opacity: 1;
+}
+.fnw-btn:active {
+  transition-duration: 0ms;
+}
+
+/* — keyframes — */
+@keyframes fnw-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes fnw-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--distance-md));
+  }
+}
+@keyframes fnw-enter-sm {
+  from {
+    opacity: 0;
+    transform: translateY(var(--distance-sm));
+  }
+}
+@keyframes fnw-enter-lg {
+  from {
+    opacity: 0;
+    transform: translateY(var(--distance-lg));
+  }
+}
+@keyframes fnw-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--distance-sm)) scale(0.98);
+  }
+}
+@keyframes fnw-draw {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes fnw-plate-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes fnw-plate-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+}
+@keyframes fnw-point-in {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+}
+@keyframes fnw-pulse {
+  0%,
+  100% {
+    opacity: 0.28;
+  }
+  35% {
+    opacity: 1;
+  }
+}
+
+/* — entrances on components — */
+.fnw-dialog-backdrop {
+  animation: fnw-fade var(--duration-slow) var(--ease-enter);
+}
+.fnw-dialog-backdrop > .fnw-dialog {
+  animation: fnw-dialog-in var(--duration-slow) var(--ease-enter);
+}
+.fnw-alert {
+  animation: fnw-enter-sm var(--duration-slow) var(--ease-enter);
+}
+
+/* — utilities: .fnw-enter animates on load; .fnw-reveal waits until scrolled into view — */
+.fnw-enter {
+  animation: fnw-enter var(--duration-slow) var(--ease-enter) both;
+  animation-delay: calc(min(var(--i, 0), 6) * var(--duration-stagger));
+}
+.fnw-enter--lg {
+  animation-name: fnw-enter-lg;
+  animation-duration: var(--duration-slower);
+}
+.fnw-js .fnw-reveal:not(.is-in) {
+  opacity: 0;
+}
+.fnw-reveal.is-in {
+  animation: fnw-enter var(--duration-slow) var(--ease-enter) both;
+  animation-delay: calc(min(var(--i, 0), 6) * var(--duration-stagger));
+}
+.fnw-reveal--lg.is-in {
+  animation-name: fnw-enter-lg;
+  animation-duration: var(--duration-slower);
+}
+.fnw-rule--draw {
+  transform-origin: left center;
+  animation: fnw-draw var(--duration-slower) var(--ease-settle) both;
+}
+.fnw-js .fnw-reveal.fnw-rule--draw:not(.is-in) {
+  opacity: 1;
+  transform: scaleX(0);
+  animation: none;
+}
+.fnw-reveal.fnw-rule--draw.is-in {
+  animation: fnw-draw var(--duration-slower) var(--ease-settle) both;
+}
+
+/* — the logo assembles: stem rises, bars slide in, the point arrives last — */
+.fnw-tile--assemble {
+  animation: fnw-fade var(--duration-slow) var(--ease-enter) both;
+}
+.fnw-tile--assemble .fnw-mark rect,
+.fnw-tile--assemble .fnw-mark circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-duration: var(--duration-slower);
+  animation-timing-function: var(--ease-settle);
+  animation-fill-mode: both;
+}
+.fnw-tile--assemble .fnw-mark rect:nth-of-type(1) {
+  animation-name: fnw-plate-up;
+  animation-delay: var(--duration-stagger);
+}
+.fnw-tile--assemble .fnw-mark rect:nth-of-type(2) {
+  animation-name: fnw-plate-in;
+  animation-delay: calc(var(--duration-stagger) * 2);
+}
+.fnw-tile--assemble .fnw-mark rect:nth-of-type(3) {
+  animation-name: fnw-plate-in;
+  animation-delay: calc(var(--duration-stagger) * 3);
+}
+.fnw-tile--assemble .fnw-mark circle {
+  animation-name: fnw-point-in;
+  animation-delay: calc(var(--duration-stagger) * 3 + var(--duration-slow));
+}
+.fnw-lockup--assemble .fnw-lockup__fnw,
+.fnw-lockup--assemble .fnw-lockup__name {
+  animation: fnw-enter-sm var(--duration-slow) var(--ease-enter) both;
+  animation-delay: calc(var(--duration-stagger) * 4);
+}
+.fnw-lockup--assemble .fnw-lockup__name {
+  animation-delay: calc(var(--duration-stagger) * 5);
+}
+
+/* — loader: the plates light in sequence while the point holds still — */
+.fnw-loader {
+  --s: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.fnw-loader .fnw-mark {
+  width: var(--s);
+  height: var(--s);
+  color: var(--logo-plate);
+}
+.fnw-loader .fnw-mark rect {
+  animation: fnw-pulse var(--duration-loop) var(--ease-standard) infinite;
+}
+.fnw-loader .fnw-mark rect:nth-of-type(2) {
+  animation-delay: calc(var(--duration-loop) * 0.15);
+}
+.fnw-loader .fnw-mark rect:nth-of-type(3) {
+  animation-delay: calc(var(--duration-loop) * 0.3);
+}
+.fnw-loader .fnw-mark circle {
+  fill: var(--logo-point);
+}
+
+/* — reduced motion: no travel, no stagger; colour still changes, the loader still pulses in place — */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+  .fnw-loader .fnw-mark rect {
+    animation-duration: var(--duration-loop) !important;
+    animation-iteration-count: infinite !important;
+  }
+  .fnw-loader .fnw-mark rect:nth-of-type(2) {
+    animation-delay: calc(var(--duration-loop) * 0.15) !important;
+  }
+  .fnw-loader .fnw-mark rect:nth-of-type(3) {
+    animation-delay: calc(var(--duration-loop) * 0.3) !important;
+  }
+}

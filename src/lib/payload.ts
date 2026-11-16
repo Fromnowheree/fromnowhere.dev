@@ -1,0 +1,146 @@
+import config from '@payload-config'
+import { getPayload } from 'payload'
+import { cache } from 'react'
+
+import { defaultLocale, locales, type Locale } from '@/i18n/locales'
+import type { Project } from '@/payload-types'
+import { isSlug, projectHref, type PublishedIndex } from './links'
+
+export const getPayloadClient = () => getPayload({ config })
+
+// React `cache` dedupes these within a single request (layout + page + metadata), per argument.
+// The site reads through the Local API, which skips access control, so every query of pages and
+// projects names `_status: published` itself: a draft is never shown to a visitor.
+
+const published = { _status: { equals: 'published' } } as const
+
+/** The studio's settings in `locale`; fields left empty in that language fall back to English. */
+export const getStudio = cache(async (locale: Locale) =>
+  (await getPayloadClient()).findGlobal({ slug: 'studio', depth: 0, locale }),
+)
+
+/**
+ * The languages the site serves, the main one (English) first. Both, always: unlike the NMT-PublicWeb
+ * template this came from, there is no setting to switch one off.
+ */
+export const getServedLocales = async (): Promise<Locale[]> => [
+  defaultLocale,
+  ...locales.filter((locale) => locale !== defaultLocale),
+]
+
+/** The main language: where a visitor lands when nothing says which they want. */
+export const getMainLanguage = async (): Promise<Locale> => defaultLocale
+
+/** Every published project, in line order. */
+export const getProjects = cache(async (locale: Locale) => {
+  const { docs } = await (
+    await getPayloadClient()
+  ).find({ collection: 'projects', where: published, sort: 'line', depth: 1, limit: 99, locale })
+  return docs
+})
+
+/** One published project, or null. */
+export const getProject = cache(async (slug: string, locale: Locale) => {
+  if (!isSlug(slug)) return null
+  const { docs } = await (
+    await getPayloadClient()
+  ).find({
+    collection: 'projects',
+    where: { and: [{ slug: { equals: slug } }, published] },
+    depth: 2,
+    limit: 1,
+    locale,
+  })
+  return docs[0] ?? null
+})
+
+/** One published page, or null. */
+export const getPage = cache(async (slug: string, locale: Locale) => {
+  // A malformed segment (e.g. a NUL byte, which Postgres rejects) is simply not a page.
+  if (!isSlug(slug)) return null
+  const { docs } = await (
+    await getPayloadClient()
+  ).find({
+    collection: 'pages',
+    where: { and: [{ slug: { equals: slug } }, published] },
+    depth: 2,
+    limit: 1,
+    locale,
+  })
+  return docs[0] ?? null
+})
+
+/** Every published page and project by slug, with when it last changed (not localised). */
+export const getPublishedSummaries = cache(async () => {
+  const payload = await getPayloadClient()
+  const [pages, projects] = await Promise.all([
+    payload.find({
+      collection: 'pages',
+      where: published,
+      depth: 0,
+      limit: 500,
+      select: { slug: true, updatedAt: true },
+    }),
+    payload.find({
+      collection: 'projects',
+      where: published,
+      depth: 0,
+      limit: 99,
+      select: { slug: true, updatedAt: true },
+    }),
+  ])
+  const pick = (docs: { slug?: string | null; updatedAt: string }[]) =>
+    docs.flatMap((doc) => (doc.slug ? [{ slug: doc.slug, updatedAt: doc.updatedAt }] : []))
+  return { pages: pick(pages.docs), projects: pick(projects.docs) }
+})
+
+/** What a site path may link to: published pages and published projects. */
+export const getPublishedIndex = cache(async (): Promise<PublishedIndex> => {
+  const { pages, projects } = await getPublishedSummaries()
+  return {
+    pages: new Set(pages.map((page) => page.slug)),
+    projects: new Set(projects.map((project) => project.slug)),
+  }
+})
+
+/** Whether the line is drawn solid: only a running project with an address of its own. */
+export const isRunning = (project: Pick<Project, 'status' | 'addresses'>): boolean =>
+  project.status === 'running' && (project.addresses?.length ?? 0) > 0
+
+/** Where a project's line ends: its first address, or its page here while it has none. */
+export const destinationOf = (
+  project: Pick<Project, 'addresses' | 'slug'>,
+): { href: string; external: boolean } => {
+  const first = project.addresses?.[0]?.url
+  return first
+    ? { href: first, external: true }
+    : { href: projectHref(project.slug ?? ''), external: false }
+}
+
+/**
+ * Where a short link (fromnowhere.dev/<word>) leads, or null when there is no such word or what
+ * it names is not public. An address written on the link wins; otherwise the project's own
+ * destination. The result is absolute (https://…) or a site path without its language.
+ */
+export const resolveShortLink = async (alias: string): Promise<string | null> => {
+  const payload = await getPayloadClient()
+  const { docs } = await payload.find({
+    collection: 'short-links',
+    where: { alias: { equals: alias } },
+    depth: 0,
+    limit: 1,
+  })
+  const link = docs[0]
+  if (!link) return null
+  if (link.url) return link.url
+  const id = typeof link.project === 'object' ? link.project?.id : link.project
+  if (!id) return null
+  const { docs: projects } = await payload.find({
+    collection: 'projects',
+    where: { and: [{ id: { equals: id } }, published] },
+    depth: 0,
+    limit: 1,
+    select: { slug: true, addresses: true },
+  })
+  return projects[0] ? destinationOf(projects[0]).href : null
+}

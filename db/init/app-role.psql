@@ -1,0 +1,56 @@
+-- The site's own database login, `app`, which the app connects with (compose.yml builds its
+-- DATABASE_URL from APP_DB_PASSWORD). It owns the site's database and everything in it, which is
+-- all Payload's migrations need, and nothing else: it is no superuser, so a flaw in the app cannot
+-- run programs in the database container (COPY ... TO PROGRAM), read Umami's database or change
+-- roles. The superuser (POSTGRES_USER) stays for backups and maintenance.
+--
+-- Run by 00-app.sh, with psql variables `pw` (the password) and `db` (the site's database), as the
+-- superuser and connected to that database. Safe to run again. tests/int/appRole.int.spec.ts runs
+-- it against a real Postgres.
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'app') THEN
+    CREATE ROLE app;
+  END IF;
+END $$;
+ALTER ROLE app WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD :'pw';
+
+-- Owning the database makes `app` the owner of its `public` schema too (Postgres 15 and newer), so
+-- the migrations can create tables and types there.
+ALTER DATABASE :"db" OWNER TO app;
+
+-- An install from before 0.1.4 connected as the superuser, whose tables, sequences and types they
+-- then are: handed over, so that the next migration can alter them. A table takes its indexes and
+-- the sequences of its own columns with it (those cannot be handed over on their own).
+DO $$
+DECLARE
+  object record;
+BEGIN
+  FOR object IN
+    SELECT c.relname,
+           CASE c.relkind WHEN 'S' THEN 'SEQUENCE' WHEN 'v' THEN 'VIEW'
+                          WHEN 'm' THEN 'MATERIALIZED VIEW' ELSE 'TABLE' END AS kind
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public'
+      AND c.relkind IN ('r', 'p', 'v', 'm', 'S')
+      AND pg_get_userbyid(c.relowner) <> 'app'
+      AND NOT (c.relkind = 'S' AND EXISTS (
+        SELECT FROM pg_depend d
+        WHERE d.classid = 'pg_class'::regclass AND d.objid = c.oid AND d.deptype IN ('a', 'i')))
+  LOOP
+    EXECUTE format('ALTER %s public.%I OWNER TO app', object.kind, object.relname);
+  END LOOP;
+
+  FOR object IN
+    SELECT t.typname
+    FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE n.nspname = 'public'
+      AND t.typtype IN ('e', 'd')
+      AND pg_get_userbyid(t.typowner) <> 'app'
+  LOOP
+    EXECUTE format('ALTER TYPE public.%I OWNER TO app', object.typname);
+  END LOOP;
+END $$;

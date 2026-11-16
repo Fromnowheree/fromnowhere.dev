@@ -1,0 +1,19 @@
+# What the image build never needs. The build context is the repository; everything below is
+# either local state, secrets or files the runner does not ship.
+.git
+.github
+.next
+node_modules
+.pnpm-store
+media
+backups
+.env
+.env.*
+!.env.example
+tests
+test-results
+playwright-report
+caddy
+compose*.yml
+db
+*.md

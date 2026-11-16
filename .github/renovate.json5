@@ -1,0 +1,114 @@
+// =============================================================================
+// NMT-PublicWeb — keep the dependencies current (Renovate, on the self-hosted Forgejo)
+// =============================================================================
+//
+// Renovate runs on Forgejo (git.home) as the `renovate` bot account, from the
+// fromnowhere/renovate repo, once a day; it serves every repository the bot is a
+// collaborator on that carries a config like this one. Its PRs target `main`, and CI
+// on Forgejo is the review each one gets. The same shape as NowheresMedicalToolbox's
+// .github/renovate.json5: routine updates GROUPED and WEEKLY (Monday morning, Zagreb),
+// images monthly, majors held on the Dependency Dashboard until somebody asks for one.
+//
+// Every npm version here is an exact pin, so each update is a deliberate PR, never a
+// silent drift through a range.
+// =============================================================================
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: ['config:recommended', 'helpers:pinGitHubActionDigests'],
+  // Renovate's own grouping (one PR per upstream monorepo) would split the weekly npm
+  // group into a PR per family and override the Payload group below.
+  ignorePresets: ['group:monorepos', 'group:recommended'],
+  timezone: 'Europe/Zagreb',
+  schedule: ['before 7am on monday'],
+
+  // docker-compose too, unlike NowheresMedicalToolbox: compose.yml's Caddy is the TLS
+  // edge of a site on the public internet, and Umami faces it as well. CI's Caddy check
+  // reads the image from compose.yml, so a Caddy PR tests the template on the new Caddy.
+  enabledManagers: ['npm', 'nvm', 'dockerfile', 'docker-compose', 'github-actions'],
+
+  // This repository's commits are sentences, not `type(scope):`.
+  semanticCommits: 'disabled',
+  prConcurrentLimit: 5,
+  // A rebase is a full CI run on the one runner; only rebase when it no longer merges.
+  rebaseWhen: 'conflicted',
+  // Advisories from OSV open a PR at once, outside the Monday schedule.
+  osvVulnerabilityAlerts: true,
+
+  // The weekly re-resolve of the lockfile: the transitive tree moves within its ranges.
+  lockFileMaintenance: { enabled: true, schedule: ['before 7am on monday'] },
+
+  packageRules: [
+    {
+      // Three days on the registry first: a compromised release is usually pulled within
+      // hours, and this site takes visitors' messages.
+      matchManagers: ['npm'],
+      minimumReleaseAge: '3 days',
+    },
+    {
+      matchManagers: ['npm'],
+      matchUpdateTypes: ['minor', 'patch'],
+      groupName: 'npm (routine)',
+    },
+    {
+      // Majors are migrations, not bumps: listed on the Dependency Dashboard, a PR opens
+      // only when its box is ticked. Among them: @types/node (tracks .nvmrc's runtime,
+      // never ahead of it), graphql (Payload 3 asks for 16), TypeScript 7 (typescript-eslint
+      // asks for under 6.1) and pnpm (a new major can rename or drop pnpm-workspace.yaml's
+      // settings, and pnpm 12 refuses a setting it does not know).
+      matchManagers: ['npm'],
+      matchUpdateTypes: ['major'],
+      dependencyDashboardApproval: true,
+    },
+    {
+      // A Payload bump can change the SCHEMA (3.91 added an index in NowheresMedicalToolbox),
+      // and production applies migrations on start. CI's "Migrations and generated files match
+      // the schema" step fails such a PR; the migration itself has to be written on the branch.
+      matchPackageNames: ['payload', '@payloadcms/**'],
+      groupName: 'Payload',
+      prBodyNotes: [
+        '**Payload moves can change the schema.** If the CI step "Migrations and generated files match the schema" fails here, then on this branch: `pnpm generate:types`, then `pnpm payload migrate:create <name>`, and commit all three migration files with the types (AGENTS.md §6) — without them a site applies no migration and runs the new code on the old schema. Before merging, run `pnpm test:e2e`.',
+      ],
+    },
+    {
+      // `engines` is a floor the project chooses, not a dependency to chase.
+      matchDepTypes: ['engines'],
+      enabled: false,
+    },
+
+    // -------------------------------------------------------------------------------
+    // Runtime and images: monthly.
+    // -------------------------------------------------------------------------------
+    {
+      // .nvmrc and the Dockerfile's FROM move together or not at all.
+      matchPackageNames: ['node', 'docker.io/library/node'],
+      groupName: 'Node runtime',
+      schedule: ['before 7am on the first day of the month'],
+    },
+    {
+      matchManagers: ['dockerfile', 'docker-compose'],
+      schedule: ['before 7am on the first day of the month'],
+    },
+    {
+      // A PostgreSQL major is a planned migration of every clinic's data (dump and
+      // restore), never an image bump.
+      matchPackageNames: ['postgres', 'docker.io/library/postgres'],
+      matchUpdateTypes: ['major'],
+      enabled: false,
+    },
+
+    // -------------------------------------------------------------------------------
+    // Workflow actions: every `uses:` is pinned to a commit SHA; this keeps the SHAs (and
+    // their `# vX.Y.Z` comments) current.
+    // -------------------------------------------------------------------------------
+    {
+      matchManagers: ['github-actions'],
+      groupName: 'workflow actions',
+    },
+    {
+      // The workflow's Postgres service is CI's copy of compose.yml's, and moves with it.
+      matchManagers: ['github-actions'],
+      matchDatasources: ['docker'],
+      enabled: false,
+    },
+  ],
+}

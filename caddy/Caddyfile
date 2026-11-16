@@ -1,0 +1,82 @@
+# Caddy for the fromnowhere.dev server: HTTPS with automatic certificates for every address below.
+# Every name comes from the environment compose.yml passes in (.env).
+#
+#   SITE_DOMAIN       the bare domain (fromnowhere.dev): the website lives here
+#   www.SITE_DOMAIN   redirected to the bare domain, so the site has one address
+#   STATS_DOMAIN      optional, the visitor statistics dashboard (compose.stats.yml)
+#   caddy/sites/      optional, the other sites on this server (yugioh.fromnowhere.dev, ...)
+
+{$SITE_DOMAIN} {
+	encode zstd gzip
+
+	# Payload's "create first user" endpoint is for provisioning only, which calls the app
+	# directly inside its container (scripts/create-admin.sh). From outside it does not exist.
+	# The app refuses it as well (src/collections/Users.ts); this is the second lock. Inside a
+	# `handle` so it runs before the catch-all `handle` below (Caddy orders `handle` ahead of a
+	# bare `respond`, which would never be reached).
+	@firstRegister path /api/users/first-register
+	handle @firstRegister {
+		respond 404
+	}
+
+	# Visitor statistics (Umami, optional, off by default): only the tracker and the endpoint it
+	# posts to, served from the site's own domain so no extra DNS lookup or third-party request is
+	# needed. The tracker sends to /api/send next to wherever it was loaded from, i.e.
+	# /stats/api/send. Without compose.stats.yml nothing loads the tracker and these two
+	# paths simply answer 502; the site itself never needs them.
+	@stats path /stats/script.js /stats/api/send
+	handle @stats {
+		uri strip_prefix /stats
+		reverse_proxy umami:3000
+	}
+
+	handle {
+		# The app keys its contact-form rate limit on the LAST X-Forwarded-For entry, the one
+		# Caddy appends here (src/lib/rateLimit.ts).
+		reverse_proxy app:3000
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		# The editor's live preview frames the site from the same origin; nobody else may. The app
+		# sends the same as `frame-ancestors 'self'` in its Content-Security-Policy (next.config.ts).
+		X-Frame-Options SAMEORIGIN
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		-Server
+		-X-Powered-By
+	}
+
+	@static path /_next/static/*
+	header @static Cache-Control "public, max-age=31536000, immutable"
+}
+
+# www -> the bare domain, so search engines know one address.
+www.{$SITE_DOMAIN} {
+	redir https://{$SITE_DOMAIN}{uri} permanent
+}
+
+# Umami dashboard on its own subdomain (STATS_DOMAIN, e.g. stats.example.com), set only after
+# scripts/stats-admin.sh replaced Umami's default admin password: this block is the only way in
+# to Umami's sign-in. The fixed placeholder name keeps it valid when STATS_DOMAIN is empty; it
+# never answers.
+http://stats.disabled.internal {$STATS_DOMAIN} {
+	@disabled host stats.disabled.internal
+	abort @disabled
+
+	reverse_proxy umami:3000
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options DENY
+		-Server
+	}
+}
+
+# The other sites on this server, one block per file (caddy/sites/README.md). A glob that matches
+# nothing is not an error, so with no files there are no other addresses and Caddy never asks for
+# a certificate it cannot get.
+import /etc/caddy/sites/*.caddy

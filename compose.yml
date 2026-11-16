@@ -1,0 +1,151 @@
+# Production stack for fromnowhere.dev: Postgres, the site and Caddy (automatic HTTPS).
+#
+#   cp .env.example .env              # fill it in (README, "Installing on a VPS")
+#   docker load < fromnowhere-web-<version>.tar   # the image; nothing is built on the server
+#   docker compose up -d
+#   ./scripts/create-admin.sh         # the first admin, password printed once
+#
+# With visitor statistics (Umami, off by default): add `-f compose.stats.yml` (see that file).
+#
+# Bind mounts carry `z` so they are readable on an SELinux host (Fedora, RHEL and friends);
+# Docker on a host without SELinux ignores it. Only Caddy publishes ports. The app gets exactly
+# the variables it reads, listed below, not the whole .env: never the database superuser's
+# password (it logs in as its own role, `app`), Umami's secrets or the backup settings.
+# tests/int/deploy.int.spec.ts holds that list against the code.
+
+# Container logs are kept to 3 files of 10 MB per service, so they never fill a small VPS's disk.
+# json-file, which Podman reads too.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '3'
+
+services:
+  db:
+    image: docker.io/library/postgres:17-alpine
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      # The password of the app's own login, `app`, which db/init/00-app.sh creates.
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # On a fresh volume: the app's own login (00-app.sh), and Umami's role and database, only
+      # with compose.stats.yml, which hands the db its UMAMI_DB_PASSWORD (README: Visitor
+      # statistics). On an existing volume they are run by hand (README, "Upgrading").
+      - ./db/init:/docker-entrypoint-initdb.d:ro,z
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    # Built and tagged by CI (.github/workflows/ci.yml) or by hand (Dockerfile); the VPS only
+    # loads it.
+    image: ${APP_IMAGE:?set APP_IMAGE in .env to the image you loaded, e.g. fromnowhere-web:0.1.0}
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      # Its own login, which owns the site's database and nothing else (db/init/app-role.psql).
+      DATABASE_URL: postgres://app:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/${POSTGRES_DB}
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:?set PAYLOAD_SECRET in .env}
+      SITE_URL: ${SITE_URL:?set SITE_URL in .env}
+      # true once, on the first start, to fill the empty database with the starting content
+      # (src/seed/index.ts). It never overwrites anything.
+      PAYLOAD_SEED: ${PAYLOAD_SEED:-false}
+      # Read by scripts/create-admin.sh at provisioning.
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      # The contact form's send-only mail account (README, "The contact form").
+      CONTACT_SMTP_HOST: ${CONTACT_SMTP_HOST:-}
+      CONTACT_SMTP_PORT: ${CONTACT_SMTP_PORT:-587}
+      CONTACT_SMTP_USER: ${CONTACT_SMTP_USER:-}
+      CONTACT_SMTP_PASS: ${CONTACT_SMTP_PASS:-}
+      CONTACT_FROM: ${CONTACT_FROM:-}
+      CONTACT_TO: ${CONTACT_TO:-}
+      # Admin mail (password resets).
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-}
+      # Visitor statistics: the tracker's address and website id, and the dashboard's domain
+      # (the admin dashboard links to it).
+      UMAMI_SCRIPT_URL: ${UMAMI_SCRIPT_URL:-}
+      UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
+      STATS_DOMAIN: ${STATS_DOMAIN:-}
+    volumes:
+      - media:/app/media
+    # The server writes only to the uploads volume and Next's image cache. Both tmpfs live in
+    # memory, so each has a ceiling a 1-2 GB VPS can afford; a full image cache only means
+    # pictures are resized again.
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+      - /app/.next/cache:size=256m
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/api/healthz').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      # The first start applies the migrations before the server answers.
+      start_period: 120s
+    depends_on:
+      db:
+        condition: service_healthy
+
+  caddy:
+    image: docker.io/library/caddy:2.10.2-alpine
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN in .env to the bare domain, e.g. example.com}
+      STATS_DOMAIN: ${STATS_DOMAIN:-}
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro,z
+      # Other sites on this server (caddy/sites/*.caddy), imported by the Caddyfile.
+      - ./caddy/sites:/etc/caddy/sites:ro,z
+      - caddy_data:/data
+      - caddy_config:/config
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      app:
+        condition: service_healthy
+
+networks:
+  # IPv6 on the stack's own network, so that Docker forwards an IPv6 visitor to Caddy with the
+  # visitor's own address. On an IPv4-only network Docker's userland proxy carries IPv6
+  # connections over IPv4, and Caddy then sees the network's gateway for every IPv6 visitor: they
+  # would all share one contact-form rate limit (README, "Visitors' addresses"). Docker Engine 27
+  # and newer, and Podman, choose the subnet themselves.
+  default:
+    enable_ipv6: true
+
+volumes:
+  pgdata:
+  media:
+  caddy_data:
+  caddy_config:

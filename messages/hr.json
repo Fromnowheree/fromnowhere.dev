@@ -1,0 +1,132 @@
+{
+  "common": {
+    "skipToContent": "Preskoči na sadržaj",
+    "studio": "Fromnowhere",
+    "studioLine": "Nezavisni softverski studio"
+  },
+  "nav": {
+    "main": "Glavni izbornik",
+    "projects": "Projekti",
+    "about": "O meni",
+    "contact": "Javite se",
+    "home": "Početna stranica Fromnowherea"
+  },
+  "language": {
+    "label": "Jezik"
+  },
+  "home": {
+    "kicker": "fromnowhere.dev",
+    "boardKicker": "Projekti",
+    "boardTitle": "Kamo vodi svaka linija",
+    "mapLabel": "Karta linija od Fromnowherea do svakog projekta",
+    "origin": "Ovdje ste",
+    "contactKicker": "Javite se",
+    "contactTitle": "Imate nešto za izraditi?",
+    "contactLead": "Recite mi što je to. Odgovaram osobno.",
+    "contactAction": "Pišite mi",
+    "empty": "Još nema objavljenih projekata."
+  },
+  "board": {
+    "line": "Linija",
+    "destination": "Odredište",
+    "what": "Što je to",
+    "address": "Adresa",
+    "status": "Status",
+    "here": "Njegova stranica ovdje"
+  },
+  "status": {
+    "running": "Radi",
+    "building": "U izradi",
+    "planned": "Planirano",
+    "paused": "Pauzirano"
+  },
+  "kind": {
+    "product": "Proizvod",
+    "community": "Zajednica",
+    "music": "Glazba",
+    "client": "Rad za klijenta"
+  },
+  "project": {
+    "line": "Linija {number}",
+    "leaves": "Napušta fromnowhere.dev",
+    "builtWith": "Izrađeno s",
+    "started": "Početak",
+    "addresses": "Adrese",
+    "noAddress": "Ova linija još nema svoju adresu. Zasad završava ovdje.",
+    "allProjects": "Svi projekti",
+    "window": "Pogled na odredište"
+  },
+  "footer": {
+    "label": "Podnožje",
+    "privacy": "Privatnost",
+    "elsewhere": "Drugdje"
+  },
+  "contact": {
+    "title": "Javite se",
+    "lead": "Projekt, pitanje ili ideja. Napišite nekoliko redaka i odgovorit ću e-poštom.",
+    "writeDirectly": "Ili pišite izravno na",
+    "noForm": "Obrazac trenutačno nije dostupan. Pišite na adresu ispod."
+  },
+  "form": {
+    "name": "Ime",
+    "email": "E-pošta",
+    "message": "Poruka",
+    "website": "Web stranica",
+    "consent": "Moji podaci smiju se koristiti za odgovor na ovu poruku (<privacy>privatnost</privacy>).",
+    "submit": "Pošalji poruku",
+    "sending": "Šaljem…",
+    "sent": "Vaša poruka je poslana",
+    "sentDetail": "Hvala. Odgovorit ću na {email}.",
+    "fixFields": "Provjerite označena polja.",
+    "needsScript": "Za ovaj obrazac potreban je JavaScript, koji je isključen u vašem pregledniku.",
+    "reach": {
+      "email": "Pišite umjesto toga na {email}."
+    },
+    "refused": {
+      "failed": "Vašu poruku nije bilo moguće poslati.",
+      "notDelivered": "Poslužitelj e-pošte nije prihvatio vašu poruku, pa nije poslana.",
+      "unavailable": "Slanje kroz ovaj obrazac nije uključeno, pa vaša poruka nije poslana.",
+      "tooMany": "S vaše veze stiglo je previše poruka, pa ova nije poslana. Pokušajte kasnije.",
+      "tooFast": "Obrazac je poslan brže nego što ga je moguće ispuniti, pa poruka nije poslana. Provjerite je i pošaljite ponovno.",
+      "stale": "Stranica je predugo otvorena, pa poruka nije poslana. Osvježite stranicu i pošaljite ponovno.",
+      "alreadySent": "Ovaj obrazac već je poslao poruku, pa ova nije poslana. Osvježite stranicu za novu poruku.",
+      "proofMissing": "Provjera iznad gumba nije bila gotova, pa poruka nije poslana. Pričekajte trenutak i pošaljite ponovno.",
+      "proofExpired": "Provjera iznad gumba je istekla, pa poruka nije poslana. Pošaljite ponovno.",
+      "busy": "Obrazac je trenutačno preopterećen, pa vaša poruka nije poslana."
+    },
+    "errors": {
+      "name": "Upišite svoje ime.",
+      "email": "Upišite adresu e-pošte, da vam mogu odgovoriti.",
+      "emailInvalid": "Ta adresa e-pošte ne izgleda ispravno.",
+      "message": "Napišite poruku.",
+      "consent": "Označite kućicu, da vam smijem odgovoriti."
+    },
+    "proof": {
+      "label": "Nisam robot",
+      "loading": "Učitavanje…",
+      "verify": "Provjeri",
+      "verifying": "Provjeravam…",
+      "verified": "Provjereno",
+      "verificationRequired": "Pričekajte da provjera završi.",
+      "waitAlert": "Provjeravam… pričekajte.",
+      "error": "Provjera nije uspjela. Pokušajte kasnije.",
+      "expired": "Provjera je istekla. Pokušajte ponovno.",
+      "reload": "Pokušaj ponovno"
+    }
+  },
+  "mail": {
+    "subject": "fromnowhere.dev: poruka od {name}",
+    "intro": "Poruka iz kontakt obrasca na fromnowhere.dev. Odgovorite na ovu e-poruku: odgovor ide na {email}.",
+    "name": "Ime",
+    "email": "E-pošta",
+    "language": "Jezik stranice",
+    "message": "Poruka",
+    "none": "nije navedeno",
+    "footer": "Web nije sačuvao kopiju ove poruke; ova e-poruka je jedina."
+  },
+  "notFound": {
+    "title": "Ova linija ne vodi nikamo",
+    "text": "Stranica koju tražite ne postoji ili je premještena.",
+    "home": "Natrag na početak"
+  }
+}

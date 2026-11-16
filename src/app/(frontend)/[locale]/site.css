@@ -1,0 +1,534 @@
+/*
+ * fromnowhere.dev's own layer, after the system's tokens.css and bundle.css. The studio site is
+ * the system's home, so unlike the community sites it never steps outside it: every colour, size
+ * and duration below is a token (design/README.md). The site-only pieces (the board, exit plates,
+ * windows) are built from the same tokens, as docs/vision.html describes them.
+ *
+ * Layout: left-aligned and asymmetric, 1120px at most, sections a `space-section` apart.
+ */
+
+::selection {
+  background: var(--selection);
+}
+
+a {
+  color: var(--link);
+  text-underline-offset: 3px;
+}
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 1120px;
+  padding-inline: max(var(--space-8), env(safe-area-inset-left, 0px))
+    max(var(--space-8), env(safe-area-inset-right, 0px));
+}
+@media (max-width: 520px) {
+  .wrap {
+    padding-inline: max(16px, env(safe-area-inset-left, 0px))
+      max(16px, env(safe-area-inset-right, 0px));
+  }
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--space-8);
+  top: var(--space-3);
+  z-index: 10;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  transform: translateY(-200%);
+}
+.skip-link:focus-visible {
+  transform: none;
+}
+
+/* ── header and footer ───────────────────────────────────────────────── */
+.site-nav {
+  padding-block: var(--space-8);
+  /* The header stays put while pages change (design/motion.md, page transitions). */
+  view-transition-name: fnw-nav;
+}
+
+.lang {
+  display: flex;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lang__opt {
+  display: inline-grid;
+  place-items: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition:
+    color var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard);
+}
+.lang__opt:hover {
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+  color: var(--text);
+}
+.lang__opt[aria-current='true'] {
+  color: var(--accent-text);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.site-main {
+  display: grid;
+  gap: var(--space-section);
+  padding-bottom: var(--space-page);
+}
+/* Grid children may shrink below their content, so a wide table scrolls in its own box instead
+   of pushing the page sideways. */
+.site-main > * {
+  min-width: 0;
+}
+
+.site-footer__id {
+  display: grid;
+  gap: var(--space-4);
+}
+.site-footer .site-footer__mail {
+  color: var(--text);
+}
+
+/* ── home ─────────────────────────────────────────────────────────────── */
+.home-hero .fnw-hero__text {
+  gap: var(--space-6);
+}
+.home-hero .fnw-hero__title {
+  font-size: clamp(34px, 6vw, 56px);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+.home-hero .fnw-kicker {
+  margin: 0;
+}
+.home-section {
+  display: grid;
+  gap: var(--space-8);
+  scroll-margin-top: var(--space-8);
+}
+.home-band {
+  display: grid;
+  gap: var(--space-4);
+  border-radius: var(--radius-lg);
+}
+.home-band h2,
+.home-band p {
+  margin: 0;
+}
+.home-band .fnw-kicker {
+  color: var(--accent-200);
+}
+.home-band h2 {
+  font-size: clamp(25px, 4vw, 42px);
+  max-width: 18ch;
+}
+
+/* ── the departures board ─────────────────────────────────────────────── */
+.board-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+.board {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.board th,
+.board td {
+  text-align: left;
+  vertical-align: top;
+  padding: var(--space-6);
+}
+.board thead th {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: var(--space-4);
+  white-space: nowrap;
+}
+.board tbody tr {
+  background: linear-gradient(
+      to right,
+      transparent,
+      var(--divider) 48px,
+      var(--divider) calc(100% - 48px),
+      transparent
+    )
+    no-repeat top / 100% 1px;
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+.board tbody tr:hover {
+  background-color: color-mix(in srgb, var(--text) 4%, transparent);
+}
+.board__line {
+  width: 3.5em;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.board__name {
+  font-weight: 500;
+  white-space: nowrap;
+}
+.board__name a {
+  color: var(--text);
+  text-decoration: none;
+}
+.board__name a:hover {
+  color: var(--accent-text);
+}
+.board__what {
+  color: var(--text-muted);
+  max-width: 34ch;
+}
+.board__addr {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--link);
+}
+.board__addr div + div,
+.board__here {
+  color: var(--text-muted);
+}
+.board__here {
+  font-family: var(--font-sans);
+}
+
+/* On a phone each row becomes a stacked sign: number and name, what it is, where, status. */
+@media (max-width: 720px) {
+  .board {
+    min-width: 0;
+  }
+  .board thead {
+    display: none;
+  }
+  .board tbody tr {
+    display: grid;
+    grid-template-columns: 3em minmax(0, 1fr);
+    gap: var(--space-2) var(--space-4);
+    padding: var(--space-6);
+  }
+  .board th,
+  .board td {
+    padding: 0;
+  }
+  .board tbody tr > :not(.board__line) {
+    grid-column: 2;
+  }
+  .board__line {
+    grid-row: 1;
+    width: auto;
+  }
+  .board__name {
+    grid-row: 1;
+    white-space: normal;
+  }
+  .board__addr {
+    overflow-wrap: anywhere;
+  }
+}
+.status-tag {
+  white-space: nowrap;
+}
+
+/* ── page heads and text ──────────────────────────────────────────────── */
+.page-head {
+  display: grid;
+  gap: var(--space-4);
+  padding-top: var(--space-8);
+}
+.page-head h1 {
+  margin: 0;
+  font-size: clamp(34px, 5vw, 42px);
+  max-width: 22ch;
+  text-wrap: balance;
+}
+.page-head .fnw-kicker {
+  margin: 0;
+}
+.page-head__lead {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  max-width: 54ch;
+  text-wrap: pretty;
+}
+
+.text-page,
+.contact {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.prose {
+  max-width: 62ch;
+  display: grid;
+  gap: var(--space-4);
+}
+.prose > * {
+  margin: 0;
+}
+.prose p,
+.prose li {
+  text-wrap: pretty;
+}
+.prose h2 {
+  font-size: 25px;
+  margin-top: var(--space-6);
+}
+.prose h3 {
+  font-size: 20px;
+  margin-top: var(--space-4);
+}
+.prose ul,
+.prose ol {
+  padding-left: 1.2em;
+  display: grid;
+  gap: var(--space-2);
+}
+.prose blockquote {
+  padding-left: var(--space-6);
+  color: var(--text-muted);
+  box-shadow: inset 2px 0 0 var(--divider);
+}
+
+/* ── project pages ────────────────────────────────────────────────────── */
+.project {
+  display: grid;
+  gap: var(--space-section);
+}
+.project__status {
+  display: flex;
+}
+.project__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: var(--space-section);
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .project__body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-8);
+  }
+}
+.project__facts,
+.project__exits {
+  display: grid;
+  gap: var(--space-4);
+}
+.project__facts {
+  gap: var(--space-8);
+}
+.facts {
+  display: grid;
+  gap: var(--space-6);
+  margin: 0;
+}
+.facts dt {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+}
+.facts dd {
+  margin: 0;
+}
+.facts__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* An exit sign: every link that leaves the site. */
+.exit {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-6) var(--space-8) var(--space-6) var(--space-6);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--text);
+  text-decoration: none;
+  transition: box-shadow var(--duration-base) var(--ease-standard);
+}
+.exit:hover {
+  box-shadow: var(--shadow-md);
+}
+.exit__arrow {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--accent-tint);
+  color: var(--accent-tint-ink);
+}
+.exit__main {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.exit__addr {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.exit__note {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.exit__out {
+  color: var(--text-muted);
+  display: inline-flex;
+}
+
+/* A window onto the destination: the one frame another brand's colours may appear in. */
+.window {
+  margin: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  background: var(--ground);
+}
+.window__bar {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  background: linear-gradient(
+      to right,
+      transparent,
+      var(--divider) 48px,
+      var(--divider) calc(100% - 48px),
+      transparent
+    )
+    no-repeat bottom / 100% 1px;
+}
+.window img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.window__caption {
+  margin: 0;
+  padding: var(--space-4);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ── contact ──────────────────────────────────────────────────────────── */
+.contact-form {
+  display: grid;
+  gap: var(--space-8);
+  max-width: 640px;
+}
+.contact-form__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+@media (max-width: 600px) {
+  .contact-form__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.contact-form .fnw-check {
+  align-items: flex-start;
+  color: var(--text-muted);
+}
+.contact-form .fnw-check__box {
+  margin-top: 2px;
+}
+.honeypot {
+  position: absolute;
+  left: -9999px;
+}
+.contact__direct {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* The proof-of-work box (ALTCHA): the widget reads these variables, set from the system's
+   tokens so it sits among the form's fields in both themes. */
+.proof {
+  display: block;
+  max-width: 640px;
+  --altcha-border-color: var(--border-control);
+  --altcha-border-radius: var(--radius-md);
+  --altcha-checkbox-border-color: var(--border-control);
+  --altcha-checkbox-outline-color: var(--focus-ring);
+  --altcha-color-base: var(--ground);
+  --altcha-color-base-content: var(--text);
+  --altcha-color-primary: var(--accent);
+  --altcha-color-primary-content: var(--on-accent);
+  --altcha-max-width: 100%;
+}
+.proof--placeholder {
+  min-height: 48px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-md);
+}
+
+/* ── 404: a line that stops ───────────────────────────────────────────── */
+.not-found {
+  display: grid;
+  gap: var(--space-6);
+  padding-block: var(--space-section);
+}
+.not-found h1 {
+  margin: 0;
+  font-size: clamp(34px, 5vw, 42px);
+}
+.not-found p {
+  margin: 0;
+}
+.not-found__line {
+  width: 320px;
+  max-width: 100%;
+  height: auto;
+}
+.not-found__point {
+  fill: var(--accent);
+}
+.not-found__route {
+  fill: none;
+  stroke: var(--border-control);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.not-found__route--gone {
+  stroke-dasharray: 2 9;
+  opacity: 0.6;
+}

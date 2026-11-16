@@ -1,0 +1,49 @@
+# pnpm's settings for this project (pnpm 11 and later read them only from here: `.npmrc` is for
+# registry and auth alone, and package.json's `pnpm` field is no longer read). One project, so
+# no `packages:` list.
+
+# Refuse to run with any pnpm other than the one `packageManager` in package.json names. Node 25+
+# ships no corepack, so nothing else enforces the pin. pnpm's default, `download`, would fetch
+# the pinned version and run it instead: a different pnpm from the one on the machine, without
+# a word, and a download at every run in a container that cannot keep it.
+pmOnFail: error
+
+# Refuse to install on a Node older than package.json's `engines` (the .nvmrc major). Without it
+# `engines` is only advice.
+engineStrict: true
+
+# A dependency's install script runs only when `allowBuilds` decides it: true runs it, false
+# never does. One that is in neither FAILS the install, instead of being skipped with a warning
+# nobody reads, so a new dependency that wants to run code at install time stops its PR until a
+# person decides. (pnpm's default since 11; stated so it cannot change under us.)
+strictDepBuilds: true
+allowBuilds:
+  sharp: true
+  esbuild: true
+  unrs-resolver: true
+  '@parcel/watcher': false
+  '@swc/core': false
+
+# Nothing younger than three days is resolved (minutes): a compromised release is usually found
+# and pulled within hours. The same wait Renovate keeps (.github/renovate.json5) and the same rule
+# as NowheresMedicalToolbox. An urgent fix younger than that goes into `minimumReleaseAgeExclude`
+# by name, with its advisory beside it, and comes out once it is three days old.
+minimumReleaseAge: 4320
+
+overrides:
+  # Monaco (via @payloadcms/ui) pins dompurify exactly; 3.4.17 fixes a critical advisory
+  # (2 November 2026). Delete once `pnpm why dompurify` shows Payload's own tree at 3.4.17+.
+  monaco-editor>dompurify: 3.4.17
+  # @lexical/headless (via @payloadcms/richtext-lexical) and vitest ask for happy-dom 20, which
+  # has two high advisories fixed in 21.0.4 (October 2026). Lexical uses only its `Window` and
+  # `happyDOM.close()`, unchanged in 21. Delete once `pnpm why happy-dom` resolves 21.0.4+ alone.
+  happy-dom: 21.0.4
+
+peerDependencyRules:
+  allowedVersions:
+    # eslint-config-next 16.4 still brings plugins that list ESLint up to 9 only. Their rules
+    # run on ESLint 10 (`pnpm lint` over the whole tree, and each plugin's rules seen firing on
+    # a probe file, 4 November 2026); ESLint 9 is out of support.
+    eslint-plugin-react>eslint: '10'
+    eslint-plugin-import>eslint: '10'
+    eslint-plugin-jsx-a11y>eslint: '10'

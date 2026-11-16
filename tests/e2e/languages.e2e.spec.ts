@@ -1,21 +1,19 @@
 import { expect, test, type APIRequestContext } from '@playwright/test'
 
-const baseURL = 'http://localhost:3000'
-
 /** The seeded pages (src/seed/index.ts), by their address without a language (the same in every
  * language). */
 const pages = ['', '/contact', '/about', '/privacy', '/projects/giogio', '/projects/nmt']
 
 /** The page's HTML without its scripts: what a visitor and a search engine read. */
 const visible = async (request: APIRequestContext, path: string) => {
-  const response = await request.get(`${baseURL}${path}`, { maxRedirects: 0 })
+  const response = await request.get(path, { maxRedirects: 0 })
   const html = await response.text()
   return { status: response.status(), html: html.replace(/<script[\s\S]*?<\/script>/g, '') }
 }
 
 test.describe('languages', () => {
   test('an address without a language goes to one the visitor reads', async ({ request }) => {
-    const response = await request.get(`${baseURL}/contact`, {
+    const response = await request.get('/contact', {
       maxRedirects: 0,
       headers: { 'accept-language': 'hr-HR,hr;q=0.9,en;q=0.5' },
     })
@@ -27,7 +25,7 @@ test.describe('languages', () => {
     request,
   }) => {
     for (const path of ['/ogledi', '/administracija', '/apiterapija']) {
-      const response = await request.get(`${baseURL}${path}`, {
+      const response = await request.get(path, {
         maxRedirects: 0,
         headers: { 'accept-language': 'hr' },
       })
@@ -55,7 +53,7 @@ test.describe('languages', () => {
         )
         // A key missing from a message file renders as its raw path.
         expect(html, `/${locale}${path}`).not.toMatch(
-          />\s*(common|nav|language|home|board|status|kind|project|footer|contact|form|mail|notFound)\.[a-zA-Z.]+\s*</,
+          />\s*(common|nav|language|home|map|board|status|kind|project|footer|contact|form|mail|notFound)\.[a-zA-Z.]+\s*</,
         )
       }
     }

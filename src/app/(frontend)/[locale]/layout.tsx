@@ -3,22 +3,21 @@ import { NextIntlClientProvider } from 'next-intl'
 import { notFound } from 'next/navigation'
 import React from 'react'
 
+import { ThemeSync } from '@/components/ThemeSync'
 import { isLocale, ogLocales } from '@/i18n/locales'
-import { PLAYED_KEY } from '@/lib/motion'
+import { headScript } from '@/lib/motion'
 import { getStudio } from '@/lib/payload'
 import { serverUrl } from '@/lib/serverUrl'
 import '@/styles/fnw/tokens.css'
 import '@/styles/fnw/bundle.css'
 import './site.css'
+import './routemap.css'
+import './window.css'
+import './transition.css'
 
 // Content comes from the CMS on every request, so edits in the admin show up immediately
 // and the Docker image can be built without a database.
 export const dynamic = 'force-dynamic'
-
-// Runs before paint. Dark is the brand's primary theme; a device set to light gets the light pair
-// (design/README.md). Then the same call <Motion> makes: a page already seen this session, or
-// reduced motion, skips its entrance (fnw-calm).
-const headScript = `(function(d){try{if(matchMedia('(prefers-color-scheme: light)').matches)d.dataset.theme='light';var p=JSON.parse(sessionStorage.getItem('${PLAYED_KEY}')||'[]');if(p.indexOf(location.pathname)>-1||matchMedia('(prefers-reduced-motion: reduce)').matches)d.classList.add('fnw-calm')}catch(e){}})(document.documentElement)`
 
 type Props = { children: React.ReactNode; params: Promise<{ locale: string }> }
 
@@ -45,9 +44,12 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     <html lang={locale} data-theme="dark" suppressHydrationWarning>
       <head>
+        {/* Before paint: the theme, and whether this page's entrances play (src/lib/motion.ts). */}
         <script dangerouslySetInnerHTML={{ __html: headScript }} />
       </head>
       <body>
+        {/* Keeps the theme across soft navigations, the language switch included. */}
+        <ThemeSync />
         {/* Messages come from src/i18n/request.ts, for the client components that need them. */}
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>

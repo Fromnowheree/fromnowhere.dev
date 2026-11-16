@@ -17,18 +17,28 @@ export async function StatusTag({ status, locale }: { status: Project['status'];
   const running = status === 'running'
   return (
     <span className={`fnw-tag fnw-tag--${running ? 'success' : 'warning'} status-tag`}>
-      <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden focusable="false">
-        <circle
-          cx="8"
-          cy="8"
-          r={running ? 4 : 3.5}
-          fill={running ? 'currentColor' : 'none'}
-          stroke="currentColor"
-          strokeWidth={running ? 0 : 1.75}
-        />
-      </svg>
+      <StatusIcon running={running} />
       {t(status)}
     </span>
+  )
+}
+
+/**
+ * The status icon on its own, in the current colour: a filled dot while running, an open ring
+ * while still on its way. Synchronous, so the route map (a single Server Component) can use it.
+ */
+export function StatusIcon({ running }: { running: boolean }) {
+  return (
+    <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden focusable="false">
+      <circle
+        cx="8"
+        cy="8"
+        r={running ? 4 : 3.5}
+        fill={running ? 'currentColor' : 'none'}
+        stroke="currentColor"
+        strokeWidth={running ? 0 : 1.75}
+      />
+    </svg>
   )
 }
 

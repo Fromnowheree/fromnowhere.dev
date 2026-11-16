@@ -62,6 +62,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Provisioning: creates the first admin (scripts/create-admin.sh runs it in this container).
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/create-admin.mjs ./scripts/create-admin.mjs
+# The seed's committed window captures (src/seed/windowSeeds.ts), read from the working directory
+# when PAYLOAD_SEED is on. The directory always exists (it keeps a .gitkeep), even with none.
+COPY --from=builder --chown=nextjs:nodejs /app/src/seed/windows ./src/seed/windows
 # The uploads volume and Next's image cache are the only places the server writes, so compose
 # can run the container with a read-only root filesystem.
 RUN mkdir -p media .next/cache && chown nextjs:nodejs media .next/cache

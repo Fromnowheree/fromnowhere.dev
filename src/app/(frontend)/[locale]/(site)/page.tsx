@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { SectionHeading } from '@/components/fnw'
 import { Lockup } from '@/components/site/Chrome'
+import { RouteMap } from '@/components/site/RouteMap'
 import { Board } from '@/components/site/Signs'
 import { Link } from '@/i18n/navigation'
 import { asLocale } from '@/i18n/server'
@@ -23,8 +24,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * The origin (docs/vision.html): the lockup and one sentence, then every project. The route map
- * joins the hero in the next step of the build order; for now the board carries the lines.
+ * The origin (docs/vision.html): the lockup and one sentence, then the route map (one line per
+ * project, from the point to a plate that opens its page), then the board, which lists the same
+ * projects in the same order as a table. Hovering or focusing a board row lights its line on the
+ * map (routemap.css, up to six lines).
  */
 export default async function Home({ params }: Props) {
   const locale = asLocale((await params).locale)
@@ -53,6 +56,7 @@ export default async function Home({ params }: Props) {
             </p>
           )}
         </div>
+        {await RouteMap({ projects, locale })}
       </section>
 
       <section className="home-section" aria-labelledby="projects">
@@ -71,7 +75,9 @@ export default async function Home({ params }: Props) {
         )}
       </section>
 
-      <section className="fnw-band home-band">
+      {/* The band is indigo (--section) in both themes, so it keeps the dark pair's text tokens;
+          the light pair's dark text on it would be about 1.1:1. */}
+      <section className="fnw-band home-band" data-theme="dark">
         <p className="fnw-kicker">{t('contactKicker')}</p>
         <h2>{t('contactTitle')}</h2>
         <p>{t('contactLead')}</p>

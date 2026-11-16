@@ -6,15 +6,28 @@ import { l, pickLabel } from '../i18n/label'
 import { MAX_LINK_LENGTH } from '../lib/content'
 import { isShortAlias } from '../lib/shortLinks'
 
-const aliasRule: TextFieldSingleValidation = (value, args) => {
-  if (!value) return pickLabel(args.req?.i18n?.language, l('Enter a word.', 'Upišite riječ.'))
-  if (isShortAlias(value)) return true
-  return pickLabel(
-    args.req?.i18n?.language,
-    l(
+/**
+ * One word the site leaves free (isShortAlias), and never the slug of a page, drafts included: a
+ * draft may be published later, and its address without a language must lead to it, not away.
+ * src/fields/slug.ts refuses the other way round, and pick-language prefers the page regardless.
+ */
+const aliasRule: TextFieldSingleValidation = async (value, args) => {
+  const say = (en: string, hr: string) => pickLabel(args.req?.i18n?.language, l(en, hr))
+  if (!value) return say('Enter a word.', 'Upišite riječ.')
+  if (!isShortAlias(value))
+    return say(
       `"/${value}" can’t be a short link: it is taken by the site itself. Choose another word.`,
       `"/${value}" ne može biti kratka poveznica: zauzeo ju je sam web. Odaberite drugu riječ.`,
-    ),
+    )
+  const { totalDocs } = await args.req.payload.count({
+    collection: 'pages',
+    where: { slug: { equals: value } },
+    req: args.req,
+  })
+  if (totalDocs === 0) return true
+  return say(
+    `"/${value}" is a page of this site. Choose another word.`,
+    `"/${value}" je stranica ovog weba. Odaberite drugu riječ.`,
   )
 }
 

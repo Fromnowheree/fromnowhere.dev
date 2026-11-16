@@ -1,11 +1,11 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, TextFieldSingleValidation } from 'payload'
 
 import { httpsRule } from '../fields/link'
 import { richTextRule } from '../fields/richText'
 import { rowLabel } from '../fields/rowLabel'
 import { seoField } from '../fields/seo'
 import { slugField } from '../fields/slug'
-import { l } from '../i18n/label'
+import { l, pickLabel } from '../i18n/label'
 import { MAX_INTRO_LENGTH, MAX_LABEL_LENGTH, MAX_LINK_LENGTH } from '../lib/content'
 
 /** How a project's line is drawn: solid while it runs, dashed while it is being built. */
@@ -13,6 +13,24 @@ export const PROJECT_STATUSES = ['running', 'building', 'planned', 'paused'] as 
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number]
 
 export const PROJECT_KINDS = ['product', 'community', 'music', 'client'] as const
+
+/**
+ * The window's address is one of the project's own (what the picture is of), or empty for the
+ * first. Compared trimmed, as both fields are trimmed before they are saved.
+ */
+const windowAddressRule: TextFieldSingleValidation = (value, { data, req }) => {
+  const address = value?.trim()
+  if (!address) return true
+  const addresses = (data as { addresses?: { url?: string | null }[] | null }).addresses ?? []
+  if (addresses.some((row) => row?.url?.trim() === address)) return true
+  return pickLabel(
+    req?.i18n?.language,
+    l(
+      'Use one of this project’s addresses, or leave it empty.',
+      'Upišite jednu od adresa ovog projekta ili ostavite prazno.',
+    ),
+  )
+}
 
 /**
  * One line on the route map and one row on the departures board, and its own page at
@@ -205,8 +223,24 @@ export const Projects: CollectionConfig = {
       label: l('Window', 'Prozor'),
       admin: {
         description: l(
-          'One picture of the destination in its own look (a screenshot works). The only place another brand’s colours appear on this site.',
-          'Jedna slika odredišta u njegovom izgledu (snimka zaslona je dovoljna). Jedino mjesto gdje se boje drugog branda pojavljuju na ovom webu.',
+          'A phone-width picture (4:5) of one of its published addresses in its own look, taken with pnpm capture:windows. Check that it shows no one’s personal details. The only place another brand’s colours appear on this site.',
+          'Slika jedne od njegovih objavljenih adresa na mobitelu (4:5), u vlastitom izgledu, snimljena naredbom pnpm capture:windows. Provjerite da ne prikazuje ničije osobne podatke. Jedino mjesto gdje se boje drugog branda pojavljuju na ovom webu.',
+        ),
+      },
+    },
+    {
+      name: 'windowAddress',
+      type: 'text',
+      maxLength: MAX_LINK_LENGTH,
+      label: l('The window shows', 'Prozor prikazuje'),
+      validate: windowAddressRule,
+      hooks: {
+        beforeValidate: [({ value }) => (typeof value === 'string' ? value.trim() : value)],
+      },
+      admin: {
+        description: l(
+          'Which of the addresses above the picture is of. Empty: the first one.',
+          'Koju od gornjih adresa slika prikazuje. Prazno: prvu.',
         ),
       },
     },

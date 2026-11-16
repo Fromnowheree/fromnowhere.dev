@@ -68,6 +68,27 @@ DATABASE_URL=postgres://postgres:test@localhost:54329/postgres pnpm test:int
 podman rm -f -v fnw-test-pg
 ```
 
+The end-to-end tests run the same way, never against the development database or the dev server
+on :3000: `E2E_PORT` switches `playwright.config.ts` to a production server (`next start`) on
+that port, against the `DATABASE_URL` given in the shell (migrations, then the seed), with uploads
+in a temporary `MEDIA_DIR`. Build first; `next dev` holds `.next/dev/lock`, so a second dev server
+cannot run beside yours, but a build can. The specs that attach test pictures boot Payload in
+the test process; in this mode the config sets `PAYLOAD_MIGRATING` so it never pushes the
+schema (a pushed database would stop the next `next start` at Payload's "data loss" prompt),
+and a database can be reused for another run.
+
+```sh
+pnpm build
+podman run -d --rm --name fnw-e2e-pg --tmpfs /var/lib/postgresql/data \
+  -e POSTGRES_PASSWORD=test -p 54330:5432 postgres:17-alpine
+E2E_PORT=3100 DATABASE_URL=postgres://postgres:test@localhost:54330/postgres pnpm test:e2e
+podman rm -f -v fnw-e2e-pg
+rm -rf "${TMPDIR:-/tmp}/fnw-e2e-media"
+```
+
+`tests/e2e/visual.e2e.spec.ts` writes screenshots to `test-results/phase1/` (or `VISUAL_DIR`)
+for looking at by eye; it asserts nothing about pixels.
+
 ## 4. Rules
 
 ### Design
@@ -84,7 +105,24 @@ podman rm -f -v fnw-test-pg
   colour alone. Inter 400 and 500 only, no italics. Layouts left-aligned, never a centred hero.
 - **Motion** uses the system's `.fnw-enter` / `.fnw-reveal` (played by `src/components/Motion.tsx`
   once per page per visit) and the motion tokens; `transform` and `opacity` only; everything stops
-  under `prefers-reduced-motion`. No counting numbers, typewriter or split-flap effects.
+  under `prefers-reduced-motion`. No counting numbers, typewriter or split-flap effects. A page
+  counts as played in both languages (`playedKey`, `src/lib/motion.ts`), so EN↔HR never replays.
+- **The route map** (`src/lib/routeMap.ts`, `src/components/site/RouteMap.tsx`, `routemap.css`)
+  is server-rendered HTML and `aria-hidden` SVG, with no client JavaScript and no `style`
+  attributes; lighting is CSS `:has()` only. **The wide map holds at most six lines**
+  (`MAP.wideMax`): with more, it is the vertical rail at every width and board rows no longer
+  light it.
+- **Page transitions**: in this App Router site a soft navigation animates only through React's
+  `<ViewTransition>` (`src/components/site/PageTransition.tsx`, keyed on the pathname around
+  `.site-page`); CSS `@view-transition` (`transition.css`) covers full document loads only. The
+  header is held still; only the page box crossfades, and nothing animates under reduced motion.
+  On Next 16.4 / React 19.3, EN↔HR swaps at once (the `[locale]` root layout remounts from
+  `<html>` down, and React fires no boundary inside a DOM node it inserts), and so does
+  back/forward (React flushes a popstate transition synchronously, with the sync lane, and
+  animates only pure transition commits). Focus still moves in both.
+- **Focus after a soft navigation** moves to `<main id="content" tabindex="-1">` whenever the
+  pathname changes, so the next Tab starts inside the new page; after a full load it starts at
+  the document. `#content` takes focus without an outline: it is a target, not a control.
 - **Voice**: plain, short, sentence case, no exclamation marks, no emoji. The studio speaks as
   "I", never "we". The name is **Fromnowhere** (one word), the monogram **FNW**.
 
@@ -103,12 +141,21 @@ podman rm -f -v fnw-test-pg
   one).
 - **Every authored link follows one rule** (`src/lib/links.ts`): a site path without its
   language that names something public (`/`, `/contact`, `/<page>`, `/projects/<slug>`), or an
-  absolute `https:`/`mailto:`/`tel:` address; checked at save time (`src/fields/link.ts`) and
-  again at render (`resolveLink`). Project addresses and profiles are https only (`httpsRule`).
+  absolute `https:`/`mailto:`/`tel:` address; checked by shape at save time (`src/fields/link.ts`)
+  and again at render (`resolveLink`). Project addresses and profiles are https only
+  (`httpsRule`).
 - **Short links** are one word at the root (`fromnowhere.dev/giogio`), answered in
   `pick-language`; `isShortAlias` keeps the languages and the paths the site answers itself out.
+  A short link and a page never share a word (both refused at save time), and pick-language
+  prefers the page.
 - **Nothing is invented for a visitor.** An empty field renders nothing; links to About and
   Privacy appear only while those pages are published; the form shows only while it can send.
+- **Windows** (`src/components/site/Window.tsx`) are a real, still capture of a destination's
+  published first screen on a phone (4:5), taken with `pnpm capture:windows` and listed in
+  `src/seed/windowSeeds.ts`. Never a demo, seed data, a preview, an iframe or a hand-made
+  postcard, never someone's personal details, and for a client site only with the client's
+  agreement. No honest capture, no window: none is seeded yet. Tests attach a fixture picture
+  (`tests/helpers/fixtureWindow.ts`) in a throwaway database only.
 
 ### Security (inherited from NMT-PublicWeb; keep them)
 
@@ -156,11 +203,13 @@ for enum".
 ## 6. Build order (from the vision)
 
 1. Vision agreed (16 November 2026).
-2. **Scaffold and the still page (this commit):** the NMT-PublicWeb base, the design system,
-   Projects / Pages / Short links / Studio, home with the board, project pages with exit plates,
-   text pages, contact, share cards, sitemap, seed.
-3. The route map on the home page (point, lines, plates, hover lighting a line, dashed lines
-   under construction, drawn once per visit), the windows, and the page transition.
+2. **Scaffold and the still page:** the NMT-PublicWeb base, the design system, Projects / Pages /
+   Short links / Studio, home with the board, project pages with exit plates, text pages,
+   contact, share cards, sitemap, seed.
+3. **Done (Phase 1, [`docs/phase-1.md`](docs/phase-1.md)):** the route map on the home page
+   (point, lines, plates, hover lighting a line, dashed lines under construction, drawn once per
+   visit), the windows' plumbing (frame, `windowAddress`, capture script, seed; no window seeded
+   until a destination is published), and the page transition with focus on `#content`.
 4. The status check (a Payload job pinging each address every 5 minutes; the board shows real
    status) and share cards with the project's line lit.
 5. About text, Caddy and DNS for fromnowhere.dev, the shared Caddy for the other sites, launch.
@@ -175,8 +224,10 @@ for enum".
   database and edits show at once.
 - **Share cards** read `src/assets/fonts/Inter-Regular.ttf` (Satori takes TTF, not WOFF2);
   `next.config.ts` traces it into the standalone build.
-- **The theme**: dark is primary; `[locale]/layout.tsx`'s head script switches `data-theme` to
-  light when the device asks for it, before paint, and decides whether entrances play.
+- **The theme**: dark is primary; the head script (`headScript` in `src/lib/motion.ts`, rendered
+  by `[locale]/layout.tsx`) switches `data-theme` to light when the device asks for it, before
+  paint, and decides whether entrances play. EN↔HR remounts the root layout and React resets
+  `<html>`'s attributes, so `ThemeSync` sets the theme again in a layout effect.
 - **Seeding the second language of an array** needs the row ids of the first, or Payload replaces
   the rows (`src/seed/index.ts`).
 - **A test that needs an empty install** uses its own database (`tests/helpers/freshDatabase.ts`).

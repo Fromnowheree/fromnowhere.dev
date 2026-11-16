@@ -3,6 +3,7 @@ import { expect } from '@playwright/test'
 
 export interface LoginOptions {
   page: Page
+  /** The site's origin; empty (the default) resolves the addresses against `baseURL`. */
   serverURL?: string
   user: {
     email: string
@@ -11,11 +12,7 @@ export interface LoginOptions {
 }
 
 /** Logs the user into the admin panel through its login page. */
-export async function login({
-  page,
-  serverURL = 'http://localhost:3000',
-  user,
-}: LoginOptions): Promise<void> {
+export async function login({ page, serverURL = '', user }: LoginOptions): Promise<void> {
   await page.goto(`${serverURL}/admin/login`)
 
   await page.fill('#field-email', user.email)

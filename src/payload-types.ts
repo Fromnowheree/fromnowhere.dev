@@ -186,9 +186,13 @@ export interface Project {
     [k: string]: unknown;
   } | null;
   /**
-   * One picture of the destination in its own look (a screenshot works). The only place another brand’s colours appear on this site.
+   * A phone-width picture (4:5) of one of its published addresses in its own look, taken with pnpm capture:windows. Check that it shows no one’s personal details. The only place another brand’s colours appear on this site.
    */
   window?: (number | null) | Media;
+  /**
+   * Which of the addresses above the picture is of. Empty: the first one.
+   */
+  windowAddress?: string | null;
   windowCaption?: string | null;
   /**
    * How the page appears in search results. Left empty, the default text is used.
@@ -481,6 +485,7 @@ export interface ProjectsSelect<T extends boolean = true> {
   stack?: T;
   story?: T;
   window?: T;
+  windowAddress?: T;
   windowCaption?: T;
   meta?:
     | T

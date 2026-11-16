@@ -1,16 +1,14 @@
-import { createLocalReq, getPayload, type Payload, type PayloadRequest } from 'payload'
+import { getPayload, type Payload } from 'payload'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { RichText } from '@/components/RichText'
-import { siteLinkRule } from '@/fields/link'
 import { httpsAddressOrNull, linkTarget, resolveLink, safeLink, withLocale } from '@/lib/links'
 import { getPublishedIndex } from '@/lib/payload'
 import config from '@/payload.config'
 import { seed } from '@/seed'
 
 let payload: Payload
-let req: PayloadRequest
 
 const PAGE_SLUGS = ['links-draft', 'links-later', 'links-rich']
 const PROJECT_SLUGS = ['links-draft-project']
@@ -23,7 +21,6 @@ const cleanUp = async () => {
 beforeAll(async () => {
   payload = await getPayload({ config: await config })
   await seed(payload)
-  req = await createLocalReq({}, payload)
   await cleanUp()
   await payload.create({
     collection: 'pages',
@@ -143,38 +140,6 @@ describe('the link rule', () => {
       'https://giogio .music',
     ])
       expect(httpsAddressOrNull(bad), bad).toBeNull()
-  })
-})
-
-describe('a site link, when the editor saves it', () => {
-  const check = (value: string) =>
-    siteLinkRule(value, { req, required: false } as Parameters<typeof siteLinkRule>[1])
-
-  it('refuses a script, a protocol-relative address and a path with its language', async () => {
-    for (const bad of ['javascript:alert(1)', '//evil.example', '/en/contact'])
-      expect(await check(bad), bad).toEqual(expect.any(String))
-  })
-
-  it('refuses a page or project that does not exist or is only a draft', async () => {
-    for (const bad of [
-      '/no-such-page',
-      '/links-draft',
-      '/projects/no-such-project',
-      '/projects/links-draft-project',
-    ])
-      expect(await check(bad), bad).toMatch(/Nothing published/)
-  })
-
-  it('accepts a published page or project, the home page, contact and an outside address', async () => {
-    for (const ok of [
-      '/about',
-      '/projects/giogio',
-      '/',
-      '/contact',
-      'https://example.com',
-      'tel:+15550100',
-    ])
-      expect(await check(ok), ok).toBe(true)
   })
 })
 

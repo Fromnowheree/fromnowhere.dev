@@ -48,6 +48,24 @@ a {
   transform: none;
 }
 
+/* ── motion (src/components/Motion.tsx, design/motion.md) ─────────────── */
+/* A page already seen this visit, or any page under reduced motion: everything shows at once.
+   <html> gets fnw-calm from the head script before paint, and from <Motion> after. */
+.fnw-calm .fnw-enter,
+.fnw-calm .fnw-reveal.is-in {
+  animation: none;
+}
+/* <Motion> adds is-waiting before paint, and only to reveals below the fold, so without
+   JavaScript nothing is ever hidden. */
+.fnw-reveal.is-waiting {
+  opacity: 0;
+}
+/* A reveal already on screen when <Motion> wakes up (is-shown) has been seen at rest: it stays
+   as it is instead of dropping to opacity 0 and playing bundle.css's .is-in entrance. */
+.fnw-reveal.is-shown {
+  animation: none;
+}
+
 /* ── header and footer ───────────────────────────────────────────────── */
 .site-nav {
   padding-block: var(--space-8);
@@ -95,6 +113,15 @@ a {
 /* Grid children may shrink below their content, so a wide table scrolls in its own box instead
    of pushing the page sideways. */
 .site-main > * {
+  min-width: 0;
+}
+/* The page box inside <main>, the one part that changes on a navigation
+   (src/components/site/PageTransition.tsx). The same grid as .site-main, one level down. */
+.site-page {
+  display: grid;
+  gap: var(--space-section);
+}
+.site-page > * {
   min-width: 0;
 }
 
@@ -217,8 +244,9 @@ a {
   font-family: var(--font-sans);
 }
 
-/* On a phone each row becomes a stacked sign: number and name, what it is, where, status. */
-@media (max-width: 720px) {
+/* On a phone or a tablet each row becomes a stacked sign: number and name, what it is, where,
+   status (the project page's breakpoint; the table squeezes its descriptions below it). */
+@media (max-width: 860px) {
   .board {
     min-width: 0;
   }
@@ -409,43 +437,6 @@ a {
 .exit__out {
   color: var(--text-muted);
   display: inline-flex;
-}
-
-/* A window onto the destination: the one frame another brand's colours may appear in. */
-.window {
-  margin: 0;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  background: var(--ground);
-}
-.window__bar {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-3) var(--space-4);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-muted);
-  background: linear-gradient(
-      to right,
-      transparent,
-      var(--divider) 48px,
-      var(--divider) calc(100% - 48px),
-      transparent
-    )
-    no-repeat bottom / 100% 1px;
-}
-.window img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-.window__caption {
-  margin: 0;
-  padding: var(--space-4);
-  font-size: 13px;
-  color: var(--text-muted);
 }
 
 /* ── contact ──────────────────────────────────────────────────────────── */

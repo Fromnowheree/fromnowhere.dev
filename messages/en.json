@@ -18,13 +18,17 @@
     "kicker": "fromnowhere.dev",
     "boardKicker": "Projects",
     "boardTitle": "Where each line goes",
-    "mapLabel": "Route map from Fromnowhere to every project",
+    "mapLabel": "Route map",
     "origin": "You are here",
     "contactKicker": "Get in touch",
     "contactTitle": "Something to build?",
     "contactLead": "Tell me what it is. I’ll reply myself.",
     "contactAction": "Write to me",
     "empty": "No projects are published yet."
+  },
+  "map": {
+    "pause": ", ",
+    "more": "{count, plural, one {# more address} other {# more addresses}}"
   },
   "board": {
     "line": "Line",
@@ -54,7 +58,7 @@
     "addresses": "Addresses",
     "noAddress": "This line has no address of its own yet. It ends here for now.",
     "allProjects": "All projects",
-    "window": "A look at the destination"
+    "window": "A glimpse of the destination"
   },
   "footer": {
     "label": "Footer",

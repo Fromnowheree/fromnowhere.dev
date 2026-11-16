@@ -38,6 +38,13 @@ With `PAYLOAD_SEED=true` an empty database is filled with the starting content: 
 projects, their short links, the studio's words and the About and Privacy pages, in English and
 Croatian (`src/seed/index.ts`). It never overwrites anything.
 
+A project's window (a phone-width picture of its destination, on its page) is seeded from the
+manifest `src/seed/windowSeeds.ts` and the committed captures `src/seed/windows/*.webp`, taken
+with `pnpm capture:windows` (Playwright on this machine; never in CI or the image). A window is
+added only for a published destination: a real, live page, no demo or seed data, no one's
+personal details, and the client's agreement for a client's site. Until one is live the manifest
+is empty and the seed attaches no windows.
+
 ### Checks
 
 ```sh

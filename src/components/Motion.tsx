@@ -3,24 +3,17 @@
 import { usePathname } from 'next/navigation'
 import { useLayoutEffect } from 'react'
 
-import { PLAYED_KEY } from '@/lib/motion'
+import { isCalm, PLAYED_KEY, playedKey, readPlayed } from '@/lib/motion'
 
 // Plays entrances once per page per visit: `.fnw-enter` on load (CSS only), `.fnw-reveal` and
 // `.fnw-assemble` as they scroll into view. Nothing is ever hidden that someone could already
 // see: content on screen when the page wakes up stays as it is, and only content further down
 // waits for its reveal. A page seen before in this session, or any page under reduced motion,
-// gets `fnw-calm` on <html> and shows everything at once. The layout's inline script makes the
-// same call before first paint.
+// gets `fnw-calm` on <html> and shows everything at once. A page is the same page in every
+// language (`playedKey`), so switching EN↔HR is calm. The layout's head script makes the same call
+// before first paint.
 
-const readPlayed = (): string[] => {
-  try {
-    return JSON.parse(sessionStorage.getItem(PLAYED_KEY) || '[]')
-  } catch {
-    return []
-  }
-}
-
-// Decided once per page, so React's development double effects don't count as a second visit.
+// Decided once per address, so React's development double effects don't count as a second visit.
 let decided: { path: string; calm: boolean } | undefined
 
 export function Motion() {
@@ -29,12 +22,11 @@ export function Motion() {
   // Before paint, so content below the fold is out of sight before it's hidden.
   useLayoutEffect(() => {
     if (decided?.path !== pathname) {
-      const played = readPlayed()
-      const calm =
-        played.includes(pathname) || matchMedia('(prefers-reduced-motion: reduce)').matches
+      const played = readPlayed(() => sessionStorage.getItem(PLAYED_KEY))
+      const calm = isCalm(pathname, played, matchMedia)
       if (!calm) {
         try {
-          sessionStorage.setItem(PLAYED_KEY, JSON.stringify([...played, pathname]))
+          sessionStorage.setItem(PLAYED_KEY, JSON.stringify([...played, playedKey(pathname)]))
         } catch {}
       }
       decided = { path: pathname, calm }
@@ -44,7 +36,12 @@ export function Motion() {
     const items = Array.from(
       document.querySelectorAll<HTMLElement>('.fnw-reveal:not(.is-in), .fnw-assemble:not(.is-in)'),
     )
-    const show = (el: HTMLElement) => el.classList.add('is-in', 'is-shown')
+    // is-shown: on screen as the page wakes up, so it stays as it is and does not play
+    // (site.css); only reveals that waited play their entrance.
+    const show = (el: HTMLElement) => {
+      el.classList.remove('is-waiting')
+      el.classList.add('is-in', 'is-shown')
+    }
     if (decided.calm) {
       items.forEach(show)
       return

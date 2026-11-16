@@ -1,0 +1,69 @@
+/* ── the page transition (src/components/site/PageTransition.tsx, design/motion.md) ──
+   Soft navigations: React's <ViewTransition> keyed on the pathname exits and enters the page
+   box (.site-page). Full document loads: the typed @view-transition below. Opacity only. */
+
+::view-transition {
+  pointer-events: none;
+}
+
+/* <main> takes focus after a soft navigation and from the skip link, and a hash's target inside it
+   after one to an address with a hash (PageTransition): targets, not controls. */
+#content:focus,
+#content [data-focus-target]:focus {
+  outline: none;
+}
+
+/* Soft navigations: LanguageSwitch's href changes in the header on every navigation, so React
+   always snapshots the root. The root (footer, background) swaps at once; only the page box fades. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+/* The header stays put (.site-nav has view-transition-name: fnw-nav). */
+::view-transition-group(fnw-nav) {
+  animation: none;
+  z-index: 1;
+}
+::view-transition-old(fnw-nav) {
+  display: none;
+}
+::view-transition-new(fnw-nav) {
+  animation: none;
+}
+
+/* A quiet, overlapping crossfade: the exit is faster than the entrance, opacity only, no delay. */
+::view-transition-old(.fnw-page-out) {
+  animation: fnw-page-out var(--duration-fast) var(--ease-exit) both;
+}
+::view-transition-new(.fnw-page-in) {
+  animation: fnw-fade var(--duration-slow) var(--ease-enter) both;
+}
+@keyframes fnw-page-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Full document loads (no JS, plain <a>, entering from /pick-language): the root crossfades. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+    types: fnw-doc;
+  }
+}
+:root:active-view-transition-type(fnw-doc)::view-transition-old(root) {
+  animation: fnw-page-out var(--duration-fast) var(--ease-exit) both;
+}
+:root:active-view-transition-type(fnw-doc)::view-transition-new(root) {
+  animation: fnw-fade var(--duration-slow) var(--ease-enter) both;
+}
+
+/* bundle.css's reduced-motion reset cannot reach these pseudo-elements. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

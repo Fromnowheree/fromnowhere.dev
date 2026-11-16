@@ -2,13 +2,13 @@ import type { Metadata } from 'next'
 import { getFormatter, getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 
-import { MediaImage } from '@/components/MediaImage'
 import { RichText } from '@/components/RichText'
 import { ExitPlate, StatusTag } from '@/components/site/Signs'
+import { Window } from '@/components/site/Window'
 import { Link } from '@/i18n/navigation'
 import { asLocale } from '@/i18n/server'
-import { asMedia, lineNumber } from '@/lib/format'
-import { displayAddress, projectHref } from '@/lib/links'
+import { lineNumber } from '@/lib/format'
+import { projectHref } from '@/lib/links'
 import { pageMetadata } from '@/lib/metadata'
 import { getProject, getPublishedIndex } from '@/lib/payload'
 
@@ -43,7 +43,6 @@ export default async function ProjectPage({ params }: Props) {
   if (!project) notFound()
 
   const addresses = project.addresses ?? []
-  const window = asMedia(project.window)
   const started = project.started
     ? format.dateTime(new Date(project.started), { month: 'long', year: 'numeric' })
     : null
@@ -71,6 +70,8 @@ export default async function ProjectPage({ params }: Props) {
         </div>
 
         <aside className="project__facts">
+          {/* Look through the window, then go out the door. */}
+          {await Window({ project, locale })}
           <section aria-label={t('addresses')} className="project__exits">
             {addresses.length > 0 ? (
               addresses.map((address) => (
@@ -107,17 +108,6 @@ export default async function ProjectPage({ params }: Props) {
           </dl>
         </aside>
       </div>
-
-      {window && (
-        <figure className="window">
-          <figcaption className="window__bar">
-            <span>{addresses[0] ? displayAddress(addresses[0].url) : project.name}</span>
-            <span>{lineNumber(project.line)}</span>
-          </figcaption>
-          <MediaImage media={window} sizes="(min-width: 1120px) 1072px, 100vw" />
-          {project.windowCaption && <p className="window__caption">{project.windowCaption}</p>}
-        </figure>
-      )}
 
       <p>
         <Link href="/#projects">← {t('allProjects')}</Link>

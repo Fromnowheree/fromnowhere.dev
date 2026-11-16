@@ -203,4 +203,13 @@ describe('Dockerfile', () => {
   it('ships the provisioning script', () => {
     expect(runner).toContain('scripts/create-admin.mjs')
   })
+
+  // The seed reads the window captures from the working directory (/app), not from its bundle.
+  it('ships the seed’s window captures, a directory that always exists', () => {
+    expect(runner).toMatch(
+      /^COPY --from=builder --chown=nextjs:nodejs \/app\/src\/seed\/windows \.\/src\/seed\/windows$/m,
+    )
+    expect(statSync('src/seed/windows/.gitkeep').isFile()).toBe(true)
+    expect(read('.dockerignore')).not.toMatch(/^\/?src\b|^\*\*\/\*\.webp$/m)
+  })
 })

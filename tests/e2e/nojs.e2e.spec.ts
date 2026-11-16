@@ -1,89 +1,114 @@
 import { readFileSync } from 'node:fs'
 
 import { expect, test, type Page } from '@playwright/test'
+import { getPayload } from 'payload'
 
-import { relayReady } from '../../src/lib/relay/config'
+import { readRelayConfig } from '../../src/lib/relay/config'
+import config from '../../src/payload.config.js'
 
-const baseURL = 'http://localhost:3000'
-
-// The dev server reads the same .env as this test (playwright.config.ts loads it).
-const formShown = relayReady(process.env)
 const en = JSON.parse(readFileSync('messages/en.json', 'utf8'))
 
-/**
- * The menu without JavaScript (src/components/NavLinks.tsx). The menu button is a script's
- * button, so without scripts a link to #site-nav takes its place and the drawer opens as the
- * address's target: every page in the menu stays reachable on a phone, not just the ones the
- * footer repeats. With scripts the link never shows, so the address never carries #site-nav.
- */
+/** Whether the server shows the form at all (see contact.e2e.spec.ts): its CONTACT_* account. */
+const formShown = readRelayConfig(process.env) !== null
+
+/** The address the contact test shows when the studio has none of its own (a reserved domain). */
+const PROBE_EMAIL = 'e2e-probe@example.com'
+
+/** Pages a visitor reaches first: the home page (map and board), a project page, the contact page. */
+const PAGES = ['/en', '/en/projects/giogio', '/en/contact']
+
+/** A phone, a large phone and a tablet. */
 const SCREENS = [320, 390, 768]
 
+/**
+ * The site without JavaScript: every page is server-rendered HTML with plain links, so it reads
+ * and navigates the same. The header has no menu button to depend on a script; its links stay on
+ * screen at every width, and nothing pushes the page sideways.
+ */
 for (const width of SCREENS) {
-  test.describe(`at ${width}px`, () => {
-    test.use({ viewport: { width, height: 800 } })
+  test.describe(`without JavaScript at ${width}px`, () => {
+    test.use({ viewport: { width, height: 800 }, javaScriptEnabled: false })
 
-    test.describe('without JavaScript', () => {
-      test.use({ javaScriptEnabled: false })
+    for (const path of PAGES) {
+      test(`${path} renders, with the header's links and no sideways scroll`, async ({ page }) => {
+        const response = await page.goto(path)
+        expect(response?.status()).toBe(200)
+        await expect(page.locator('#content h1')).toBeVisible()
 
-      test('the menu opens, shows every link and closes with Back', async ({ page }) => {
-        await page.goto(`${baseURL}/en`)
-        const drawer = page.locator('#site-nav')
-        await expect(drawer).toBeHidden()
-        // The menu's own links (the drawer's first list; the language switch has another).
-        const links = page.locator('#site-nav > ul a[href]')
-        expect(await links.count()).toBeGreaterThan(0)
+        const header = page.locator('header.site-nav')
+        await expect(
+          header
+            .getByRole('navigation', { name: en.nav.main })
+            .getByRole('link', { name: en.nav.projects }),
+        ).toBeVisible()
+        await expect(header.getByRole('link', { name: en.nav.contact })).toBeVisible()
+        // The language switch: EN and HR, each the same page in its language.
+        await expect(header.locator('a[hreflang="en"]')).toBeVisible()
+        await expect(header.locator('a[hreflang="hr"]')).toBeVisible()
 
-        await page.locator('a[href="#site-nav"]').click()
-        await expect(drawer).toBeVisible()
-        for (const link of await links.all()) await expect(link).toBeVisible()
-
-        await page.goBack()
-        await expect(drawer).toBeHidden()
+        const { scrollWidth, innerWidth } = await page.evaluate(() => ({
+          scrollWidth: document.documentElement.scrollWidth,
+          innerWidth: window.innerWidth,
+        }))
+        expect(scrollWidth).toBeLessThanOrEqual(innerWidth)
       })
-    })
-
-    test('with JavaScript the menu is the button, never the link', async ({ page }) => {
-      await page.goto(`${baseURL}/en`)
-      await expect(page.locator('[aria-controls="site-nav"]')).toBeVisible()
-      await expect(page.locator('a[href="#site-nav"]')).toBeHidden()
-    })
+    }
   })
 }
 
-test.describe('on a desktop without JavaScript', () => {
-  test.use({ viewport: { width: 1280, height: 800 }, javaScriptEnabled: false })
-
-  test('the menu is the row of links, with no menu link', async ({ page }) => {
-    await page.goto(`${baseURL}/en`)
-    await expect(page.locator('#site-nav')).toBeVisible()
-    await expect(page.locator('a[href="#site-nav"]')).toBeHidden()
-  })
-})
-
 /**
- * The contact form without JavaScript (src/components/blocks/ContactBlock.tsx): its proof of work
- * runs in the browser, so the server would refuse whatever was typed. The visitor is told so, with
- * the clinic's phone and e-mail, instead of being shown a form that cannot send. Only where the
- * form exists at all, i.e. with the CONTACT_* mail account set up.
+ * The contact form without JavaScript (src/app/(frontend)/[locale]/(site)/contact/page.tsx): its
+ * proof of work runs in the browser, so the server would refuse whatever was typed. The visitor is
+ * told so instead of being shown a form that cannot send, with the address to write to below it.
+ * Only where the form exists at all, i.e. with the CONTACT_* mail account set up.
  */
 test.describe('the contact form', () => {
-  test.skip(!formShown, 'the dev server has no CONTACT_* mail account, so it shows no form')
-  const note = (page: Page) => page.locator('#form').getByText(en.form.needsScript)
+  test.skip(!formShown, 'the server has no CONTACT_* mail account, so it shows no form')
+  const note = (page: Page) => page.getByText(en.form.needsScript)
 
   test.describe('without JavaScript', () => {
     test.use({ javaScriptEnabled: false })
 
-    test('is replaced by how to reach the clinic', async ({ page }) => {
-      await page.goto(`${baseURL}/en/contact`)
+    /**
+     * The address shows only while the studio has one (Studio global, `email`), and the seed sets
+     * none. The test brings its own through the Local API (same DATABASE_URL as the server, see
+     * playwright.config.ts) and puts back whatever was there; an address already set is used as is.
+     */
+    let address = PROBE_EMAIL
+    let restore: (() => Promise<void>) | null = null
+
+    test.beforeAll(async () => {
+      const payload = await getPayload({ config })
+      const studio = await payload.findGlobal({ slug: 'studio', depth: 0 })
+      if (studio.email) {
+        address = studio.email
+        return
+      }
+      await payload.updateGlobal({ slug: 'studio', data: { email: PROBE_EMAIL } })
+      restore = async () => {
+        await payload.updateGlobal({ slug: 'studio', data: { email: null } })
+      }
+    })
+
+    test.afterAll(async () => {
+      await restore?.()
+    })
+
+    test('is replaced by how to reach me', async ({ page }) => {
+      await page.goto('/en/contact')
       await expect(note(page)).toBeVisible()
-      await expect(note(page)).toContainText('@')
-      await expect(page.locator('#form form')).toBeHidden()
+      await expect(page.locator('.contact-form')).toBeHidden()
+      // The address to write to instead.
+      const mail = page.locator('.contact__direct a[href^="mailto:"]')
+      await expect(mail).toHaveCount(1)
+      await expect(mail).toBeVisible()
+      await expect(mail).toHaveAttribute('href', `mailto:${address}`)
     })
   })
 
   test('with JavaScript is the form, with no note', async ({ page }) => {
-    await page.goto(`${baseURL}/en/contact`)
-    await expect(page.locator('#form form')).toBeVisible()
+    await page.goto('/en/contact')
+    await expect(page.locator('.contact-form')).toBeVisible()
     await expect(note(page)).toBeHidden()
   })
 })

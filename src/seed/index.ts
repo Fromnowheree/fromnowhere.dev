@@ -1,6 +1,9 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import type { Payload } from 'payload'
 
 import { richText } from './lexical'
+import { WINDOWS, type WindowSeed } from './windowSeeds'
 
 /**
  * Fills an EMPTY database with the site's starting content, in English and Croatian: the four
@@ -9,6 +12,10 @@ import { richText } from './lexical'
  *
  * Statuses and addresses are the launch plan, not a promise: check them in the admin before
  * going live. NMT has no address yet, so its line is dashed and ends at its page here.
+ *
+ * Windows come from src/seed/windowSeeds.ts and the committed captures in src/seed/windows/
+ * (`pnpm capture:windows`). A window is added only for a published destination, so the manifest
+ * is empty until one is live, and an entry whose file is missing is skipped: nothing is invented.
  */
 
 type ProjectSeed = {
@@ -133,7 +140,21 @@ const PROJECTS: ProjectSeed[] = [
   },
 ]
 
-export async function seed(payload: Payload) {
+type SeedOptions = {
+  /** Where the captures are. Resolved from the working directory, never from this module's own
+   * address: the seed is bundled into .next/server/chunks, and the standalone server runs in /app. */
+  windowsDir?: string
+  /** The window manifest; tests pass a fixture. */
+  windows?: WindowSeed[]
+}
+
+export async function seed(
+  payload: Payload,
+  {
+    windowsDir = path.resolve(process.cwd(), 'src/seed/windows'),
+    windows = WINDOWS,
+  }: SeedOptions = {},
+) {
   const { totalDocs } = await payload.count({ collection: 'projects', overrideAccess: true })
   if (totalDocs > 0) return
   payload.logger.info('Seed: filling an empty database with the starting content.')
@@ -173,6 +194,43 @@ export async function seed(payload: Payload) {
       collection: 'short-links',
       data: { alias: project.alias, project: created.id },
     })
+
+    const window = windows.find((entry) => entry.slug === project.slug)
+    if (window) {
+      const filePath = path.join(windowsDir, window.file)
+      if (fs.existsSync(filePath)) {
+        const media = await payload.create({
+          collection: 'media',
+          locale: 'en',
+          data: { alt: window.alt.en, focalX: 50, focalY: 0 },
+          filePath,
+        })
+        await payload.update({
+          collection: 'media',
+          id: media.id,
+          locale: 'hr',
+          data: { alt: window.alt.hr },
+        })
+        await payload.update({
+          collection: 'projects',
+          id: created.id,
+          locale: 'en',
+          data: {
+            window: media.id,
+            windowAddress: window.address,
+            windowCaption: window.caption.en,
+          },
+        })
+        await payload.update({
+          collection: 'projects',
+          id: created.id,
+          locale: 'hr',
+          data: { windowCaption: window.caption.hr },
+        })
+      } else {
+        payload.logger.info(`Seed: no window for ${project.slug} (${window.file} not found).`)
+      }
+    }
   }
 
   await payload.updateGlobal({

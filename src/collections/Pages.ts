@@ -2,10 +2,34 @@ import type { CollectionConfig } from 'payload'
 
 import { richTextRule } from '../fields/richText'
 import { seoField } from '../fields/seo'
-import { slugField } from '../fields/slug'
-import { l } from '../i18n/label'
+import { slugField, type SlugCheck } from '../fields/slug'
+import { l, pickLabel } from '../i18n/label'
 import { MAX_HEADING_LENGTH, MAX_INTRO_LENGTH } from '../lib/content'
 import { RESERVED_PAGE_SLUGS } from '../lib/links'
+
+/**
+ * A page's address without a language (fromnowhere.dev/about) must lead to the page, so its slug
+ * may not be a short link's word (Content → Short links). Checked when a page is saved, as a draft
+ * or published, but only for a new or changed slug (src/fields/slug.ts): a short link written with
+ * a page's word before this rule existed does not lock the page against edits. The short link
+ * refuses a page's slug too (src/collections/ShortLinks.ts), and pick-language prefers the page
+ * regardless.
+ */
+const notAShortLink: SlugCheck = async (slug, req) => {
+  const { totalDocs } = await req.payload.count({
+    collection: 'short-links',
+    where: { alias: { equals: slug } },
+    req,
+  })
+  if (totalDocs === 0) return true
+  return pickLabel(
+    req.i18n?.language,
+    l(
+      `"/${slug}" is a short link. Choose another address, or remove the short link first.`,
+      `"/${slug}" je kratka poveznica. Odaberite drugu adresu ili najprije uklonite kratku poveznicu.`,
+    ),
+  )
+}
 
 /**
  * Plain text pages: About, the privacy policy and anything like them, served at
@@ -56,6 +80,6 @@ export const Pages: CollectionConfig = {
       validate: richTextRule,
     },
     seoField,
-    slugField('title', RESERVED_PAGE_SLUGS),
+    slugField('title', RESERVED_PAGE_SLUGS, notAShortLink),
   ],
 }

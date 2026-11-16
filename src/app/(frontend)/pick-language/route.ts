@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server'
 
 import { chooseLocale, LANGUAGE_PATH_HEADER, LOCALE_COOKIE, sitePath } from '@/lib/locale'
-import { getServedLocales, resolveShortLink } from '@/lib/payload'
+import { getPublishedIndex, getServedLocales, resolveShortLink } from '@/lib/payload'
 import { shortAliasOf } from '@/lib/shortLinks'
 
 // Reads the short links and languages on every request; a build-time answer would be the build's.
@@ -11,7 +11,9 @@ export const dynamic = 'force-dynamic'
  * An address without a language ("/", "/contact", "/giogio"), rewritten here by src/proxy.ts.
  *
  * - One word that is a short link (Content → Short links) goes where the link says: another site,
- *   or a project's page in the visitor's language.
+ *   or a project's page in the visitor's language. A published page with that word as its slug
+ *   wins: its address without a language leads to it (a link saved before the two were kept
+ *   apart, src/collections/ShortLinks.ts and Pages.ts, is passed over).
  * - Anything else is redirected to the same path in a language the site serves. The Location is
  *   relative, so it is right whatever host name the site is reached by.
  */
@@ -24,7 +26,8 @@ export async function GET(request: NextRequest) {
   const path = sitePath(request.headers.get(LANGUAGE_PATH_HEADER))
 
   const alias = shortAliasOf(path)
-  const target = alias ? await resolveShortLink(alias) : null
+  const isPage = alias ? (await getPublishedIndex()).pages.has(alias) : false
+  const target = alias && !isPage ? await resolveShortLink(alias) : null
   if (target) {
     return new Response(null, {
       // Temporary: a link may be pointed somewhere else later, and browsers keep a 308 for good.

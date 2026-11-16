@@ -18,13 +18,17 @@
     "kicker": "fromnowhere.dev",
     "boardKicker": "Projekti",
     "boardTitle": "Kamo vodi svaka linija",
-    "mapLabel": "Karta linija od Fromnowherea do svakog projekta",
+    "mapLabel": "Karta linija",
     "origin": "Ovdje ste",
     "contactKicker": "Javite se",
     "contactTitle": "Imate nešto za izraditi?",
     "contactLead": "Recite mi što je to. Odgovaram osobno.",
     "contactAction": "Pišite mi",
     "empty": "Još nema objavljenih projekata."
+  },
+  "map": {
+    "pause": ", ",
+    "more": "još {count, plural, one {# adresa} few {# adrese} other {# adresa}}"
   },
   "board": {
     "line": "Linija",

@@ -88,7 +88,7 @@ export async function runStatusCheck(
 
 /**
  * The status check as a Payload job: scheduled every CHECK_EVERY_MINUTES minutes on the `status`
- * queue, which the server runs while STATUS_CHECKS is not "off" (src/instrumentation.ts,
+ * queue, which the server runs while STATUS_CHECKS is not "off" (src/instrumentation.node.ts,
  * `jobs.autoRun` in payload.config.ts). No retries: the next round is the retry.
  */
 export const checkStatusTask: TaskConfig<'checkStatus'> = {

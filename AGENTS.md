@@ -204,7 +204,7 @@ no-preference)`, which `tests/int/routeMap.int.spec.ts` checks for all three sty
   "Not answering just now"); a further stop that is quiet says "No answer" beside it and on its
   exit. One miss is a blip; a check older than 30 minutes says nothing, and the editor's status
   stands. Only `running` can become delayed. The cron starts only where Payload boots with
-  `cron: true` (`src/instrumentation.ts`, unless `STATUS_CHECKS=off`, which the end-to-end tests
+  `cron: true` (`src/instrumentation.node.ts`, unless `STATUS_CHECKS=off`, which the end-to-end tests
   set), never in a build, a test or a script.
 - **Nothing is invented for a visitor.** An empty field renders nothing; links to About and
   Privacy appear only while those pages are published; the form shows only while it can send.
@@ -248,7 +248,7 @@ no-preference)`, which `tests/int/routeMap.int.spec.ts` checks for all three sty
 ## 5. Migrations (read before deploying anything)
 
 Development pushes the schema; **production never pushes**: it applies `src/migrations/` at
-server start (`src/instrumentation.ts`), and exits if that fails so the container restarts.
+server start (`src/instrumentation.node.ts`), and exits if that fails so the container restarts.
 **Every schema change ships with its own migration**: change the config, `pnpm generate:types`,
 `pnpm payload migrate:create <name>`, commit the `.ts`, its `.json` snapshot and `index.ts`. CI
 fails a schema change without them. Migrations are append-only once production has run them.
@@ -287,6 +287,12 @@ for enum".
 
 ## 7. Gotchas
 
+- **Unknown addresses at any depth** reach the site's 404 through `(site)/[...rest]/page.tsx`,
+  which only calls `notFound()`. A `not-found.tsx` catches `notFound()` from a route that
+  matched; without the catch-all, `/hr/a/b` fell through to Next's bare white page.
+- **The status check connects through `guardedLookup`** (`src/lib/probe.ts`): every address a
+  name resolves to must be public, checked at connection time, so a public name pointing inside
+  (127.0.0.1, the compose network) or a rebinding DNS gets nothing. Keep `fetch` out of it.
 - **Never add a `loading.tsx`** (or a `<Suspense>` above a page) under
   `src/app/(frontend)/[locale]/`: streaming sends 200 before the page knows it exists, so an
   unpublished page would answer 200 instead of 404.

@@ -10,7 +10,7 @@
 #
 # which runs:
 #
-#   docker build --platform linux/arm64 -t "fromnowhere-web:$version" \
+#   docker build --platform linux/arm64 -t "localhost/fromnowhere-web:$version" \
 #     --build-arg APP_VERSION="$version" --build-arg APP_COMMIT="$(git rev-parse HEAD)" .
 #
 # The health check lives in compose.yml, not here: podman builds OCI images by default, and the

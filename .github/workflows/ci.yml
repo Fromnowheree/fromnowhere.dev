@@ -155,6 +155,6 @@ jobs:
           docker build \
             --build-arg APP_VERSION="${GITHUB_REF_NAME#v}" \
             --build-arg APP_COMMIT="${GITHUB_SHA}" \
-            --tag "fromnowhere-web:${GITHUB_REF_NAME#v}" .
-          docker image inspect "fromnowhere-web:${GITHUB_REF_NAME#v}" \
+            --tag "localhost/fromnowhere-web:${GITHUB_REF_NAME#v}" .
+          docker image inspect "localhost/fromnowhere-web:${GITHUB_REF_NAME#v}" \
             --format '{{index .Config.Labels "org.opencontainers.image.version"}} {{index .Config.Labels "org.opencontainers.image.revision"}}'

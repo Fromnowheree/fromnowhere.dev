@@ -213,6 +213,16 @@ describe('routeMap', () => {
         })
   })
 
+  it('keeps the stops a phone lane has room for, rather than none when not all fit', () => {
+    const tall = (n: number) =>
+      routeMap(Array.from({ length: n }, () => ({ state: 'running' as const, stops: 3 })))!.tall
+    // The top lane is short (it ends at the first terminal): one stop, where it used to drop all.
+    expect(tall(4).lines.map((line) => line.stops.length)).toEqual([1, 3, 3, 1])
+    for (const line of tall(7).lines)
+      for (let k = 1; k < line.stops.length; k++)
+        expect(line.stops[k].y - line.stops[k - 1].y).toBeGreaterThanOrEqual(9)
+  })
+
   it('puts a stop for each further address, three at most, on the line itself', () => {
     const wide = routeMap([{ state: 'running', stops: 9 }])!.wide
     expect(wide.lines[0].stops).toHaveLength(MAP.stopsMax)

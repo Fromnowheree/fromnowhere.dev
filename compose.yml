@@ -49,7 +49,10 @@ services:
   app:
     # Built and tagged by CI (.github/workflows/ci.yml) or by hand (Dockerfile); the VPS only
     # loads it.
-    image: ${APP_IMAGE:?set APP_IMAGE in .env to the image you loaded, e.g. fromnowhere-web:0.1.0}
+    image: ${APP_IMAGE:?set APP_IMAGE in .env to the image you loaded, e.g. localhost/fromnowhere-web:0.1.0}
+    # Loaded, never pulled: a name that does not match the loaded image stops here, instead of
+    # asking Docker Hub for an image that is not there.
+    pull_policy: never
     restart: unless-stopped
     logging: *logging
     environment:

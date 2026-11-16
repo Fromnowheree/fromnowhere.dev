@@ -356,10 +356,15 @@ const tallLayout = (lines: MapLineInput[]): MapLayout => {
         height,
         points,
         input,
-        (m) =>
-          hi - lo < 12 * m
-            ? []
-            : Array.from({ length: m }, (_, k) => ({ x, y: lo + ((hi - lo) * (k + 1)) / (m + 1) })),
+        // As many stops as the lane has room for (12 units each, so their labels stay apart),
+        // the first addresses first: a lane short of room for all keeps some, not none.
+        (m) => {
+          const fit = Math.max(0, Math.min(m, Math.floor((hi - lo) / 12)))
+          return Array.from({ length: fit }, (_, k) => ({
+            x,
+            y: lo + ((hi - lo) * (k + 1)) / (fit + 1),
+          }))
+        },
         { x: tx, y: ty },
         {
           left: pct(tx + L.labelGap, L.width),

@@ -316,16 +316,18 @@ export async function RouteMap({ projects, locale }: { projects: LiveProject[]; 
                 </span>
                 <div className="term__body">
                   <div className="term__head">
-                    <Link className="term__name" href={projectHref(project.slug ?? '')}>
-                      <span className="fnw-sr">
-                        {tProject('line', { number })}
-                        {tMap('pause')}
-                      </span>
+                    {/* Named whole by aria-label, "Line 02, Giogio, Running", which contains the
+                        visible name. Visually hidden spans around the name did the same, but
+                        sat outside the card on a phone (sideways scroll) and read with a
+                        stray space before the comma. */}
+                    <Link
+                      className="term__name"
+                      href={projectHref(project.slug ?? '')}
+                      aria-label={[tProject('line', { number }), project.name, tStatus(state)].join(
+                        tMap('pause'),
+                      )}
+                    >
                       {project.name}
-                      <span className="fnw-sr">
-                        {tMap('pause')}
-                        {tStatus(state)}
-                      </span>
                     </Link>
                     <span className="term__kind" aria-hidden="true">
                       {tKind(project.kind)}

@@ -121,8 +121,11 @@ const textOf = (markup: string, skip: (tag: string) => boolean) => {
     .replace(/ ([,.])/g, '$1')
     .trim()
 }
+/** A link named by aria-label is read as that label, its content unread (as a screen reader does). */
+const labelled = (markup: string) =>
+  markup.replace(/<a\b([^>]*)\baria-label="([^"]*)"([^>]*)>[\s\S]*?<\/a>/g, '<a$1$3>$2</a>')
 const spoken = (markup: string) =>
-  textOf(markup, (tag) => /aria-hidden="true"/.test(tag) || /^<(svg|title)\b/.test(tag))
+  textOf(labelled(markup), (tag) => /aria-hidden="true"/.test(tag) || /^<(svg|title)\b/.test(tag))
 const visible = (markup: string) => textOf(markup, (tag) => /class="fnw-sr"/.test(tag))
 
 /** Every element whose opening tag matches, with its content (balanced by tag name). */

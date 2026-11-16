@@ -117,12 +117,12 @@ One server (2–4 GB, with the other fromnowhere.dev sites beside it), one direc
 
 1. **DNS**: point the bare domain and `www.` at the VPS, with an AAAA record too if the VPS has
    IPv6 (and `stats.` for statistics).
-2. **The image**: CI builds `fromnowhere-web:<version>` for a `v<version>` tag and keeps no copy
+2. **The image**: CI builds `localhost/fromnowhere-web:<version>` for a `v<version>` tag and keeps no copy
    (there is no registry yet). Build the same image from the release's tag on your own machine,
    for the VPS's processor (`./scripts/build-image.sh`, linux/arm64 by default, or
    `linux/amd64`), and copy it over:
-   `docker save fromnowhere-web:<version> | ssh vps docker load`.
-3. **`.env`**: `cp .env.example .env` and fill it in: `APP_IMAGE` (`fromnowhere-web:<version>`),
+   `docker save localhost/fromnowhere-web:<version> | ssh vps docker load`.
+3. **`.env`**: `cp .env.example .env` and fill it in: `APP_IMAGE` (`localhost/fromnowhere-web:<version>`),
    `SITE_DOMAIN` (the bare domain), `SITE_URL`, `POSTGRES_PASSWORD`, `APP_DB_PASSWORD` and
    `PAYLOAD_SECRET` (each `openssl rand -hex 32`), `ADMIN_EMAIL`, `BACKUP_RECIPIENT`, the
    `CONTACT_*` mail account. Set `PAYLOAD_SEED=true` for the first start only, so the empty database gets the
@@ -178,7 +178,9 @@ any account exists it refuses again; further accounts are made in the admin by a
 ### Visitor statistics (optional, off by default)
 
 Umami is added by `compose.stats.yml`, with every credential generated at installation. Put
-`COMPOSE_FILE=compose.yml:compose.stats.yml` in `.env` so that every `docker compose` command below includes it.
+`COMPOSE_FILE=compose.yml:compose.stats.yml` in `.env` so that every `docker compose` command below includes it
+(on the shared server: `compose.yml:compose.shared.yml:compose.stats.yml`, or Caddy loses the
+other sites).
 
 1. In `.env`: `UMAMI_APP_SECRET` and `UMAMI_DB_PASSWORD` (each `openssl rand -hex 32`). Compose
    refuses to start Umami without them. On a fresh database volume `db/init/01-umami.sh` creates
@@ -259,7 +261,7 @@ restored database brings its own accounts.
 
 ```sh
 ./scripts/backup.sh                     # a backup of the site as it is now
-# load the new image as in step 2, then in .env: APP_IMAGE=fromnowhere-web:<new version>
+# load the new image as in step 2, then in .env: APP_IMAGE=localhost/fromnowhere-web:<new version>
 docker compose up -d                    # the app restarts and applies the new migrations
 docker compose ps                       # the app "healthy"; if not: docker compose logs app
 ```

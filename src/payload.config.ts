@@ -19,6 +19,7 @@ import { richTextLinkRule } from './fields/link'
 import { Studio } from './globals/Studio'
 import { checkStatusTask } from './jobs/checkStatus'
 import { defaultLocale, localeNames, locales } from './i18n/locales'
+import { serverUrl } from './lib/serverUrl'
 import { siteOrigins } from './lib/siteOrigins'
 import { migrations } from './migrations'
 import { seed } from './seed'
@@ -99,6 +100,11 @@ export default buildConfig({
   // Left empty, Payload would accept it from any origin, including the other *.fromnowhere.dev
   // sites.
   csrf: siteOrigins(),
+  // The site's public origin. Without it Payload derives one from the request, which behind Caddy
+  // is http:// and not in `csrf`, so links in admin mail (a password reset) came out without a
+  // host. Payload adds it to `csrf` as well. Production only: the editor's client calls the API
+  // at this origin, and in development the admin is also opened from a phone on the LAN.
+  serverURL: process.env.NODE_ENV === 'production' ? serverUrl : undefined,
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
@@ -109,7 +115,7 @@ export default buildConfig({
     },
     migrationDir: path.resolve(dirname, 'migrations'),
     // Development pushes the schema straight into the database. Production never pushes: it
-    // applies these migrations when the server starts (src/instrumentation.ts boots Payload before
+    // applies these migrations when the server starts (src/instrumentation.node.ts boots Payload before
     // the first request), so a new image brings its schema with it. Every schema change ships
     // with a migration of its own (AGENTS.md, "Migrations").
     prodMigrations: migrations,
@@ -124,7 +130,7 @@ export default buildConfig({
     : undefined,
   // The status check (src/jobs/checkStatus.ts) is scheduled every 5 minutes on the `status` queue.
   // Every minute the server queues it when due and runs what is queued; that cron starts only
-  // where Payload is booted with `cron: true` (src/instrumentation.ts, unless STATUS_CHECKS is
+  // where Payload is booted with `cron: true` (src/instrumentation.node.ts, unless STATUS_CHECKS is
   // "off"), never in a build, a test or a script.
   jobs: {
     tasks: [checkStatusTask],

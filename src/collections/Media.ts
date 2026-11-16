@@ -13,7 +13,11 @@ export const Media: CollectionConfig = {
     group: l('Content', 'Sadržaj'),
   },
   access: {
-    read: () => true,
+    // The files themselves are public (the site shows them); the documents are not. Open to
+    // anyone, GET /api/media would list every upload, including a window attached to a draft
+    // project, which is how a project is kept hidden. Payload's file route passes
+    // `isReadingStaticFile`; the site reads documents through the Local API.
+    read: ({ req, isReadingStaticFile }) => Boolean(req.user) || Boolean(isReadingStaticFile),
   },
   fields: [
     {

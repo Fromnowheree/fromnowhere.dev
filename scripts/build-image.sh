@@ -5,9 +5,11 @@
 #   ./scripts/build-image.sh                 # linux/arm64: the Oracle Ampere (A1) server
 #   ./scripts/build-image.sh linux/amd64     # an x86 server
 #
-# Then copy it over and point .env's APP_IMAGE at the printed tag:
+# Then copy it over and point .env's APP_IMAGE at the printed tag. The name starts with
+# `localhost/` because that is what podman calls a local image (and keeps in what it saves);
+# Docker keeps the name as written, so both engines and the server agree on it.
 #
-#   docker save fromnowhere-web:<version> | ssh <server> docker load
+#   docker save localhost/fromnowhere-web:<version> | ssh <server> docker load
 #   (podman save works the same way; its default format loads into Docker.)
 #
 # Building for another processor than this machine's runs under emulation (qemu-user-static,
@@ -39,7 +41,7 @@ fi
 
 version="$(node -p "require('./package.json').version")"
 commit="$(git rev-parse HEAD)"
-tag="fromnowhere-web:$version"
+tag="localhost/fromnowhere-web:$version"
 
 if [ "$(git describe --tags --exact-match 2>/dev/null || true)" != "v$version" ]; then
   echo "Note: HEAD is not tagged v$version; this image is not a release." >&2

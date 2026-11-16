@@ -135,7 +135,12 @@ export default async function Home({ params }: Props) {
         </div>
       </section>
 
-      <HomeMotion />
+      {/* Keyed on what the map draws: when the home page is fetched again in place (the brand
+          link on /en) with a line changed (a delay, a new address), the island starts over on
+          the new lines and trains instead of running only the ones it found first. */}
+      <HomeMotion
+        key={projects.map((p) => `${p.slug}:${serviceOf(p)}:${p.addresses?.length ?? 0}`).join('|')}
+      />
     </div>
   )
 }

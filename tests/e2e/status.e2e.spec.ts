@@ -60,6 +60,13 @@ test.describe('the live board', () => {
     await expect(page.locator('.map__svg--wide .line--delayed[data-line="gati"]')).toHaveCount(1)
     await expect(page.locator('.map__svg--wide .line[data-line="gati"] .train')).toHaveCount(0)
 
+    // A delayed line's longer card name never pushes the phone page sideways.
+    await page.setViewportSize({ width: 320, height: 800 })
+    await page.goto('/en')
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
+    await expect(page.getByRole('link', { name: 'Line 04, Gati, Delayed' })).toHaveCount(1)
+    await page.setViewportSize({ width: 1280, height: 800 })
+
     await page.goto('/hr/projects/gati')
     await expect(page.locator('.project__status .status')).toHaveText('Kasni')
     await expect(page.locator('.exit--quiet .exit__quiet')).toHaveText('Trenutačno ne odgovara')

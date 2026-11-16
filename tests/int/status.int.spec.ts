@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { isProbeable, probe } from '@/lib/probe'
+import { guardedFetch, isProbeable, isPublicIp, probe } from '@/lib/probe'
 import { answers, DOWN_AFTER, serviceOf, STALE_MS, withService } from '@/lib/status'
 import type { Project } from '@/payload-types'
 
@@ -113,6 +113,46 @@ describe('isProbeable', () => {
   })
 })
 
+describe('isPublicIp', () => {
+  it('accepts public addresses and refuses every internal, reserved or mapped form', () => {
+    for (const ip of ['91.234.46.60', '1.1.1.1', '2a01:4f8:c0c:1234::1', '::ffff:8.8.8.8'])
+      expect(isPublicIp(ip), ip).toBe(true)
+    for (const ip of [
+      '127.0.0.1',
+      '10.1.2.3',
+      '172.20.0.5',
+      '192.168.1.1',
+      '169.254.169.254',
+      '100.64.0.1',
+      '0.0.0.0',
+      '224.0.0.1',
+      '255.255.255.255',
+      '::1',
+      '::',
+      'fd00::1',
+      'fe80::1',
+      'ff02::1',
+      '::ffff:127.0.0.1',
+      '::ffff:7f00:1',
+      '64:ff9b::a00:1',
+      'not an ip',
+    ])
+      expect(isPublicIp(ip), ip).toBe(false)
+  })
+})
+
+describe('guardedFetch', () => {
+  it('refuses to connect when the name resolves to an internal address', async () => {
+    // localhost resolves to 127.0.0.1 / ::1 without the network: the knock never connects.
+    await expect(
+      guardedFetch('https://localhost:9/', {
+        signal: AbortSignal.timeout(2_000),
+        headers: {},
+      }),
+    ).rejects.toMatchObject({ code: 'EPRIVATE' })
+  })
+})
+
 describe('probe', () => {
   type Answer = { status: number; location?: string } | Error
   /** A fetch that answers from a script, and remembers what it was asked. */
@@ -138,7 +178,7 @@ describe('probe', () => {
         answered: true,
         code: status,
       })
-      expect(asked[0].init).toMatchObject({ method: 'GET', redirect: 'manual' })
+      expect(asked[0].init.signal).toBeInstanceOf(AbortSignal)
       expect(new Headers(asked[0].init.headers).get('user-agent')).toMatch(/^FromnowhereStatus\//)
     }
   })

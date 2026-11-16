@@ -29,12 +29,17 @@ database.
 
 ## 1. The server [you]
 
-Oracle Cloud console → Compute → Instances → Create:
+First, **upgrade the account to Pay As You Go** (Billing → Upgrade). Resources inside the Always
+Free limits stay free, but Oracle reclaims _idle_ Always Free instances on free-only accounts, and
+a quiet portfolio site looks idle. Set a budget alert at a small amount while you are there.
+
+Then Oracle Cloud console → Compute → Instances → Create:
 
 - **Image**: Canonical Ubuntu 24.04 (the aarch64 build is picked with the shape).
-- **Shape**: Ampere → `VM.Standard.A1.Flex`. Always Free covers 4 OCPUs and 24 GB in total;
-  2 OCPUs / 12 GB is plenty for both sites and leaves the rest for later. If it says "out of
-  capacity", try another availability domain or try again later; it comes and goes.
+- **Shape**: Ampere → `VM.Standard.A1.Flex`, **2 OCPUs / 12 GB**: plenty for both sites, and
+  within the Always Free Ampere allowance (reported as halved in 2026 from 4 / 24; check the
+  current limit on Oracle's Always Free page). If it says "out of capacity", try another
+  availability domain or try again later; it comes and goes.
 - **Boot volume**: 100 GB (Always Free covers 200 GB of block storage in total).
 - **Networking**: a public subnet with a public IPv4 address. IPv6 is optional: enable it on the
   VCN and the subnet, assign an address to the instance, and add AAAA records in step 3.
@@ -55,6 +60,10 @@ Then open the ports, in two places:
    sudo netfilter-persistent save
    ```
 
+   Do this before Docker is installed, and never run `netfilter-persistent save` again once it
+   is: it would save Docker's own chains too, and after a reboot they would clash with the ones
+   Docker makes, cutting the containers off.
+
 ## 2. Docker and the basics [server]
 
 ```sh
@@ -66,10 +75,13 @@ sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyring
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
   https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
   | sudo tee /etc/apt/sources.list.d/docker.list
-sudo apt update && sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-sudo usermod -aG docker "$USER"     # then log out and back in
+sudo apt update && sudo apt install -y docker-ce docker-ce-cli containerd.io \
+  docker-buildx-plugin docker-compose-plugin
+sudo usermod -aG docker "$USER"     # takes effect at the next login; `sudo docker` until then
 sudo dpkg-reconfigure -plow unattended-upgrades
-docker network create fromnowhere-sites
+sudo docker network create fromnowhere-sites
+sudo mkdir -p /srv/fnw /srv/fnwygo && sudo chown "$USER" /srv/fnw /srv/fnwygo
+exit                                # log in again, so `docker` works without sudo
 ```
 
 ## 3. DNS [you]
@@ -88,28 +100,34 @@ at the server and ports 80 and 443 are open. Check with `dig +short fromnowhere.
 
 ## 4. The image [you]
 
-The server never builds this site. On your machine, from a clean checkout:
+The server never builds this site. On your machine, with everything committed (the script
+refuses a tree with changes):
 
 ```sh
-git tag v0.1.0 && git push --tags        # the release
+git tag v0.1.0                           # the release: package.json's version, with a v
 ./scripts/build-image.sh                 # linux/arm64, under emulation: slow, give it time
-docker save fromnowhere-web:0.1.0 | ssh <server> docker load
-# podman: podman save fromnowhere-web:0.1.0 | ssh <server> docker load
+podman save localhost/fromnowhere-web:0.1.0 | ssh <server> docker load    # or docker save
 ```
+
+The name keeps its `localhost/` prefix: that is what podman calls a local image, and `.env`
+names it the same way. Compose never pulls it (`pull_policy: never`), so a name that does not
+match stops with a clear error.
 
 ## 5. The checkout and `.env` [server]
 
+The server needs the release's deployment files (compose, Caddy, db init, scripts), not the
+source, and no Git remote is needed: send the tag's tree from your machine.
+
 ```sh
-sudo mkdir -p /srv/fnw && sudo chown "$USER" /srv/fnw
-git clone <this repository> /srv/fnw && cd /srv/fnw && git checkout v0.1.0
-cp .env.example .env && chmod 600 .env
+git archive v0.1.0 | ssh <server> 'tar -x -C /srv/fnw'          # [you]
+cd /srv/fnw && cp .env.example .env && chmod 600 .env          # [server]
 ```
 
 Fill in `.env` (every variable is explained in `.env.example`):
 
 ```sh
 COMPOSE_FILE=compose.yml:compose.shared.yml
-APP_IMAGE=fromnowhere-web:0.1.0
+APP_IMAGE=localhost/fromnowhere-web:0.1.0
 SITE_DOMAIN=fromnowhere.dev
 SITE_URL=https://fromnowhere.dev
 POSTGRES_USER=fnw
@@ -157,7 +175,9 @@ admin").
 ## 8. yugioh.fromnowhere.dev beside it [server]
 
 ```sh
-git clone <fnwygo repository> /srv/fnwygo && cd /srv/fnwygo
+# [you] from the fnwygo checkout (it builds on the server, so it needs its source):
+#   git archive HEAD | ssh <server> 'tar -x -C /srv/fnwygo'
+cd /srv/fnwygo
 cp /srv/fnw/deploy/fnwygo/compose.shared.yml .
 cp .env.example .env && chmod 600 .env     # fill in as fnwygo's README says, plus:
 #   COMPOSE_FILE=compose.yml:compose.shared.yml
@@ -199,11 +219,18 @@ Reply-To set to the sender, and a link pasted into a chat shows the share card.
 ## 11. Every release after this [you, then server]
 
 ```sh
-git tag v0.1.1 && git push --tags && ./scripts/build-image.sh
-docker save fromnowhere-web:0.1.1 | ssh <server> docker load
-ssh <server>
+# [you] the version first: the image is named after package.json's version.
+npm pkg set version=0.1.1 && git commit -am "Release 0.1.1" && git tag v0.1.1
+./scripts/build-image.sh
+podman save localhost/fromnowhere-web:0.1.1 | ssh <server> docker load
+git archive v0.1.1 | ssh <server> 'tar -x -C /srv/fnw'     # the release's compose, Caddy, scripts
+# [server]
 cd /srv/fnw && ./scripts/backup.sh          # the way back is this backup (AGENTS.md §5)
-git fetch --tags && git checkout v0.1.1
-sed -i 's/^APP_IMAGE=.*/APP_IMAGE=fromnowhere-web:0.1.1/' .env
+sed -i 's#^APP_IMAGE=.*#APP_IMAGE=localhost/fromnowhere-web:0.1.1#' .env
 docker compose up -d                        # migrations run at start
+docker compose up -d --force-recreate caddy # Caddy reads a changed Caddyfile only when recreated
 ```
+
+The Caddyfile is mounted as a single file: an unpacked release replaces the file on disk, and a
+running Caddy keeps reading the old one (even through `caddy reload`) until it is recreated.
+Its certificates are kept in its volume, so recreating it costs a second, not a certificate.

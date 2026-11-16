@@ -3,7 +3,10 @@
 #   docker compose -f compose.yml -f compose.stats.yml up -d
 #   ./scripts/stats-admin.sh          # replaces Umami's default admin password, printed once
 #
-# or put COMPOSE_FILE=compose.yml:compose.stats.yml in .env so every command includes it.
+# or put COMPOSE_FILE=compose.yml:compose.stats.yml in .env so every command includes it. On a
+# server that shares its Caddy (compose.shared.yml) keep that file in the list too:
+# COMPOSE_FILE=compose.yml:compose.shared.yml:compose.stats.yml, or the next `up` recreates Caddy
+# without the shared network and the other sites answer 502.
 #
 # A file of its own rather than a compose profile, so that its secrets can be REQUIRED: compose
 # checks `${VAR:?}` in every service of the files it reads, including services whose profile is

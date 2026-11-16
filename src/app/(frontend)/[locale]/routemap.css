@@ -379,11 +379,20 @@
   display: none;
 }
 @container map (width < 1040px) {
-  .term__sum {
+  .term__sum,
+  .term__kind {
     display: none;
   }
+  /* One line, so a long name ("Nowhere’s Medical Toolbox") cannot grow its card into the next.
+     The link's accessible name stays whole; the board below spells it out too. Not clipped: the
+     card-wide ::after target is positioned by the card, not by the name. */
   .term__name {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
     font-size: 17px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 

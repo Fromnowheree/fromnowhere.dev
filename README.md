@@ -98,12 +98,18 @@ is not shown and the page gives the e-mail address instead.
 
 ## Other sites on this server
 
-The plan (vision, "Hosting") is one server for the fromnowhere.dev family behind this stack's
-Caddy. Each other site gets a block in `caddy/sites/<name>.caddy` (see the README there), and its
-container joins a network Caddy is on. That second half is not wired yet: until it is, every
-other site keeps its own Caddy on its own server.
+One server for the fromnowhere.dev family behind this stack's Caddy. `compose.shared.yml` puts
+Caddy on an external network, `fromnowhere-sites` (`docker network create fromnowhere-sites`
+once); each other site's web container joins it under a fixed alias, and its address block goes
+into `caddy/sites/<name>.caddy` (see the README there). yugioh.fromnowhere.dev is ready to go:
+`deploy/fnwygo/compose.shared.yml` for its checkout and `caddy/sites/yugioh.caddy.example` here
+(`docs/launch.md`, step 8). Only Caddy is on the shared network; no app reaches another's
+database.
 
 ## Installing on a VPS
+
+The launch itself, on an Oracle Cloud Ampere server shared with yugioh.fromnowhere.dev, step by
+step: [`docs/launch.md`](docs/launch.md). What follows is the general version.
 
 One server (2–4 GB, with the other fromnowhere.dev sites beside it), one directory, for example
 `/srv/fnw`, holding a checkout of this repository (for `compose.yml`, `caddy/`, `db/` and
@@ -113,7 +119,8 @@ One server (2–4 GB, with the other fromnowhere.dev sites beside it), one direc
    IPv6 (and `stats.` for statistics).
 2. **The image**: CI builds `fromnowhere-web:<version>` for a `v<version>` tag and keeps no copy
    (there is no registry yet). Build the same image from the release's tag on your own machine,
-   for the VPS's processor (the commands are in the `Dockerfile` header), and copy it over:
+   for the VPS's processor (`./scripts/build-image.sh`, linux/arm64 by default, or
+   `linux/amd64`), and copy it over:
    `docker save fromnowhere-web:<version> | ssh vps docker load`.
 3. **`.env`**: `cp .env.example .env` and fill it in: `APP_IMAGE` (`fromnowhere-web:<version>`),
    `SITE_DOMAIN` (the bare domain), `SITE_URL`, `POSTGRES_PASSWORD`, `APP_DB_PASSWORD` and

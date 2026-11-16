@@ -2,11 +2,15 @@
 #
 # Built in CI (.github/workflows/ci.yml, on a version tag), never on the server: a 1-2 GB
 # server cannot build Next.js reliably. CI keeps no copy yet (no registry), so to install one,
-# build it by hand from the release's tag, for the VPS's processor (most are linux/amd64; an
-# image built for an ARM laptop's own will not start there):
+# build it by hand from the release's tag, for the server's processor (the Oracle Ampere server
+# is linux/arm64; an image built for another processor will not start there):
 #
 #   version="$(node -p "require('./package.json').version")"
-#   docker build --platform linux/amd64 -t "fromnowhere-web:$version" \
+#   ./scripts/build-image.sh               # linux/arm64 (Oracle Ampere); or linux/amd64
+#
+# which runs:
+#
+#   docker build --platform linux/arm64 -t "fromnowhere-web:$version" \
 #     --build-arg APP_VERSION="$version" --build-arg APP_COMMIT="$(git rev-parse HEAD)" .
 #
 # The health check lives in compose.yml, not here: podman builds OCI images by default, and the

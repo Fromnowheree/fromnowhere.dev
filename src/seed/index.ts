@@ -31,6 +31,60 @@ type ProjectSeed = {
   alias: string
 }
 
+/** The About and Privacy pages' starting words, in both languages. */
+export const PAGES = [
+  {
+    slug: 'about',
+    en: {
+      title: 'About',
+      lead: 'Fromnowhere is one person making software: sites, products and the parts that keep them running.',
+      content: [
+        'I build things for the web from start to finish: the idea, the design, the code, the server it runs on and the care it needs after launch. Fromnowhere is the name I build under, and this site is the station every project leaves from.',
+        { h2: 'What I make' },
+        'Sites with a character of their own: a tournament broadcast for a local Yu-Gi-Oh! scene, a collage, a paper trail and a playable album for one musician. Products that solve one problem properly, like a toolbox for clinics that keeps their records on their own premises. And sites for clients who want something they can run themselves.',
+        { h2: 'How the work gets made' },
+        'Every project here is built from one design system and one stack: Next.js and Payload on Postgres, served by Caddy. The same parts, arranged differently each time, so each site gets a look of its own without starting from nothing, and every one of them can be looked after by one person.',
+        { h2: 'Working together' },
+        'If you have something to build, write to me. I read every message and reply myself, and I say plainly whether I am the right person for it.',
+      ],
+    },
+    hr: {
+      title: 'O meni',
+      lead: 'Fromnowhere je jedna osoba koja izrađuje softver: web stranice, proizvode i sve što ih drži u pogonu.',
+      content: [
+        'Izrađujem stvari za web od početka do kraja: ideju, dizajn, kod, poslužitelj na kojem rade i brigu koja im treba nakon objave. Fromnowhere je ime pod kojim radim, a ovaj web je stanica iz koje kreće svaki projekt.',
+        { h2: 'Što izrađujem' },
+        'Web stranice s vlastitim karakterom: prijenos turnira za lokalnu Yu-Gi-Oh! zajednicu, kolaž, papirnati trag i album koji se može igrati za jednog glazbenika. Proizvode koji jedan problem rješavaju kako treba, poput alata za ordinacije koji njihove podatke čuva u njihovim prostorima. I web stranice za klijente koji žele nešto čime mogu sami upravljati.',
+        { h2: 'Kako nastaje rad' },
+        'Svaki projekt ovdje izrađen je od jednog dizajnerskog sustava i jednog skupa alata: Next.js i Payload na Postgresu, koje poslužuje Caddy. Isti dijelovi, svaki put drukčije složeni, pa svaki web dobije vlastiti izgled bez kretanja od nule, a o svakom se može brinuti jedna osoba.',
+        { h2: 'Suradnja' },
+        'Ako imate nešto za izraditi, javite mi se. Čitam svaku poruku i odgovaram osobno, a iskreno ću reći jesam li prava osoba za taj posao.',
+      ],
+    },
+  },
+  {
+    slug: 'privacy',
+    en: {
+      title: 'Privacy',
+      lead: 'What this site keeps about you, which is very little.',
+      content: [
+        'The contact form sends your message straight to my inbox and keeps no copy on the server. I use what you wrote, and your address, only to reply. There are no cookies for visitors.',
+        'The server writes no log of visits. To hold off spam, the contact form remembers the address a message came from for a short while, in memory only. If visitor statistics are switched on, they are counted with Umami on this server, without cookies or IP addresses, and deleted after 13 months.',
+        'For anything about your data, write to hello@fromnowhere.dev.',
+      ],
+    },
+    hr: {
+      title: 'Privatnost',
+      lead: 'Što ovaj web čuva o vama, a to je vrlo malo.',
+      content: [
+        'Kontakt obrazac šalje vašu poruku izravno u moj sandučić i ne čuva kopiju na poslužitelju. Ono što ste napisali i vašu adresu koristim samo za odgovor. Za posjetitelje nema kolačića.',
+        'Poslužitelj ne vodi zapis o posjetima. Radi zaštite od neželjenih poruka kontakt obrazac kratko pamti adresu s koje je poruka stigla, samo u memoriji. Ako je statistika posjeta uključena, broji se Umamijem na ovom poslužitelju, bez kolačića i IP adresa, i briše nakon 13 mjeseci.',
+        'Za sve u vezi s vašim podacima pišite na hello@fromnowhere.dev.',
+      ],
+    },
+  },
+]
+
 const PROJECTS: ProjectSeed[] = [
   {
     line: 1,
@@ -238,6 +292,7 @@ export async function seed(
     locale: 'en',
     data: {
       headline: 'Every project starts at the same point',
+      email: 'hello@fromnowhere.dev',
       lede: 'Fromnowhere is a one-person software studio. Each line below leaves from here for something I’ve built: a site, a product, a community. Pick one and go.',
       defaultDescription:
         'Fromnowhere is an independent software studio: apps, developer websites and community sites.',
@@ -254,49 +309,7 @@ export async function seed(
     },
   })
 
-  const pages = [
-    {
-      slug: 'about',
-      en: {
-        title: 'About',
-        lead: 'Who’s behind Fromnowhere, and how the work gets made.',
-        content: [
-          'This page is waiting for its words: who I am, where I work from and what I like building.',
-          { h2: 'How the work gets made' },
-          'Every project here is built from one design system and one stack: Next.js and Payload on Postgres, served by Caddy from a small server. The same parts, arranged differently each time.',
-        ],
-      },
-      hr: {
-        title: 'O meni',
-        lead: 'Tko stoji iza Fromnowherea i kako nastaje rad.',
-        content: [
-          'Ova stranica čeka svoj tekst: tko sam, odakle radim i što volim raditi.',
-          { h2: 'Kako nastaje rad' },
-          'Svaki projekt ovdje izrađen je od jednog dizajnerskog sustava i jednog skupa alata: Next.js i Payload na Postgresu, koje Caddy poslužuje s malog poslužitelja. Isti dijelovi, svaki put drukčije složeni.',
-        ],
-      },
-    },
-    {
-      slug: 'privacy',
-      en: {
-        title: 'Privacy',
-        lead: 'What this site keeps about you, which is very little.',
-        content: [
-          'A starting text, to be checked before launch.',
-          'The contact form sends your message straight to my inbox and keeps no copy on the server. There are no cookies for visitors. If visitor statistics are switched on, they are counted with Umami on this server, without cookies or IP addresses, and deleted after 13 months.',
-        ],
-      },
-      hr: {
-        title: 'Privatnost',
-        lead: 'Što ovaj web čuva o vama, a to je vrlo malo.',
-        content: [
-          'Početni tekst, za provjeru prije objave.',
-          'Kontakt obrazac šalje vašu poruku izravno u moj sandučić i ne čuva kopiju na poslužitelju. Za posjetitelje nema kolačića. Ako je statistika posjeta uključena, broji se Umamijem na ovom poslužitelju, bez kolačića i IP adresa, i briše nakon 13 mjeseci.',
-        ],
-      },
-    },
-  ]
-  for (const page of pages) {
+  for (const page of PAGES) {
     const created = await payload.create({
       collection: 'pages',
       locale: 'en',

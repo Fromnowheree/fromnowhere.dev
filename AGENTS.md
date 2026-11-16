@@ -278,7 +278,12 @@ for enum".
 4. **Done (Phase 2, 16 November 2026):** the status check (a Payload job knocking on each
    address every 5 minutes; the board, map, tally and project pages show Delayed and quiet
    stops) and share cards drawn from the route map with the project's line lit.
-5. About text, Caddy and DNS for fromnowhere.dev, the shared Caddy for the other sites, launch.
+5. **Phase 3, launch** ([`docs/launch.md`](docs/launch.md)): one Oracle Cloud Ampere server
+   (linux/arm64, `scripts/build-image.sh`) shared with yugioh.fromnowhere.dev through
+   `compose.shared.yml` (only Caddy joins the `fromnowhere-sites` network; each other site's web
+   container joins it by alias, with its block in `caddy/sites/`). The About draft, Privacy and
+   hello@fromnowhere.dev are in the seed (`PAGES`); the launch itself (server, DNS, mailboxes,
+   first release) is the runbook's, done by hand.
 
 ## 7. Gotchas
 

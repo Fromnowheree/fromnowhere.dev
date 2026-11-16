@@ -1,5 +1,5 @@
 // =============================================================================
-// NMT-PublicWeb — keep the dependencies current (Renovate, on the self-hosted Forgejo)
+// fromnowhere.dev — keep the dependencies current (Renovate, on the self-hosted Forgejo)
 // =============================================================================
 //
 // Renovate runs on Forgejo (git.home) as the `renovate` bot account, from the
@@ -89,7 +89,7 @@
       schedule: ['before 7am on the first day of the month'],
     },
     {
-      // A PostgreSQL major is a planned migration of every clinic's data (dump and
+      // A PostgreSQL major is a planned migration of the site's data (dump and
       // restore), never an image bump.
       matchPackageNames: ['postgres', 'docker.io/library/postgres'],
       matchUpdateTypes: ['major'],

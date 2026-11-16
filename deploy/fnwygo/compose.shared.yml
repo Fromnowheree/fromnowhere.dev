@@ -1,0 +1,25 @@
+# For fnwygo (yugioh.fromnowhere.dev) on the fromnowhere.dev server: copy this file into the
+# fnwygo checkout on the server, next to its compose.yml, and start it with
+#
+#   COMPOSE_FILE=compose.yml:compose.shared.yml    # in fnwygo's .env
+#   docker compose up -d --build                  # WITHOUT --profile https: no Caddy of its own
+#
+# Its web container joins the shared network as `ygo-web`, which fromnowhere.dev's Caddy
+# reaches (caddy/sites/yugioh.caddy, from caddy/sites/yugioh.caddy.example). Its database and
+# bot stay on fnwygo's own network. fnwygo publishes its web port on 127.0.0.1 only; nothing from
+# outside reaches it except through Caddy.
+
+services:
+  web:
+    networks:
+      default:
+      sites:
+        aliases:
+          - ygo-web
+
+networks:
+  # fnwygo's own network, named so podman-compose (which wants it declared) reads it too.
+  default: {}
+  sites:
+    name: fromnowhere-sites
+    external: true

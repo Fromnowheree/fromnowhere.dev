@@ -1,0 +1,23 @@
+# yugioh.fromnowhere.dev (fnwygo) behind this server's Caddy. To switch it on, once fnwygo runs
+# with deploy/fnwygo/compose.shared.yml and its DNS points here:
+#
+#   cp caddy/sites/yugioh.caddy.example caddy/sites/yugioh.caddy
+#   docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+#
+# Kept as .example so Caddy never asks for a certificate before the name points at this server.
+
+yugioh.fromnowhere.dev {
+	encode zstd gzip
+
+	reverse_proxy ygo-web:3000
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	@static path /_next/static/*
+	header @static Cache-Control "public, max-age=31536000, immutable"
+}

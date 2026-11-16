@@ -160,6 +160,33 @@ describe('other sites on this server (caddy/sites)', () => {
     for (const address of siteAddresses(caddyfile))
       expect(address, address).toMatch(/\{\$(SITE_DOMAIN|STATS_DOMAIN)\}/)
   })
+
+  type Overlay = {
+    services: Record<
+      string,
+      { networks?: string[] | Record<string, { aliases?: string[] } | null> }
+    >
+    networks: Record<string, { name?: string; external?: boolean } | null>
+  }
+  const shared = parse(read('compose.shared.yml')) as Overlay
+  const ygo = parse(read('deploy/fnwygo/compose.shared.yml')) as Overlay
+
+  it('meet only Caddy on the shared network: no app or database of this stack joins it', () => {
+    expect(Object.keys(shared.services)).toEqual(['caddy'])
+    expect(shared.services.caddy.networks).toEqual(['default', 'sites'])
+    expect(shared.networks.sites).toEqual({ name: 'fromnowhere-sites', external: true })
+  })
+
+  it('join it with their web container alone, under the alias their block proxies to', () => {
+    expect(Object.keys(ygo.services)).toEqual(['web'])
+    expect(ygo.networks.sites).toEqual({ name: 'fromnowhere-sites', external: true })
+    const aliases = (ygo.services.web.networks as Record<string, { aliases?: string[] } | null>)
+      .sites?.aliases
+    const example = read('caddy/sites/yugioh.caddy.example')
+    expect(siteAddresses(example)).toEqual(['yugioh.fromnowhere.dev'])
+    const upstream = /reverse_proxy ([\w-]+):3000/.exec(example)?.[1]
+    expect(aliases).toEqual([upstream])
+  })
 })
 
 describe('the site block', () => {

@@ -8,8 +8,8 @@
 # Decrypt on your own machine, where the private key is, and pipe it to the VPS, so the key never
 # goes on the server and nothing is written there in the clear:
 #
-#   age -d -i publicweb-backup-key.txt db-<stamp>.dump.age \
-#     | ssh vps 'cd /srv/publicweb && ./scripts/restore.sh db'
+#   age -d -i fnw-backup-key.txt db-<stamp>.dump.age \
+#     | ssh vps 'cd /srv/fnw && ./scripts/restore.sh db'
 #
 # A database is restored into a scratch database first, while the site keeps running, in one
 # transaction that stops at the first error: a damaged or wrong file fails there and the site is

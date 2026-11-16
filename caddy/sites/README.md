@@ -7,9 +7,13 @@ medical.fromnowhere.dev) next to this one. Each file is one site block, for exam
 ```caddy
 yugioh.fromnowhere.dev {
 	encode zstd gzip
-	reverse_proxy fnwygo-web-1:3000
+	reverse_proxy ygo-web:3000
 }
 ```
 
-The other app's container must be on a network Caddy shares (README, "Other sites on this
-server"). An empty folder is fine: the glob matching nothing is not an error.
+The other app's container must be on the network Caddy shares (`compose.shared.yml`, README,
+"Other sites on this server"), under the alias the block names. `yugioh.caddy.example` is the
+whole block for yugioh.fromnowhere.dev: copy it to `yugioh.caddy` once that site runs here and
+its name points at this server (`docs/launch.md`, step 8). Only `*.caddy` is imported, so an
+example never asks for a certificate. An empty folder is fine: the glob matching nothing is not
+an error.

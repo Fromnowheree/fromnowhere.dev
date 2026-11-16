@@ -1,0 +1,21 @@
+# The shared front door: this stack's Caddy also serves the other fromnowhere.dev sites on the
+# same server (yugioh.fromnowhere.dev first). Use it on top of compose.yml:
+#
+#   docker network create fromnowhere-sites        # once per server
+#   COMPOSE_FILE=compose.yml:compose.shared.yml    # in .env (with compose.stats.yml if used)
+#
+# Caddy joins the external network `fromnowhere-sites`, which each other site's web container
+# joins too under a fixed alias (deploy/fnwygo/compose.shared.yml gives ygo's `ygo-web`). Its
+# address block goes into caddy/sites/<name>.caddy (caddy/sites/README.md). Only Caddy is on the
+# shared network: this site's app and database stay on their own, unreachable from the others.
+
+services:
+  caddy:
+    networks:
+      - default
+      - sites
+
+networks:
+  sites:
+    name: fromnowhere-sites
+    external: true

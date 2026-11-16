@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Nightly backup of one clinic's site, ENCRYPTED: the database, the uploaded images and, when it
+# Nightly backup of the fromnowhere.dev site, ENCRYPTED: the database, the uploaded images and, when it
 # exists, the visitor statistics, each piped straight from the container into `age` and written
 # only as ciphertext. No plaintext dump ever touches the disk, not even for a moment.
 #
 # Run from cron on the VPS, from the project directory:
 #
-#   30 3 * * * cd /srv/publicweb && ./scripts/backup.sh 2>&1 | logger -t publicweb-backup
+#   30 3 * * * cd /srv/fnw && ./scripts/backup.sh 2>&1 | logger -t fnw-backup
 #
 # Settings, from the environment or from .env (read line by line, never sourced):
 #

@@ -5,10 +5,10 @@ import config from '../../src/payload.config.js'
 import { richText } from '../../src/seed/lexical'
 
 /**
- * The notes (docs/prototypes/notes.html). The seed writes two, one short of opening them; these
- * tests check they stay hidden, then write two more through the Local API (one on Giogio's line,
- * one on Locals') and a draft, and look at every place notes appear. Throwaway mode only
- * (E2E_PORT): it writes to the database the server reads.
+ * The notes (docs/prototypes/notes.html). The seed writes three, the number that opens them;
+ * these tests take one back to a draft to see them hidden, then write two more through the Local
+ * API (one on Giogio's line, one on Locals') and a draft, and look at every place notes appear.
+ * Throwaway mode only (E2E_PORT): it writes to the database the server reads.
  */
 
 test.skip(!process.env.E2E_PORT, 'Writes notes: throwaway mode (E2E_PORT) only.')
@@ -81,7 +81,25 @@ test.afterAll(async () => {
   await payload.delete({ collection: 'notes', where: { slug: { in: MADE } } })
 })
 
-test.describe('with the seed’s two notes', () => {
+/** The seed's newest note, as a draft or published again. */
+const setThird = async (status: 'draft' | 'published') => {
+  const { docs } = await payload.find({
+    collection: 'notes',
+    where: { slug: { equals: 'notes-are-open' } },
+    limit: 1,
+  })
+  await payload.update({
+    collection: 'notes',
+    id: docs[0]!.id,
+    // Not `draft: true`: that saves a draft beside the published note, which stays live.
+    data: { _status: status },
+  })
+}
+
+test.describe('with two published', () => {
+  test.beforeAll(() => setThird('draft'))
+  test.afterAll(() => setThird('published'))
+
   test('nothing about them is public', async ({ page, request }) => {
     expect((await page.goto('/en/notes'))?.status()).toBe(404)
     expect((await page.goto('/en/notes/every-line-reports-in'))?.status()).toBe(404)
@@ -93,7 +111,7 @@ test.describe('with the seed’s two notes', () => {
   })
 })
 
-test.describe('with four published', () => {
+test.describe('with five published', () => {
   test.beforeAll(async () => {
     await write('e2e-press-start', '2026-10-20T12:00:00.000Z', 'giogio')
     await write('e2e-standings', '2026-11-01T12:00:00.000Z', 'locals')
@@ -104,6 +122,7 @@ test.describe('with four published', () => {
     expect((await page.goto('/en/notes'))?.status()).toBe(200)
     await expect(page.locator('h1')).toHaveText('Notes')
     await expect(page.locator('.notes-log h3')).toHaveText([
+      'Notes are open',
       'Every line reports in now',
       'Links arrive with a map',
       'Standings while the event runs',
@@ -113,11 +132,11 @@ test.describe('with four published', () => {
     // The studio's notes wear the point; a project's its line.
     const owners = page.locator('.notes-log__card .notes-owner')
     await expect(owners.nth(0)).toContainText('Fromnowhere')
-    await expect(owners.nth(3)).toContainText('Giogio')
+    await expect(owners.nth(4)).toContainText('Giogio')
     await expect(page.locator('.site-nav__links a[href="/en/notes"]')).toHaveCount(1)
     await expect(page.locator('.site-footer a[href="/en/notes"]')).toHaveCount(1)
     await expect(page.locator('.notes-chip')).toHaveText([
-      /All\s*4/,
+      /All\s*5/,
       /01\s*Locals\s*1/,
       /02\s*Giogio\s*1/,
     ])
@@ -136,7 +155,7 @@ test.describe('with four published', () => {
     await expect(page.locator('.notes-chip[aria-current="page"]')).toContainText('Giogio')
     // A made-up line shows them all.
     await page.goto('/en/notes?line=nowhere')
-    await expect(page.locator('.notes-log h3')).toHaveCount(4)
+    await expect(page.locator('.notes-log h3')).toHaveCount(5)
   })
 
   test('a note on a line shows that line’s route and the way to the project', async ({ page }) => {
@@ -158,7 +177,7 @@ test.describe('with four published', () => {
     await expect(page.locator('.note-page .kicker')).toContainText('Fromnowhere')
     const route = page.locator('.notes-route--studio')
     await expect(route.locator('h2')).toHaveText('More notes')
-    await expect(route.locator('li')).toHaveCount(3)
+    await expect(route.locator('li')).toHaveCount(4)
     await expect(page.locator('.prose li')).toHaveCount(3)
     await finished(page)
     await page.screenshot({ path: `${SHOTS}/note.png`, fullPage: true })
@@ -175,11 +194,11 @@ test.describe('with four published', () => {
     const panel = page.locator('.home__notes')
     await expect(panel.locator('h2')).toHaveText('Latest notes')
     await expect(panel.locator('h3')).toHaveText([
+      'Notes are open',
       'Every line reports in now',
       'Links arrive with a map',
-      'Standings while the event runs',
     ])
-    await expect(panel.locator('.notes-more')).toContainText('All notes 4')
+    await expect(panel.locator('.notes-more')).toContainText('All notes 5')
     const order = await page.evaluate(() => {
       const board = document.querySelector('.home__board')!
       const notes = document.querySelector('.home__notes')!
@@ -205,7 +224,7 @@ test.describe('with four published', () => {
   test('speak Croatian under /hr', async ({ page }) => {
     await page.goto('/hr/notes')
     await expect(page.locator('h1')).toHaveText('Bilješke')
-    await expect(page.locator('.notes-log h3').first()).toHaveText('Svaka linija se sada javlja')
+    await expect(page.locator('.notes-log h3').first()).toHaveText('Bilješke su otvorene')
     await page.goto('/hr/notes/e2e-press-start')
     await expect(page.locator('h1')).toHaveText('Press Start se igra u pregledniku')
     await expect(page.locator('.notes-route')).toContainText('Ovdje ste')
@@ -265,7 +284,7 @@ test.describe('with four published', () => {
     const context = await browser.newContext({ javaScriptEnabled: false })
     const page = await context.newPage()
     await page.goto('/en/notes')
-    await expect(page.locator('.notes-log h3')).toHaveCount(4)
+    await expect(page.locator('.notes-log h3')).toHaveCount(5)
     await page.getByRole('link', { name: 'Standings while the event runs' }).click()
     await expect(page.locator('h1')).toHaveText('Standings while the event runs')
     await context.close()

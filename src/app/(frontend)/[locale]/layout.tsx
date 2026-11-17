@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import React from 'react'
 
 import { isLocale, ogLocales } from '@/i18n/locales'
+import { HeadScript } from '@/components/HeadScript'
 import { headScript } from '@/lib/motion'
 import { getStudio } from '@/lib/payload'
 import { serverUrl } from '@/lib/serverUrl'
@@ -49,7 +50,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     <html lang={locale} suppressHydrationWarning>
       <head>
         {/* Before paint: whether this page's entrances play (src/lib/motion.ts). */}
-        <script dangerouslySetInnerHTML={{ __html: headScript }} />
+        <HeadScript code={headScript} />
       </head>
       <body>
         {/* The atmosphere behind every page: grid, haze and sodium glow (site.css). */}

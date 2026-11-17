@@ -199,8 +199,9 @@ no-preference)`, which `tests/int/routeMap.int.spec.ts` checks for site.css, rou
   **Nothing about notes is public until three are published** (`NOTES_OPEN_AT`): `getNotes`
   returns none, so /notes and every note answer 404, and the nav, footer, home panel, project
   lists, sitemap, share cards and links in text all leave them out. A note whose project is a
-  draft reads as a note about the studio. The seed writes two true notes about the studio, one
-  short of opening. Their dates are days, kept at noon UTC and shown in UTC.
+  draft reads as a note about the studio. The seed writes three true notes about the studio
+  (`NOTES`), enough to open them, whenever there are no notes at all, even into a database seeded
+  before notes existed. Their dates are days, kept at noon UTC and shown in UTC.
 - **Short links** are one word at the root (`fromnowhere.dev/giogio`), answered in
   `pick-language`; `isShortAlias` keeps the languages and the paths the site answers itself out.
   A short link and a page never share a word (both refused at save time), and pick-language
@@ -311,6 +312,12 @@ for enum".
 - **Never add a `loading.tsx`** (or a `<Suspense>` above a page) under
   `src/app/(frontend)/[locale]/`: streaming sends 200 before the page knows it exists, so an
   unpublished page would answer 200 instead of 404.
+- **The head script is rendered only while the server's HTML hydrates** (`HeadScript`): React
+  remounts the layout on the EN ↔ HR switch, and a `<script>` it inserts never runs and makes
+  React warn ("Encountered a script tag"). **`src/instrumentation-client.ts`** skips, in
+  development only, the one Performance measure React's dev build asks for with a negative
+  time when a server component ends in `notFound()` or is cut short, which otherwise throws
+  "cannot have a negative time stamp" in the browser.
 - **`next dev` rewrites the block below** in this file. Leave it in place and commit it.
 - **Pages render per request** (`dynamic = 'force-dynamic'`), so the image builds without a
   database and edits show at once.

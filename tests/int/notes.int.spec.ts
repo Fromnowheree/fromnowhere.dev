@@ -137,13 +137,24 @@ describe('the rules', () => {
 })
 
 describe('the seed', () => {
-  it('writes two true notes about the studio in both languages, one short of opening', () => {
-    expect(NOTES).toHaveLength(NOTES_OPEN_AT - 1)
+  it('writes three true notes about the studio in both languages, enough to open them', () => {
+    expect(NOTES).toHaveLength(NOTES_OPEN_AT)
     for (const seeded of NOTES) {
       expect(seeded.en.title).toBeTruthy()
       expect(seeded.hr.title).toBeTruthy()
       expect(seeded.hr.summary).not.toBe(seeded.en.summary)
     }
+  })
+
+  it('writes them into a site that has none, once, newest first', async () => {
+    // Projects exist here, so the rest of the seed does nothing: the notes are a step of their own.
+    await seed(payload)
+    const notes = await getNotes('en')
+    expect(notes.map((n) => n.slug)).toEqual(NOTES.map((n) => n.slug))
+    expect((await getNotes('hr'))[0]?.title).toBe(NOTES[0]!.hr.title)
+    await seed(payload)
+    expect(await payload.count({ collection: 'notes' })).toEqual({ totalDocs: NOTES.length })
+    await payload.delete({ collection: 'notes', where: { id: { exists: true } } })
   })
 })
 

@@ -61,6 +61,8 @@ test.describe('the wide map at 1440', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/en')
     await expect(page.locator('.map__svg--wide .line')).toHaveCount(4)
+    // HomeMotion is listening: pointing and focus light lines only from here on.
+    await expect(page.locator('#route-map')).toHaveClass(/is-live/)
   })
 
   test('shows the wide drawing, its terminals with their labels to the right', async ({ page }) => {

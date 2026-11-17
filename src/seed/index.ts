@@ -8,9 +8,12 @@ import { WINDOWS, type WindowSeed } from './windowSeeds'
 /**
  * Fills an EMPTY database with the site's starting content, in English and Croatian: the four
  * lines from the vision (docs/vision.html), their short links, the studio's words and the About
- * and privacy pages, and the first two notes (about the studio itself: with fewer than three
- * published, the notes stay hidden until a third is written). It never overwrites: if any project
- * exists, it does nothing.
+ * and privacy pages. It never overwrites: if any project exists, it does nothing.
+ *
+ * The first notes (NOTES) are a step of their own: they are written whenever there are no notes
+ * at all, drafts included, so a database seeded before the notes existed gets them too. Once any
+ * note exists, they are left alone; PAYLOAD_SEED goes back to false after the first start
+ * (docs/launch.md), so deleting every note later does not bring them back.
  *
  * Statuses and addresses are the launch plan, not a promise: check them in the admin before
  * going live. NMT has no address yet, so its line is dashed and ends at its page here.
@@ -197,10 +200,32 @@ const PROJECTS: ProjectSeed[] = [
 ]
 
 /**
- * The first notes, both about the studio itself and both true of the site as it launches. Two is
- * one short of opening the notes (src/lib/notes.ts): they appear once a third is published.
+ * The first notes, all about the studio itself and all true of the site as it launches: three,
+ * the number that opens the notes (src/lib/notes.ts). Newest first.
  */
 export const NOTES = [
+  {
+    slug: 'notes-are-open',
+    date: '2026-11-17T12:00:00.000Z',
+    en: {
+      title: 'Notes are open',
+      summary:
+        'Short, dated notes on what I’m building have a page of their own now, and the newest three wait under the departures board.',
+      content: [
+        'Each note belongs to the line of the project it is about and wears that line’s colour, on the notes page, under the board and on the project’s own page. A note like this one, about the studio itself, wears the point.',
+        'Notes stay hidden until there are at least three, so the page never opens nearly empty. This is the third.',
+      ],
+    },
+    hr: {
+      title: 'Bilješke su otvorene',
+      summary:
+        'Kratke bilješke s datumom o onome što izrađujem sada imaju svoju stranicu, a najnovije tri čekaju ispod ploče polazaka.',
+      content: [
+        'Svaka bilješka pripada liniji projekta o kojem govori i nosi boju te linije, na stranici bilježaka, ispod ploče i na stranici samog projekta. Bilješka poput ove, o samom studiju, nosi točku.',
+        'Bilješke su skrivene dok ih nema barem tri, pa se stranica nikad ne otvara gotovo prazna. Ovo je treća.',
+      ],
+    },
+  },
   {
     slug: 'every-line-reports-in',
     date: '2026-11-16T12:00:00.000Z',
@@ -278,6 +303,7 @@ export async function seed(
     windows = WINDOWS,
   }: SeedOptions = {},
 ) {
+  await seedNotes(payload)
   const { totalDocs } = await payload.count({ collection: 'projects', overrideAccess: true })
   if (totalDocs > 0) return
   payload.logger.info('Seed: filling an empty database with the starting content.')
@@ -398,6 +424,15 @@ export async function seed(
     })
   }
 
+  payload.logger.info('Seed: done.')
+}
+
+/** The first notes, when there are no notes at all (drafts included). */
+async function seedNotes(payload: Payload) {
+  // Counts every note, drafts too: a draft lives in the collection with `_status: draft`.
+  const { totalDocs } = await payload.count({ collection: 'notes', overrideAccess: true })
+  if (totalDocs > 0) return
+  payload.logger.info('Seed: writing the first notes.')
   // Oldest first: notes of the same day list newest-created first, so they read in NOTES' order.
   for (const note of [...NOTES].reverse()) {
     const created = await payload.create({
@@ -419,6 +454,4 @@ export async function seed(
       data: { title: note.hr.title, summary: note.hr.summary, content: richText(note.hr.content) },
     })
   }
-
-  payload.logger.info('Seed: done.')
 }

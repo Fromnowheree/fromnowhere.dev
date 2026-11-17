@@ -122,6 +122,8 @@ services:
     environment:
       SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN in .env to the bare domain, e.g. example.com}
       STATS_DOMAIN: ${STATS_DOMAIN:-}
+      # Required: where the editor (/admin and the API) answers from (caddy/Caddyfile).
+      ADMIN_ALLOW: ${ADMIN_ALLOW:?set ADMIN_ALLOW in .env to your own IP address, e.g. 203.0.113.7}
     ports:
       - '80:80'
       - '443:443'

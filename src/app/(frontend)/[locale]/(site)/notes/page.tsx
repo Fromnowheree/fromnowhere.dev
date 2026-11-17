@@ -9,7 +9,9 @@ import { Link } from '@/i18n/navigation'
 import { asLocale } from '@/i18n/server'
 import { lineNumber } from '@/lib/format'
 import { notesHref } from '@/lib/links'
-import { pageMetadata } from '@/lib/metadata'
+
+const NOTES_FEED = `${notesHref}/feed.xml`
+import { localizedPath, pageMetadata } from '@/lib/metadata'
 import { linesOf } from '@/lib/notes'
 import { getNotes } from '@/lib/payload'
 
@@ -25,7 +27,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     getTranslations({ locale, namespace: 'notes' }),
   ])
   if (notes.length === 0) return {}
-  return pageMetadata(locale, null, { title: t('title'), description: t('lead'), path: notesHref })
+  const metadata = await pageMetadata(locale, null, {
+    title: t('title'),
+    description: t('lead'),
+    path: notesHref,
+  })
+  // The feed, for a reader that looks for one on the page.
+  return {
+    ...metadata,
+    alternates: {
+      ...metadata.alternates,
+      types: { 'application/atom+xml': localizedPath(locale, NOTES_FEED) },
+    },
+  }
 }
 
 const delay = (i: number) => ({ '--i': i }) as React.CSSProperties
@@ -111,6 +125,16 @@ export default async function NotesPage({ params, searchParams }: Props) {
       </header>
 
       {await NotesLog({ notes, locale, colour: picked ? noteColour(picked) : undefined })}
+      <p className="notes-feed">
+        {/* A plain anchor: the feed is a file, not a page the router can show. */}
+        <a
+          className="notes-more"
+          href={localizedPath(locale, NOTES_FEED)}
+          type="application/atom+xml"
+        >
+          {t('feed')}
+        </a>
+      </p>
       <NotesMotion key={picked?.slug ?? ''} />
     </div>
   )

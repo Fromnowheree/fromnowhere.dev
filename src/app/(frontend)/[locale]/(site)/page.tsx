@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import type React from 'react'
 
+import { JsonLd } from '@/components/JsonLd'
 import { HomeMotion } from '@/components/site/HomeMotion'
 import { LatestNotes } from '@/components/site/Notes'
 import { RouteMap } from '@/components/site/RouteMap'
@@ -9,9 +10,10 @@ import { Board } from '@/components/site/Signs'
 import { Link } from '@/i18n/navigation'
 import { asLocale } from '@/i18n/server'
 import { pageMetadata } from '@/lib/metadata'
-import { getNotes, getProjects, getShortLinks, getStudio } from '@/lib/payload'
+import { getNotes, getProjects, getServedLocales, getShortLinks, getStudio } from '@/lib/payload'
 import { serverUrl } from '@/lib/serverUrl'
 import { serviceOf, type Service } from '@/lib/status'
+import { studioGraph } from '@/lib/structuredData'
 
 type Props = { params: Promise<{ locale: string }> }
 
@@ -38,12 +40,13 @@ const delay = (d: number) => ({ '--d': d }) as React.CSSProperties
  */
 export default async function Home({ params }: Props) {
   const locale = asLocale((await params).locale)
-  const [t, studio, projects, shortLinks, notes] = await Promise.all([
+  const [t, studio, projects, shortLinks, notes, languages] = await Promise.all([
     getTranslations({ locale, namespace: 'home' }),
     getStudio(locale),
     getProjects(locale),
     getShortLinks(),
     getNotes(locale),
+    getServedLocales(),
   ])
 
   // The headline's own full stop gives way to the point.
@@ -64,6 +67,14 @@ export default async function Home({ params }: Props) {
 
   return (
     <div className="home">
+      <JsonLd
+        data={studioGraph({
+          description: studio.defaultDescription,
+          email: studio.email,
+          profiles: (studio.profiles ?? []).map((profile) => profile.url),
+          languages,
+        })}
+      />
       <section className="hero" aria-labelledby="home-title">
         <p className="kicker enter" style={delay(0)}>
           {t('kicker')}

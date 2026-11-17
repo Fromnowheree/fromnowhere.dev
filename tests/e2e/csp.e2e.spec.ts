@@ -155,7 +155,14 @@ test.describe('the pages keep to the policy', () => {
     })
   })
 
-  for (const path of ['/en', '/en/projects/giogio', '/hr', '/en/notes', '/en/contact']) {
+  for (const path of [
+    '/en',
+    '/en/projects/giogio',
+    '/hr',
+    '/en/notes',
+    '/en/notes/notes-are-open',
+    '/en/contact',
+  ]) {
     test(`${path} fires no securitypolicyviolation`, async ({ page }) => {
       const response = await page.goto(path)
       expect(response?.status()).toBe(200)

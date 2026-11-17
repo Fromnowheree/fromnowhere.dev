@@ -130,6 +130,7 @@ COMPOSE_FILE=compose.yml:compose.shared.yml
 APP_IMAGE=localhost/fromnowhere-web:0.1.0
 SITE_DOMAIN=fromnowhere.dev
 SITE_URL=https://fromnowhere.dev
+ADMIN_ALLOW=...              # your own address: curl -4 ifconfig.me (and -6); space-separated
 POSTGRES_USER=fnw
 POSTGRES_DB=fnw
 POSTGRES_PASSWORD=...        # openssl rand -hex 32
@@ -161,6 +162,11 @@ Once `https://fromnowhere.dev` answers, set `PAYLOAD_SEED=false` in `.env` and r
 
 Then the first admin: `./scripts/create-admin.sh` prints a password once (README, "The first
 admin").
+
+`/admin` (and the API it works through) answers only to the addresses in `ADMIN_ALLOW`; from
+anywhere else it is a 404. When your address changes (a new connection, travel), set it again in
+`.env` and run `docker compose up -d caddy`. For an IPv6 home network whose last part changes,
+allow its prefix (e.g. `2001:db8:1234::/56`).
 
 ## 7. Content, before telling anyone [you, in /admin]
 
@@ -209,6 +215,7 @@ curl -sI https://fromnowhere.dev/en | grep -iE '^(HTTP|strict-transport|content-
 curl -sI https://www.fromnowhere.dev | grep -i '^location'          # → https://fromnowhere.dev/
 curl -sI https://fromnowhere.dev/ygo | grep -i '^location'          # the short link
 curl -so /dev/null -w '%{http_code}\n' https://fromnowhere.dev/api/users/first-register   # 404
+# From a phone on mobile data (not your ADMIN_ALLOW address): /admin answers 404.
 curl -so /dev/null -w '%{http_code} %{content_type}\n' https://fromnowhere.dev/og/en/projects/giogio
 ```
 

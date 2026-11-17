@@ -99,6 +99,8 @@ export async function GET() {
     (profile) => `- [${line(profile.label)}](${profile.url}): ${displayAddress(profile.url)}`,
   )
   out.push('## Optional', '', `- [Sitemap](${serverUrl}/sitemap.xml): every page in both languages`)
+  if (notes.length > 0)
+    out.push(`- [Notes feed](${url(`${notesHref}/feed.xml`)}): the notes as an Atom feed`)
   out.push(...elsewhere, '')
 
   return new Response(out.join('\n'), {

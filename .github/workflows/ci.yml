@@ -122,7 +122,8 @@ jobs:
           image="$(sed -n "s/^ *image: \(docker.io\/library\/caddy:.*\)$/\1/p" compose.yml)"
           sites="$(mktemp -d)/sites"
           mkdir "$sites"
-          cid="$(docker create -e SITE_DOMAIN=example.com -e STATS_DOMAIN= "$image" \
+          cid="$(docker create -e SITE_DOMAIN=example.com -e STATS_DOMAIN= \
+            -e 'ADMIN_ALLOW=203.0.113.7 2001:db8::/48' "$image" \
             caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile)"
           docker cp caddy/Caddyfile "$cid:/etc/caddy/Caddyfile"
           docker cp "$sites" "$cid:/etc/caddy/"

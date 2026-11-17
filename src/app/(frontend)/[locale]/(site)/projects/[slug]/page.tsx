@@ -3,6 +3,7 @@ import { getFormatter, getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import type React from 'react'
 
+import { JsonLd } from '@/components/JsonLd'
 import { RichText } from '@/components/RichText'
 import { ProjectNotes } from '@/components/site/Notes'
 import { ExitPlate, StatusTag } from '@/components/site/Signs'
@@ -15,6 +16,7 @@ import { pageMetadata } from '@/lib/metadata'
 import { getNotes, getProject, getPublishedIndex } from '@/lib/payload'
 import { lineColour } from '@/lib/routeMap'
 import { serviceOf } from '@/lib/status'
+import { projectNode } from '@/lib/structuredData'
 
 type Props = { params: Promise<{ locale: string; slug: string }> }
 
@@ -61,6 +63,17 @@ export default async function ProjectPage({ params }: Props) {
 
   return (
     <article className="project" style={{ '--c': lineColour(project.line) } as React.CSSProperties}>
+      <JsonLd
+        data={projectNode({
+          locale,
+          path: projectHref(slug),
+          name: project.name,
+          summary: project.summary,
+          address: addresses[0]?.url,
+          started: project.started,
+          stack: project.stack ?? [],
+        })}
+      />
       <header className="page-head">
         <p className="kicker fnw-enter" style={{ '--i': 0 } as React.CSSProperties}>
           {t('line', { number: lineNumber(project.line) })} · {tKind(project.kind)}

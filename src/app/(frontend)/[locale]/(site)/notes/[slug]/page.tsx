@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import type React from 'react'
 
+import { JsonLd } from '@/components/JsonLd'
 import { RichText } from '@/components/RichText'
 import { NoteArrow, noteDates, NoteOwner, noteColour } from '@/components/site/Notes'
 import { Link } from '@/i18n/navigation'
@@ -11,6 +12,7 @@ import { lineNumber } from '@/lib/format'
 import { noteHref, notesHref, projectHref } from '@/lib/links'
 import { pageMetadata } from '@/lib/metadata'
 import { getNote, getNotes, getPublishedIndex } from '@/lib/payload'
+import { noteNode } from '@/lib/structuredData'
 
 type Props = { params: Promise<{ locale: string; slug: string }> }
 
@@ -52,6 +54,17 @@ export default async function NotePage({ params }: Props) {
 
   return (
     <article className="note-page" style={{ '--c': noteColour(project) } as React.CSSProperties}>
+      <JsonLd
+        data={noteNode({
+          locale,
+          path: noteHref(slug),
+          title: note.title,
+          summary: note.summary,
+          date: note.date,
+          updatedAt: note.updatedAt,
+          about: project ? { name: project.name, path: projectHref(project.slug) } : null,
+        })}
+      />
       <p className="note-page__back">
         <Link className="back" href={notesHref}>
           <span aria-hidden="true">←</span>

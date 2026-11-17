@@ -44,6 +44,8 @@ address, `notes.ts` when the notes open, `shortLinks.ts`, `relay/`),
 `src/i18n/`, `src/proxy.ts`, `src/app/(frontend)/[locale]/(site)/` (home `page.tsx`,
 `projects/[slug]`, `notes`, `notes/[slug]`, `contact`, `[slug]` for text pages), `src/app/(frontend)/pick-language/`
 (addresses without a language, and short links), `src/app/(frontend)/og/` (share cards), `src/app/llms.txt/` (the site for language models),
+`src/app/.well-known/security.txt/`, `src/app/manifest.ts` (icons from `scripts/make-icons.mjs`),
+`src/app/global-error.tsx` and the two `error.tsx` (the error page),
 `src/seed/` (the starting content). `src/payload-types.ts` and
 `src/app/(payload)/admin/importMap.js` are generated; never edit them by hand.
 
@@ -256,6 +258,9 @@ no-preference)`, which `tests/int/routeMap.int.spec.ts` checks for site.css, rou
   are style attributes). The editor keeps only the plain policy. Every response also carries
   `nosniff`, a referrer policy, a permissions policy and `Cross-Origin-Opener-Policy`, and no
   `X-Powered-By` (Caddy sends the same set, plus HSTS).
+- **The editor answers only to `ADMIN_ALLOW`** (Caddy, `caddy/Caddyfile`): /admin and the API
+  it works through give 404 to every other address; uploaded files and `/api/contact/*` stay
+  public. Compose refuses to start Caddy without it (no default that opens it to everyone).
 - **The REST API reads nothing to a visitor** (`signedIn`, `src/access.ts`): projects, pages,
   notes, short links, status checks, uploads' documents, users and the studio's settings all
   answer 403 without a session. The site reads through the Local API and never over HTTP; only
@@ -354,6 +359,14 @@ for enum".
   local mail catcher (Mailpit in `compose.dev.yml`) speaks STARTTLS with a certificate from
   `./scripts/dev-mail.sh`, which `pnpm dev:mail` trusts through `NODE_EXTRA_CA_CERTS`. Read what
   the form sent at http://localhost:8025 (`.env.example`, the contact block).
+- **What the site tells machines**: structured data on the home page (the studio and the site),
+  each project (`CreativeWork`) and each note (`BlogPosting`), built in `src/lib/structuredData.ts`
+  and rendered by `JsonLd` (a data block: no nonce needed, `<` escaped); an Atom feed of the notes
+  per language (`/<lang>/notes/feed.xml`, named by the notes page, absent while notes are closed);
+  the web manifest and app icons; `/.well-known/security.txt` from the studio's address.
+- **An error while rendering** shows the site's own page ("Service interrupted", `error.tsx` in
+  `(site)` with the chrome and in `[locale]` without it), with Try again; `global-error.tsx` is the
+  last resort with its own document. The visitor never sees the error itself.
 - **/llms.txt** (`src/app/llms.txt/route.ts`, https://llmstxt.org) describes the site in Markdown
   for language models: the studio, its published projects with their addresses, pages, open
   notes and contact. Like the sitemap it is read from the CMS per request, published only.

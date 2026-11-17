@@ -206,6 +206,21 @@ describe('the site block', () => {
   })
 })
 
+describe('the editor', () => {
+  it('answers only to ADMIN_ALLOW, the API with it, ahead of the catch-all proxy', () => {
+    const guard = caddyfile.search(
+      /@editor \{\n\s*path \/admin \/admin\/\* \/api \/api\/\*\n\s*not path \/api\/media\/file\/\* \/api\/contact\/\*\n\s*not remote_ip \{\$ADMIN_ALLOW\}\n\s*\}\n\s*handle @editor \{\n\s*respond 404/,
+    )
+    expect(guard).toBeGreaterThan(-1)
+    expect(guard).toBeLessThan(caddyfile.indexOf('\thandle {'))
+  })
+
+  it('cannot start without ADMIN_ALLOW: no default opens it to everyone', () => {
+    expect(compose.services.caddy?.environment?.ADMIN_ALLOW).toMatch(/^\$\{ADMIN_ALLOW:\?/)
+    expect(read('.env.example')).toMatch(/^ADMIN_ALLOW=$/m)
+  })
+})
+
 describe('Dockerfile', () => {
   const dockerfile = read('Dockerfile')
   const runner = dockerfile.slice(dockerfile.lastIndexOf('\nFROM '))

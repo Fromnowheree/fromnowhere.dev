@@ -837,3 +837,8 @@
       0 0 22px var(--c);
   }
 }
+
+/* The feed, under the log. */
+.notes-feed {
+  margin: clamp(24px, 4vw, 40px) 0 0;
+}

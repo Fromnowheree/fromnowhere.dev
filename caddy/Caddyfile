@@ -2,6 +2,7 @@
 # Every name comes from the environment compose.yml passes in (.env).
 #
 #   SITE_DOMAIN       the bare domain (fromnowhere.dev): the website lives here
+#   ADMIN_ALLOW       the addresses the editor answers to (your own), space-separated
 #   www.SITE_DOMAIN   redirected to the bare domain, so the site has one address
 #   STATS_DOMAIN      optional, the visitor statistics dashboard (compose.stats.yml)
 #   caddy/sites/      optional, the other sites on this server (yugioh.fromnowhere.dev, ...)
@@ -16,6 +17,20 @@
 	# bare `respond`, which would never be reached).
 	@firstRegister path /api/users/first-register
 	handle @firstRegister {
+		respond 404
+	}
+
+	# The editor answers only to the addresses in ADMIN_ALLOW (yours: an IPv4 address, an IPv6
+	# address or range, space-separated), and so does the API it works through. Anyone else gets
+	# 404, as if neither existed. The site's own public paths under /api stay open to everyone:
+	# uploaded pictures and the contact form's puzzle. The app's own locks (sign-in limits, the
+	# session cookie's origin check) still stand behind this one.
+	@editor {
+		path /admin /admin/* /api /api/*
+		not path /api/media/file/* /api/contact/*
+		not remote_ip {$ADMIN_ALLOW}
+	}
+	handle @editor {
 		respond 404
 	}
 

@@ -2,6 +2,7 @@ import type { GlobalConfig } from 'payload'
 
 import { httpsRule } from '../fields/link'
 import { rowLabel } from '../fields/rowLabel'
+import { signedIn } from '../access'
 import { l } from '../i18n/label'
 import { MAX_INTRO_LENGTH, MAX_LABEL_LENGTH, MAX_LINK_LENGTH } from '../lib/content'
 
@@ -13,7 +14,8 @@ export const Studio: GlobalConfig = {
   slug: 'studio',
   label: l('Studio', 'Studio'),
   admin: { group: l('Settings', 'Postavke') },
-  access: { read: () => true },
+  // The editor's, over the API: the site reads it through the Local API (src/lib/payload.ts).
+  access: { read: signedIn },
   versions: { max: 25 },
   fields: [
     {

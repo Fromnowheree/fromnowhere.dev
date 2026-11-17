@@ -6,6 +6,7 @@ import React from 'react'
 import { isLocale, ogLocales } from '@/i18n/locales'
 import { HeadScript } from '@/components/HeadScript'
 import { headScript } from '@/lib/motion'
+import { getNonce } from '@/lib/nonce'
 import { getStudio } from '@/lib/payload'
 import { serverUrl } from '@/lib/serverUrl'
 import '@/styles/fnw/tokens.css'
@@ -50,7 +51,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     <html lang={locale} suppressHydrationWarning>
       <head>
         {/* Before paint: whether this page's entrances play (src/lib/motion.ts). */}
-        <HeadScript code={headScript} />
+        <HeadScript code={headScript} nonce={await getNonce()} />
       </head>
       <body>
         {/* The atmosphere behind every page: grid, haze and sodium glow (site.css). */}

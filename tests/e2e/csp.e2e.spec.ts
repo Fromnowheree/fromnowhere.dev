@@ -56,7 +56,10 @@ test('another site cannot frame a page; the site itself can', async ({ page, bas
   await openMissingPage(page, `${otherOrigin(site)}/en/no-such-page`)
   expect(await framesSite(page, site)).toBe(false)
 
-  await openMissingPage(page, '/en/no-such-page')
+  // The editor frames the site for its live preview. A site page frames nothing at all
+  // (`frame-src 'none'`, src/lib/csp.ts), so the editor's own page does the framing here.
+  await page.goto('/admin/login')
+  await page.locator('form').first().waitFor()
   expect(await framesSite(page, site)).toBe(true)
 })
 
@@ -90,6 +93,45 @@ test('an injected form cannot post to another site', async ({ page, baseURL }) =
   expect(page.url().startsWith(baseURL!)).toBe(true)
 })
 
+test('every page carries a script policy with a nonce of its own', async ({ request }) => {
+  const policyOf = async (path: string) =>
+    (await request.get(path)).headers()['content-security-policy'] ?? ''
+  const first = await policyOf('/en')
+  const second = await policyOf('/en')
+  const nonce = (policy: string) => /'nonce-([^']+)'/.exec(policy)?.[1]
+  expect(first).toContain("'strict-dynamic'")
+  expect(first).not.toMatch(/script-src[^;]*'unsafe-inline'/)
+  expect(first).not.toContain("'unsafe-eval'")
+  expect(nonce(first)).toBeTruthy()
+  expect(nonce(second)).not.toBe(nonce(first))
+  for (const path of ['/en/notes', '/hr/projects/giogio', '/en/no-such-page'])
+    expect(await policyOf(path), path).toMatch(/script-src [^;]*'nonce-/)
+})
+
+test('the page’s own scripts run; injected ones do not', async ({ page }) => {
+  // Stored XSS, simulated: the page's HTML arrives with markup that carries no nonce, under the
+  // policy the server sent with it.
+  await page.route('**/en', async (route) => {
+    const response = await route.fetch()
+    const html = (await response.text()).replace(
+      '</body>',
+      '<script>window.injected = (window.injected || []).concat("script")</script>' +
+        '<img src="/no-such.png" onerror="window.injected = (window.injected || []).concat(\'handler\')">' +
+        '<a id="js-link" href="javascript:window.injected = (window.injected || []).concat(\'link\')">x</a>' +
+        '</body>',
+    )
+    await route.fulfill({ response, body: html })
+  })
+  await page.goto('/en')
+  // React is running: the map's island marked it live.
+  await expect(page.locator('#route-map')).toHaveClass(/is-live/)
+  await page.locator('#js-link').click()
+  await page.waitForTimeout(500)
+  expect(await page.evaluate(() => (window as Window & { injected?: string[] }).injected)).toBe(
+    undefined,
+  )
+})
+
 test('the editor carries the policy too', async ({ request }) => {
   const response = await request.get('/admin')
   expect(response.headers()['content-security-policy']).toContain("frame-ancestors 'self'")
@@ -113,7 +155,7 @@ test.describe('the pages keep to the policy', () => {
     })
   })
 
-  for (const path of ['/en', '/en/projects/giogio', '/hr']) {
+  for (const path of ['/en', '/en/projects/giogio', '/hr', '/en/notes', '/en/contact']) {
     test(`${path} fires no securitypolicyviolation`, async ({ page }) => {
       const response = await page.goto(path)
       expect(response?.status()).toBe(200)

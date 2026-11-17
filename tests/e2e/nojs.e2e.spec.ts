@@ -64,7 +64,9 @@ for (const width of SCREENS) {
  */
 test.describe('the contact form', () => {
   test.skip(!formShown, 'the server has no CONTACT_* mail account, so it shows no form')
-  const note = (page: Page) => page.getByText(en.form.needsScript)
+  // By its element, not getByText: Playwright's text matching skips what is inside <noscript>,
+  // which is where the note lives.
+  const note = (page: Page) => page.locator('noscript > p.contact__note')
 
   test.describe('without JavaScript', () => {
     test.use({ javaScriptEnabled: false })
@@ -97,6 +99,7 @@ test.describe('the contact form', () => {
     test('is replaced by how to reach me', async ({ page }) => {
       await page.goto('/en/contact')
       await expect(note(page)).toBeVisible()
+      await expect(note(page)).toHaveText(en.form.needsScript)
       await expect(page.locator('.contact-form')).toBeHidden()
       // The address to write to instead.
       const mail = page.locator('.contact__direct a[href^="mailto:"]')

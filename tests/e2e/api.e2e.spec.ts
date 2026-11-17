@@ -13,12 +13,46 @@ test.describe('API surface', () => {
     expect((await request.get('/api/graphql-playground')).status()).toBe(404)
   })
 
-  test('lists no uploads, drafts or status checks to a visitor', async ({ request }) => {
+  test('reads nothing to a visitor: the site reads through the Local API', async ({ request }) => {
     // The files are public; the documents are not: a window attached to a draft project would
-    // otherwise be listed here.
-    for (const path of ['/api/media', '/api/status-checks', '/api/short-links', '/api/users'])
+    // otherwise be listed here, and a draft's text through ?draft=true.
+    for (const path of [
+      '/api/media',
+      '/api/status-checks',
+      '/api/short-links',
+      '/api/users',
+      '/api/projects',
+      '/api/projects?draft=true&limit=100',
+      '/api/projects/versions',
+      '/api/pages',
+      '/api/pages/versions',
+      '/api/notes',
+      '/api/notes/versions',
+      '/api/globals/studio',
+      '/api/globals/studio/versions',
+      '/api/payload-jobs',
+    ])
       expect((await request.get(path)).status(), path).toBe(403)
-    const projects = await (await request.get('/api/projects?draft=true&limit=100')).json()
-    for (const doc of projects.docs) expect(doc._status).toBe('published')
+  })
+
+  test('writes nothing for a visitor', async ({ request }) => {
+    for (const collection of ['projects', 'pages', 'notes', 'short-links', 'media'])
+      expect(
+        (await request.post(`/api/${collection}`, { data: { title: 'x' } })).status(),
+        collection,
+      ).toBe(403)
+  })
+
+  test('every response carries the basic headers, and none names the framework', async ({
+    request,
+  }) => {
+    for (const path of ['/en', '/admin', '/api/users', '/llms.txt', '/og/en']) {
+      const headers = (await request.get(path)).headers()
+      expect(headers['x-content-type-options'], path).toBe('nosniff')
+      expect(headers['referrer-policy'], path).toBe('strict-origin-when-cross-origin')
+      expect(headers['permissions-policy'], path).toContain('camera=()')
+      expect(headers['cross-origin-opener-policy'], path).toBe('same-origin')
+      expect(headers['x-powered-by'], path).toBeUndefined()
+    }
   })
 })

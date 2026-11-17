@@ -3,6 +3,7 @@ import type { CollectionConfig } from 'payload'
 import { richTextRule } from '../fields/richText'
 import { seoField } from '../fields/seo'
 import { slugField } from '../fields/slug'
+import { signedIn } from '../access'
 import { l } from '../i18n/label'
 import { MAX_HEADING_LENGTH, MAX_INTRO_LENGTH } from '../lib/content'
 
@@ -25,9 +26,9 @@ export const Notes: CollectionConfig = {
     ),
   },
   defaultSort: '-date',
-  access: {
-    read: ({ req }) => (req.user ? true : { _status: { equals: 'published' } }),
-  },
+  // The editor's, over the API: the site reads through the Local API (src/lib/payload.ts), which
+  // names `_status: published` itself, so a visitor has nothing to read here (tests/e2e/api).
+  access: { read: signedIn },
   versions: { drafts: true, maxPerDoc: 25 },
   fields: [
     {

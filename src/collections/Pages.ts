@@ -3,6 +3,7 @@ import type { CollectionConfig } from 'payload'
 import { richTextRule } from '../fields/richText'
 import { seoField } from '../fields/seo'
 import { slugField, type SlugCheck } from '../fields/slug'
+import { signedIn } from '../access'
 import { l, pickLabel } from '../i18n/label'
 import { MAX_HEADING_LENGTH, MAX_INTRO_LENGTH } from '../lib/content'
 import { RESERVED_PAGE_SLUGS } from '../lib/links'
@@ -48,10 +49,9 @@ export const Pages: CollectionConfig = {
       'Tekstualne stranice poput O meni i pravila privatnosti. Početna, projekti i kontakt su ugrađeni.',
     ),
   },
-  access: {
-    // Visitors (and the REST API without a session) see published pages only.
-    read: ({ req }) => (req.user ? true : { _status: { equals: 'published' } }),
-  },
+  // The editor's, over the API: the site reads through the Local API (src/lib/payload.ts), which
+  // names `_status: published` itself, so a visitor has nothing to read here (tests/e2e/api).
+  access: { read: signedIn },
   versions: { drafts: true, maxPerDoc: 25 },
   fields: [
     {

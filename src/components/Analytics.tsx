@@ -21,7 +21,14 @@ export const statisticsScript = (
 
 /** Cookieless visitor statistics (self-hosted Umami). The admin has its own layout and never
  * loads it. */
-export function Analytics({ enabled }: { enabled: boolean | null | undefined }) {
+export function Analytics({
+  enabled,
+  nonce,
+}: {
+  enabled: boolean | null | undefined
+  /** The request's script nonce (src/lib/csp.ts): without it the policy stops the script. */
+  nonce?: string
+}) {
   const script = statisticsScript(enabled)
   if (!script) return null
 
@@ -33,6 +40,7 @@ export function Analytics({ enabled }: { enabled: boolean | null | undefined }) 
         // Count only the real domain, not visits to a preview, the server IP or localhost.
         data-domains={new URL(serverUrl).hostname}
         strategy="afterInteractive"
+        nonce={nonce}
       />
       <StatsClicks />
     </>

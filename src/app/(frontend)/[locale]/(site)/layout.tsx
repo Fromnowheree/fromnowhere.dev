@@ -6,6 +6,7 @@ import { Motion } from '@/components/Motion'
 import { SiteFooter, SiteHeader } from '@/components/site/Chrome'
 import { PageTransition } from '@/components/site/PageTransition'
 import { asLocale } from '@/i18n/server'
+import { getNonce } from '@/lib/nonce'
 import { getStudio } from '@/lib/payload'
 
 type Props = { children: React.ReactNode; params: Promise<{ locale: string }> }
@@ -30,7 +31,7 @@ export default async function SiteLayout({ children, params }: Props) {
         <PageTransition>{children}</PageTransition>
       </main>
       <SiteFooter locale={locale} />
-      <Analytics enabled={studio.visitorStatistics} />
+      <Analytics enabled={studio.visitorStatistics} nonce={await getNonce()} />
     </>
   )
 }

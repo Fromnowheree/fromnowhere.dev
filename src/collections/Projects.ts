@@ -5,6 +5,7 @@ import { richTextRule } from '../fields/richText'
 import { rowLabel } from '../fields/rowLabel'
 import { seoField } from '../fields/seo'
 import { slugField } from '../fields/slug'
+import { signedIn } from '../access'
 import { l, pickLabel } from '../i18n/label'
 import { MAX_INTRO_LENGTH, MAX_LABEL_LENGTH, MAX_LINK_LENGTH } from '../lib/content'
 
@@ -50,9 +51,9 @@ export const Projects: CollectionConfig = {
     ),
   },
   defaultSort: 'line',
-  access: {
-    read: ({ req }) => (req.user ? true : { _status: { equals: 'published' } }),
-  },
+  // The editor's, over the API: the site reads through the Local API (src/lib/payload.ts), which
+  // names `_status: published` itself, so a visitor has nothing to read here (tests/e2e/api).
+  access: { read: signedIn },
   versions: { drafts: true, maxPerDoc: 25 },
   fields: [
     {

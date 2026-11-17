@@ -43,7 +43,9 @@
 		# The editor's live preview frames the site from the same origin; nobody else may. The app
 		# sends the same as `frame-ancestors 'self'` in its Content-Security-Policy (next.config.ts).
 		X-Frame-Options SAMEORIGIN
-		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		# The same as the app sends (next.config.ts), which these replace.
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()"
+		Cross-Origin-Opener-Policy same-origin
 		-Server
 		-X-Powered-By
 	}

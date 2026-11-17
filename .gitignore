@@ -25,6 +25,8 @@
 # misc
 .DS_Store
 *.pem
+# the dev mail catcher's certificates (scripts/dev-mail.sh)
+/.dev/
 
 # debug
 npm-debug.log*

@@ -43,7 +43,7 @@ rule, `payload.ts` every query, `routeMap.ts` the map's geometry, `status.ts` a 
 address, `notes.ts` when the notes open, `shortLinks.ts`, `relay/`),
 `src/i18n/`, `src/proxy.ts`, `src/app/(frontend)/[locale]/(site)/` (home `page.tsx`,
 `projects/[slug]`, `notes`, `notes/[slug]`, `contact`, `[slug]` for text pages), `src/app/(frontend)/pick-language/`
-(addresses without a language, and short links), `src/app/(frontend)/og/` (share cards),
+(addresses without a language, and short links), `src/app/(frontend)/og/` (share cards), `src/app/llms.txt/` (the site for language models),
 `src/seed/` (the starting content). `src/payload-types.ts` and
 `src/app/(payload)/admin/importMap.js` are generated; never edit them by hand.
 
@@ -247,7 +247,19 @@ no-preference)`, which `tests/int/routeMap.int.spec.ts` checks for site.css, rou
 - **The first admin is made at provisioning** (`scripts/create-admin.sh`, `src/lib/provision.ts`),
   never by whoever opens `/admin` first; Caddy answers `/api/users/first-register` with 404.
 - **Every response carries a Content-Security-Policy** (`next.config.ts`); uploads get one of
-  their own that keeps `script-src 'none'`.
+  their own that keeps `script-src 'none'`. **Every page carries a second, strict one from the
+  proxy** (`src/proxy.ts`, `src/lib/csp.ts`): scripts run only with the request's nonce
+  (`'strict-dynamic'`, no `'unsafe-inline'`, `'unsafe-eval'` in development only), so an injected
+  script, inline handler or `javascript:` link runs nothing. Next puts the nonce on its own
+  scripts; a script the site renders itself takes it from `getNonce()` (`src/lib/nonce.ts`), as
+  the head script and the statistics script do. Styles stay `'unsafe-inline'` (the line colours
+  are style attributes). The editor keeps only the plain policy. Every response also carries
+  `nosniff`, a referrer policy, a permissions policy and `Cross-Origin-Opener-Policy`, and no
+  `X-Powered-By` (Caddy sends the same set, plus HSTS).
+- **The REST API reads nothing to a visitor** (`signedIn`, `src/access.ts`): projects, pages,
+  notes, short links, status checks, uploads' documents, users and the studio's settings all
+  answer 403 without a session. The site reads through the Local API and never over HTTP; only
+  uploaded files are public (`isReadingStaticFile`). A new collection gets `read: signedIn` too.
 - **GraphQL stays off** and there are no route files under `src/app/(payload)/api/graphql*`.
 - **The app container gets only the variables it reads**, listed in `compose.yml`; a new one
   goes into `.env.example` AND that list (`tests/int/deploy.int.spec.ts`).
@@ -338,7 +350,13 @@ for enum".
   the rows (`src/seed/index.ts`).
 - **A test that needs an empty install** uses its own database (`tests/helpers/freshDatabase.ts`).
 - **To see the form locally** set the six `CONTACT_*` variables; without them the contact page
-  shows the e-mail address instead. The relay insists on TLS.
+  shows the e-mail address instead. The relay insists on TLS with a checked certificate, so the
+  local mail catcher (Mailpit in `compose.dev.yml`) speaks STARTTLS with a certificate from
+  `./scripts/dev-mail.sh`, which `pnpm dev:mail` trusts through `NODE_EXTRA_CA_CERTS`. Read what
+  the form sent at http://localhost:8025 (`.env.example`, the contact block).
+- **/llms.txt** (`src/app/llms.txt/route.ts`, https://llmstxt.org) describes the site in Markdown
+  for language models: the studio, its published projects with their addresses, pages, open
+  notes and contact. Like the sitemap it is read from the CMS per request, published only.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

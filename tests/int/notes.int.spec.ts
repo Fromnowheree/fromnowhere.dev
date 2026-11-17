@@ -203,13 +203,9 @@ describe('the published notes', () => {
     expect(notes.find((n) => n.slug === 'notes-one')?.title).toBe('Title of notes-one')
   })
 
-  it('are read-only to visitors through the API: drafts stay out', async () => {
-    const { docs } = await payload.find({
-      collection: 'notes',
-      overrideAccess: false,
-      depth: 0,
-      limit: 100,
-    })
-    expect(docs.map((n) => n.slug).sort()).toEqual(['notes-one', 'notes-three', 'notes-two'])
+  it('are not readable over the API without a session: the site reads them itself', async () => {
+    await expect(
+      payload.find({ collection: 'notes', overrideAccess: false, depth: 0, limit: 100 }),
+    ).rejects.toThrow()
   })
 })

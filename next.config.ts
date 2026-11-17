@@ -10,11 +10,11 @@ const dirname = path.dirname(__filename)
 // next-intl reads the request's language and messages from here (src/i18n/request.ts).
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
-// The page-level policy every response carries, the site's and the editor's alike: no plugins, no
-// <base> pointing elsewhere (which would send every relative link and script to another host),
-// forms post only to this site, and only this site may frame it (the editor's live preview). It
-// limits what an injected tag could do without limiting scripts, styles or images: those need a
-// per-request nonce in Next, and would have to be checked against Payload's editor.
+// The plain policy every response carries: no plugins, no <base> pointing elsewhere (which would
+// send every relative link and script to another host), forms post only to this site, and only
+// this site may frame it (the editor's live preview). The site's pages carry a second, strict one
+// from the proxy, with a nonce for scripts (src/lib/csp.ts); a browser enforces both. The editor
+// (/admin) keeps only this one: Payload's admin is not built for a nonce.
 // Sent by the app rather than Caddy, so the dev server and the tests see it too.
 const contentSecurityPolicy = [
   "base-uri 'self'",
@@ -37,14 +37,28 @@ const uploadPolicy = [
   "frame-ancestors 'self'",
 ].join('; ')
 
+// Sent on every response by the app as well as by Caddy (caddy/Caddyfile), so they hold without
+// it: no guessing a file's type from its bytes, addresses leave the site as an origin only, no
+// camera, microphone, location or payment, and a page another site opened cannot reach back into
+// it (window.opener). HSTS stays Caddy's: it means something only over HTTPS.
+const securityHeaders = [
+  { key: 'Content-Security-Policy', value: contentSecurityPolicy },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  {
+    key: 'Permissions-Policy',
+    value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()',
+  },
+  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+]
+
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // No "X-Powered-By: Next.js": nothing a visitor needs, and a free hint for anyone probing.
+  poweredByHeader: false,
   async headers() {
     return [
-      {
-        source: '/(.*)',
-        headers: [{ key: 'Content-Security-Policy', value: contentSecurityPolicy }],
-      },
+      { source: '/(.*)', headers: securityHeaders },
       {
         source: '/api/media/file/:path*',
         headers: [{ key: 'Content-Security-Policy', value: uploadPolicy }],

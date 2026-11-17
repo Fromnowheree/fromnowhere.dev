@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import type React from 'react'
 
 import { RichText } from '@/components/RichText'
+import { ProjectNotes } from '@/components/site/Notes'
 import { ExitPlate, StatusTag } from '@/components/site/Signs'
 import { Window } from '@/components/site/Window'
 import { Link } from '@/i18n/navigation'
@@ -11,7 +12,7 @@ import { asLocale } from '@/i18n/server'
 import { lineNumber } from '@/lib/format'
 import { displayAddress, projectHref } from '@/lib/links'
 import { pageMetadata } from '@/lib/metadata'
-import { getProject, getPublishedIndex } from '@/lib/payload'
+import { getNotes, getProject, getPublishedIndex } from '@/lib/payload'
 import { lineColour } from '@/lib/routeMap'
 import { serviceOf } from '@/lib/status'
 
@@ -33,12 +34,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  * One project (docs/vision.html, "One page per project"), on its own line: the page takes the
  * line's colour, and its hero draws a short trip from the point to this terminal (dashed past the
  * frontier while it is being built). Then its story, a window onto the destination in its own
- * look, an exit for every address, lit in the line's colour, and the facts.
+ * look, an exit for every address, lit in the line's colour, the facts, and its notes.
  */
 export default async function ProjectPage({ params }: Props) {
   const { locale: raw, slug } = await params
   const locale = asLocale(raw)
-  const [project, index, t, tKind, tStatus, tBoard, tMap, format] = await Promise.all([
+  const [project, index, t, tKind, tStatus, tBoard, tMap, format, notes] = await Promise.all([
     getProject(slug, locale),
     getPublishedIndex(),
     getTranslations({ locale, namespace: 'project' }),
@@ -47,6 +48,7 @@ export default async function ProjectPage({ params }: Props) {
     getTranslations({ locale, namespace: 'board' }),
     getTranslations({ locale, namespace: 'map' }),
     getFormatter({ locale }),
+    getNotes(locale),
   ])
   if (!project) notFound()
 
@@ -143,6 +145,12 @@ export default async function ProjectPage({ params }: Props) {
           </dl>
         </aside>
       </div>
+
+      {await ProjectNotes({
+        notes: notes.filter((note) => note.project?.slug === project.slug),
+        project: { slug, name: project.name, line: project.line },
+        locale,
+      })}
 
       <p className="project__back">
         <Link className="back" href="/#projects">

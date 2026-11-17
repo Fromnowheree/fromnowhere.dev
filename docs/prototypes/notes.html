@@ -1,0 +1,717 @@
+<title>Fromnowhere Notes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Night transit, dark only. The notes' log: a violet rail, one stop per note, each lit in its project's line colour; a note about the studio wears the point. */
+:root {
+  color-scheme: dark;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --night: #05060f;
+  --ground: #090b19;
+  --surface: #11142a;
+  --surface-2: #181c38;
+  --track: #04050c;
+  --text: #eeedf6;
+  --text-muted: #a8acc6;
+  --text-dim: #6c7093;
+  --divider: rgba(238, 237, 246, 0.1);
+  --divider-strong: rgba(238, 237, 246, 0.2);
+  --grid: rgba(150, 160, 255, 0.05);
+
+  --accent: #a796ff;
+  --accent-soft: rgba(167, 150, 255, 0.35);
+  --accent-haze: rgba(120, 100, 255, 0.16);
+  --sodium: #ffb347;
+  --sodium-haze: rgba(255, 160, 60, 0.07);
+  --train-core: #fffaf0;
+
+  --line-1: #5b8cff;
+  --line-2: #ff5fa8;
+  --line-3: #ffb347;
+  --line-4: #45e0b4;
+  --focus: #ffffff;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --gutter: 16px;
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --dur-fast: 160ms;
+  --dur-slow: 320ms;
+}
+
+* { box-sizing: border-box; }
+html { background: var(--night); }
+body {
+  margin: 0; background: var(--night); color: var(--text);
+  font-family: var(--font-sans); font-weight: 400; font-size: 16px; line-height: 1.55;
+  -webkit-font-smoothing: antialiased; overflow-x: clip;
+}
+a { color: inherit; }
+::selection { background: var(--accent-soft); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: var(--radius-sm); }
+#content:focus { outline: none; }
+
+.wrap {
+  width: 100%; max-width: 1320px; margin-inline: auto;
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+}
+.narrow { max-width: 1080px; }
+@media (min-width: 720px) { :root { --gutter: 32px; } }
+
+.sky {
+  position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden;
+  background:
+    radial-gradient(120% 70% at 50% 120%, var(--sodium-haze), transparent 60%),
+    radial-gradient(80% 60% at 10% 30%, var(--accent-haze), transparent 65%),
+    linear-gradient(180deg, var(--night), var(--ground) 40%, var(--night));
+}
+.sky::before {
+  content: ''; position: absolute; inset: -20%;
+  background:
+    linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 48px 48px,
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 48px 48px;
+  mask-image: radial-gradient(70% 55% at 40% 40%, #000, transparent 75%);
+  -webkit-mask-image: radial-gradient(70% 55% at 40% 40%, #000, transparent 75%);
+}
+.sky::after {
+  content: ''; position: absolute; width: 70vmax; height: 70vmax; left: -10vmax; top: -15vmax;
+  background: radial-gradient(circle, var(--accent-haze), transparent 60%);
+}
+
+/* ---------- Prototype bar (not part of the design) ---------- */
+.proto { background: var(--surface-2); border-bottom: 1px solid var(--divider-strong); font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+.proto .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; padding-block: 4px; }
+.proto__tag { color: var(--sodium); letter-spacing: 0.1em; text-transform: uppercase; }
+.proto__views, .proto__toggle { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+.proto a, .proto button {
+  min-height: 44px; display: inline-flex; align-items: center; padding: 0 10px; border-radius: var(--radius-sm);
+  color: var(--text-muted); text-decoration: none; font: inherit; background: none; border: 0; cursor: pointer;
+}
+.proto a:hover, .proto button:hover { color: var(--text); }
+.proto a[aria-current], .proto button[aria-pressed="true"] { color: var(--text); background: rgba(255, 255, 255, 0.06); }
+.proto__toggle { margin-left: auto; }
+.proto__toggle span { padding-right: 4px; color: var(--text-dim); }
+.proto__hint { flex-basis: 100%; color: var(--text-dim); padding-bottom: 6px; }
+
+/* ---------- Header ---------- */
+.top .wrap { display: flex; align-items: center; gap: 12px; padding-top: 18px; padding-bottom: 18px; }
+.lockup { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; margin-right: auto; min-height: 44px; }
+.lockup svg { width: 36px; height: 36px; display: block; }
+.lockup span { font-weight: 500; letter-spacing: 0.06em; font-size: 17px; }
+.nav { display: flex; align-items: center; gap: 4px; }
+.nav a { text-decoration: none; color: var(--text-muted); padding: 0 10px; min-height: 44px; display: inline-flex; align-items: center; font-size: 15px; border-radius: var(--radius-sm); transition: color var(--dur-fast); }
+.nav a:hover, .nav a[aria-current] { color: var(--text); }
+.nav a.nav__notes[aria-current] { box-shadow: inset 0 -2px 0 var(--accent); border-radius: 0; }
+.lang { display: inline-flex; font-family: var(--font-mono); font-size: 12px; border: 1px solid var(--divider-strong); border-radius: 999px; padding: 2px; margin-left: 6px; }
+.lang span { padding: 4px 9px; border-radius: 999px; color: var(--text-dim); }
+.lang span:first-child { background: var(--surface-2); color: var(--text); }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 500; min-height: 44px;
+  font-size: 15px; padding: 0 16px; border-radius: 999px; color: var(--night); background: var(--text);
+  transition: background var(--dur-fast), box-shadow var(--dur-slow);
+}
+.btn:hover { background: #fff; box-shadow: 0 0 24px var(--accent-soft); }
+.nav .btn { margin-left: 8px; color: var(--night); }
+@media (max-width: 640px) {
+  .nav .nav__text { display: none; }
+  .nav .btn { padding: 0 12px; font-size: 14px; margin-left: 4px; }
+  .lockup span { display: none; }
+}
+
+/* ---------- Shared pieces ---------- */
+.kicker { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 18px; }
+.kicker i { width: 6px; height: 6px; border-radius: 50%; background: var(--c, var(--accent)); box-shadow: 0 0 10px var(--c, var(--accent)); display: inline-block; }
+.kicker a { color: var(--text-muted); text-decoration: none; }
+.kicker a:hover { color: var(--text); text-decoration: underline; text-decoration-color: var(--c); text-underline-offset: 4px; }
+.dot { display: inline-block; width: 0.2em; height: 0.2em; border-radius: 50%; background: var(--accent); margin-left: 0.06em; box-shadow: 0 0 18px var(--accent), 0 0 48px var(--accent-soft); }
+.pt { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); flex: none; }
+.route--studio ol::before { display: none; }
+.no {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500; line-height: 1.5; color: var(--night); background: var(--c);
+  border-radius: var(--radius-sm); padding: 1px 6px; box-shadow: 0 0 14px color-mix(in srgb, var(--c) 60%, transparent);
+  letter-spacing: 0; text-transform: none;
+}
+.page-head { padding-top: clamp(28px, 6vw, 64px); }
+.page-head h1 { font-weight: 500; font-size: clamp(40px, 6.4vw, 84px); line-height: 1.02; letter-spacing: -0.035em; margin: 0; text-wrap: balance; }
+.page-head__row { display: grid; gap: 24px; margin-top: 20px; align-items: end; }
+@media (min-width: 900px) { .page-head__row { grid-template-columns: minmax(0, 1fr) auto; } }
+.lede { margin: 0; color: var(--text-muted); font-size: clamp(16px, 1.6vw, 19px); max-width: 52ch; }
+.tally { display: flex; gap: 22px; font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; flex-wrap: wrap; }
+.tally b { display: block; font-family: var(--font-sans); font-weight: 500; color: var(--text); font-size: 26px; letter-spacing: -0.02em; text-transform: none; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.annot {
+  border: 1px dashed color-mix(in srgb, var(--sodium) 55%, transparent); border-radius: var(--radius-md);
+  padding: 14px 16px; color: var(--text-muted); font-size: 14px; background: rgba(255, 179, 71, 0.04);
+}
+.annot b { display: block; font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sodium); margin-bottom: 4px; }
+.arrow { width: 16px; height: 16px; flex: none; }
+
+/* ---------- Line chips (the filter) ---------- */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: clamp(28px, 4vw, 44px); padding-bottom: clamp(20px, 3vw, 32px); border-bottom: 1px solid var(--divider); }
+.chip {
+  min-height: 44px; display: inline-flex; align-items: center; gap: 9px; padding: 0 14px 0 9px; border-radius: 999px;
+  border: 1px solid var(--divider-strong); text-decoration: none; color: var(--text-muted); font-size: 14px;
+  transition: color var(--dur-fast), border-color var(--dur-slow), background var(--dur-slow), box-shadow var(--dur-slow);
+}
+.chip--all { padding-left: 14px; }
+.chip:hover { color: var(--text); border-color: color-mix(in srgb, var(--c) 60%, transparent); }
+.chip small { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); }
+.chip[aria-current] { color: var(--text); border-color: color-mix(in srgb, var(--c) 75%, transparent); background: color-mix(in srgb, var(--c) 12%, transparent); box-shadow: 0 0 22px -6px var(--c); }
+
+/* ---------- The log: line 00's rail, one stop per note ---------- */
+.log-wrap { position: relative; padding-top: clamp(20px, 3vw, 32px); }
+.log { list-style: none; margin: 0; padding: 0; position: relative;
+  --date-w: 96px; --col-gap: 20px; --track-w: 36px; --lc: var(--accent);
+  --rail-x: calc(var(--date-w) + var(--col-gap) + var(--track-w) / 2);
+}
+.log__rail {
+  position: absolute; top: 24px; bottom: 24px; left: calc(var(--rail-x) - 3px); width: 6px; border-radius: 3px;
+  background: var(--lc); box-shadow: 0 0 0 4px var(--track), 0 0 22px color-mix(in srgb, var(--lc) 45%, transparent);
+  transform-origin: top; transition: background var(--dur-slow), box-shadow var(--dur-slow);
+}
+.log__rail::after { /* the line goes on past the oldest note: dashed, like track still to come */
+  content: ''; position: absolute; left: 0; width: 6px; top: 100%; height: 40px;
+  background: repeating-linear-gradient(180deg, var(--lc) 0 6px, transparent 6px 14px); opacity: 0.45;
+}
+.log__train {
+  position: absolute; top: 0; left: calc(var(--rail-x) - 5px); width: 10px; height: 24px; border-radius: 5px;
+  background: var(--train-core); box-shadow: 0 0 10px var(--lc), 0 0 24px var(--lc); opacity: 0; pointer-events: none;
+}
+.month, .entry { display: grid; grid-template-columns: var(--date-w) var(--track-w) minmax(0, 1fr); column-gap: var(--col-gap); position: relative; }
+.month { padding: 22px 0 4px; }
+.month span { grid-column: 3; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); padding-left: 18px; }
+.month::before { content: ''; position: absolute; left: calc(var(--rail-x) - 13px); width: 26px; height: 2px; top: 31px; background: var(--text-dim); border-radius: 1px; }
+.month:first-child { padding-top: 0; }
+.month:first-child::before { top: 9px; }
+.entry { padding: 10px 0; }
+.entry__date { text-align: right; font-family: var(--font-mono); font-size: 13px; line-height: 22px; color: var(--text-muted); padding-top: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.entry__date small { display: block; color: var(--text-dim); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; line-height: 1.4; }
+.entry__stop { position: relative; display: flex; justify-content: center; padding-top: 16px; }
+.entry__stop .core {
+  width: 18px; height: 18px; border-radius: 50%; background: var(--ground); border: 4px solid var(--c);
+  box-shadow: 0 0 0 3px var(--track), 0 0 16px color-mix(in srgb, var(--c) 70%, transparent);
+  display: grid; place-items: center; position: relative; z-index: 1;
+  transition: transform var(--dur-slow) var(--ease-settle), box-shadow var(--dur-slow);
+}
+.entry__stop .core::after { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--c); }
+.entry__stop .pulse { position: absolute; top: 16px; left: 50%; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; border: 2px solid var(--c); opacity: 0; }
+.entry__card {
+  padding: 12px 16px 14px; margin-left: -4px; border-radius: var(--radius-md); border: 1px solid transparent; min-width: 0;
+  transition: background var(--dur-slow), border-color var(--dur-slow), box-shadow var(--dur-slow), transform var(--dur-slow) var(--ease-settle);
+}
+.entry__line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; font-family: var(--font-mono); font-size: 12px; line-height: 22px; color: var(--text-dim); letter-spacing: 0.08em; text-transform: uppercase; }
+.entry__line .when { display: none; }
+.entry__card h2 { margin: 6px 0 0; font-weight: 500; font-size: clamp(20px, 2.2vw, 26px); line-height: 1.25; letter-spacing: -0.015em; text-wrap: balance; }
+.entry__card h2 a { text-decoration: none; }
+.entry__card h2 a::after { content: ''; position: absolute; inset: 0; } /* the whole row is the link's target */
+.entry__card p:not(.entry__line) { margin: 6px 0 0; color: var(--text-muted); max-width: 62ch; }
+.entry.is-active .entry__card {
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border-color: color-mix(in srgb, var(--c) 55%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 20%, transparent), 0 0 40px -6px color-mix(in srgb, var(--c) 45%, transparent);
+  transform: translateX(6px);
+}
+.entry.is-active h2 a { text-decoration: underline; text-decoration-color: var(--c); text-underline-offset: 5px; }
+.entry.is-active .core { transform: scale(1.3); box-shadow: 0 0 0 3px var(--track), 0 0 26px var(--c); }
+.log[data-filtered] .month::before { background: color-mix(in srgb, var(--lc) 60%, var(--text-dim)); }
+
+@media (max-width: 640px) {
+  .log { --date-w: 0px; --col-gap: 12px; --track-w: 28px; --rail-x: calc(var(--track-w) / 2); }
+  .month, .entry { grid-template-columns: var(--track-w) minmax(0, 1fr); }
+  .entry__date { display: none; }
+  .month span { grid-column: 2; padding-left: 12px; }
+  .entry__line .when { display: inline; color: var(--text-muted); }
+  .entry.is-active .entry__card { transform: none; }
+}
+
+/* ---------- One note ---------- */
+.note { padding-top: clamp(20px, 4vw, 40px); }
+.back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--text-muted); text-decoration: none; font-size: 15px; }
+.back:hover { color: var(--text); }
+.back svg { transform: scaleX(-1); }
+.note .kicker { margin-top: 18px; }
+.note h1 { font-weight: 500; font-size: clamp(36px, 5.4vw, 68px); line-height: 1.04; letter-spacing: -0.03em; margin: 0; max-width: 18ch; text-wrap: balance; }
+.note .lede { margin-top: 18px; font-size: clamp(18px, 1.8vw, 21px); max-width: 48ch; }
+.note__grid { display: grid; gap: 40px; margin-top: clamp(32px, 5vw, 56px); padding-top: clamp(28px, 4vw, 40px); border-top: 1px solid var(--divider); }
+@media (min-width: 960px) { .note__grid { grid-template-columns: minmax(0, 1fr) 320px; gap: 64px; } }
+.prose { font-size: 17px; line-height: 1.7; max-width: 65ch; min-width: 0; }
+.prose p { margin: 0 0 1.1em; }
+.prose ul { margin: 0 0 1.1em; padding: 0; list-style: none; display: grid; gap: 6px; }
+.prose li { position: relative; padding-left: 26px; }
+.prose li::before { content: ''; position: absolute; left: 4px; top: 0.68em; width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--c); background: var(--ground); }
+.prose a { text-decoration-color: var(--c); text-underline-offset: 4px; }
+.prose code { font-family: var(--font-mono); font-size: 0.86em; color: var(--c); }
+
+/* The line's own notes, as a short route with "you are here" */
+.route { align-self: start; border: 1px solid var(--divider); border-radius: var(--radius-lg); background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 55%, var(--night))); padding: 20px; position: relative; overflow: hidden; }
+.route::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(180deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 3px); }
+.route__head { margin: 0; display: flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); }
+.route__name { margin: 10px 0 0; font-weight: 500; font-size: 20px; letter-spacing: -0.01em; }
+.route__name a { text-decoration: none; }
+.route__name a:hover { text-decoration: underline; text-decoration-color: var(--c); text-underline-offset: 4px; }
+.route ol { list-style: none; margin: 18px 0 0; padding: 0; position: relative; }
+.route ol::before { content: ''; position: absolute; left: 7px; top: 12px; bottom: 12px; width: 4px; border-radius: 2px; background: var(--c); box-shadow: 0 0 0 3px var(--track), 0 0 14px color-mix(in srgb, var(--c) 50%, transparent); }
+.route li { position: relative; padding-left: 32px; }
+.route li + li { margin-top: 2px; }
+.route li::before { content: ''; position: absolute; left: 2px; top: 13px; width: 14px; height: 14px; border-radius: 50%; background: var(--ground); border: 3px solid var(--c); box-sizing: border-box; z-index: 1; }
+.route li a, .route li > div { display: block; padding: 8px 0; min-height: 44px; text-decoration: none; color: var(--text-muted); font-size: 15px; line-height: 1.4; }
+.route li a:hover { color: var(--text); }
+.route li time { display: block; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text-dim); margin-top: 2px; }
+.route li.is-here::before { background: var(--c); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 30%, transparent), 0 0 16px var(--c); }
+.route li.is-here > div { color: var(--text); font-weight: 500; }
+.route li.is-here em { font-style: normal; font-family: var(--font-mono); font-size: 11px; color: var(--c); letter-spacing: 0.08em; text-transform: uppercase; display: block; margin-top: 2px; font-weight: 400; }
+.route__exits { display: grid; gap: 2px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--divider); }
+.route__exits a { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; text-decoration: none; font-size: 14px; color: var(--text-muted); }
+.route__exits a:hover { color: var(--text); }
+.route__exits .mono { font-family: var(--font-mono); font-size: 13px; color: var(--c); }
+
+/* ---------- Home: the notices panel under the board ---------- */
+.placeholder {
+  margin-top: clamp(28px, 4vw, 44px); border: 1px dashed var(--divider-strong); border-radius: var(--radius-lg);
+  min-height: 140px; display: grid; place-items: center; text-align: center; padding: 20px;
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim);
+}
+.board { margin-top: clamp(40px, 6vw, 72px); border-radius: var(--radius-lg); background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 60%, var(--night))); border: 1px solid var(--divider); overflow: hidden; position: relative; }
+.board::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(180deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 3px); }
+.board__head { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: flex-end; justify-content: space-between; padding: 24px clamp(16px, 3vw, 32px) 20px; border-bottom: 1px solid var(--divider-strong); }
+.board__title { margin: 0; font-weight: 500; font-size: clamp(26px, 3.4vw, 40px); letter-spacing: -0.02em; line-height: 1.1; }
+.board__title small { display: block; font-family: var(--font-mono); font-size: 12px; font-weight: 400; color: var(--text-dim); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; }
+.more { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; text-decoration: none; color: var(--text-muted); font-size: 15px; }
+.more:hover { color: var(--text); }
+.more b { font-family: var(--font-mono); font-weight: 500; font-size: 13px; color: var(--sodium); }
+.notices { list-style: none; margin: 0; padding: 0; display: grid; }
+@media (min-width: 900px) { .notices { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.notice { position: relative; padding: 22px clamp(16px, 3vw, 32px) 26px; border-top: 1px solid var(--divider); transition: background var(--dur-slow); }
+.notice:first-child { border-top: 0; }
+@media (min-width: 900px) {
+  .notice { border-top: 0; border-left: 1px solid var(--divider); }
+  .notice:first-child { border-left: 0; }
+}
+.notice::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--c); opacity: 0; box-shadow: 0 0 16px var(--c); transition: opacity var(--dur-slow); }
+.notice.is-active { background: color-mix(in srgb, var(--c) 7%, transparent); }
+.notice.is-active::before { opacity: 1; }
+.notice h3 { margin: 12px 0 0; font-weight: 500; font-size: 19px; line-height: 1.3; letter-spacing: -0.01em; text-wrap: balance; }
+.notice h3 a { text-decoration: none; }
+.notice h3 a::after { content: ''; position: absolute; inset: 0; }
+.notice.is-active h3 a { text-decoration: underline; text-decoration-color: var(--c); text-underline-offset: 4px; }
+.notice p:not(.entry__line) { margin: 8px 0 0; color: var(--text-muted); font-size: 14px; }
+.notice .entry__line .when { display: inline; color: var(--text-muted); }
+
+/* ---------- A project page's notes ---------- */
+.project-head .kicker { margin-bottom: 14px; }
+.lnotes { margin-top: clamp(40px, 6vw, 64px); }
+.lnotes h2 { font-weight: 500; font-size: clamp(24px, 3vw, 32px); letter-spacing: -0.02em; margin: 0; }
+.lnotes h2 small { display: block; font-family: var(--font-mono); font-size: 12px; font-weight: 400; color: var(--text-dim); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; }
+.lnotes ol { list-style: none; margin: 18px 0 0; padding: 0; border-top: 1px solid var(--divider); }
+.lnotes li a {
+  display: grid; grid-template-columns: 120px minmax(0, 1fr) auto; gap: 6px 20px; align-items: baseline;
+  padding: 16px 4px; min-height: 44px; border-bottom: 1px solid var(--divider); text-decoration: none; position: relative;
+  transition: background var(--dur-slow);
+}
+.lnotes li a::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c); opacity: 0; box-shadow: 0 0 16px var(--c); transition: opacity var(--dur-slow); }
+.lnotes li a:hover, .lnotes li a:focus-visible { background: color-mix(in srgb, var(--c) 7%, transparent); }
+.lnotes li a:hover::before, .lnotes li a:focus-visible::before { opacity: 1; }
+.lnotes time { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); padding-left: 12px; font-variant-numeric: tabular-nums; }
+.lnotes .t { font-weight: 500; font-size: 18px; letter-spacing: -0.01em; }
+.lnotes .s { grid-column: 2; color: var(--text-muted); font-size: 14px; }
+.lnotes .arrow { color: var(--c); grid-row: 1; grid-column: 3; }
+@media (max-width: 640px) {
+  .lnotes li a { grid-template-columns: minmax(0, 1fr) auto; }
+  .lnotes time { padding-left: 12px; }
+  .lnotes .t, .lnotes .s { grid-column: 1; padding-left: 12px; }
+  .lnotes .arrow { grid-row: 1 / span 2; grid-column: 2; align-self: center; }
+}
+.lnotes__all { margin-top: 8px; }
+
+/* ---------- 404 ---------- */
+.lost { padding-top: clamp(40px, 8vw, 96px); display: grid; gap: 20px; max-width: 760px; }
+.lost h1 { font-weight: 500; font-size: clamp(36px, 5.4vw, 64px); line-height: 1.04; letter-spacing: -0.03em; margin: 0; }
+.lost p { margin: 0; color: var(--text-muted); font-size: 18px; }
+
+/* ---------- Footer ---------- */
+footer { padding: 32px 0 calc(32px + env(safe-area-inset-bottom, 0px)); margin-top: clamp(56px, 8vw, 96px); color: var(--text-dim); font-size: 13px; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 4px 20px; align-items: center; border-top: 1px solid var(--divider); padding-top: 24px; }
+footer svg { width: 16px; height: 16px; }
+footer a { color: var(--text-muted); text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
+footer a:hover { color: var(--text); }
+footer .sp { margin-right: auto; display: inline-flex; gap: 8px; align-items: center; }
+
+/* ---------- Motion: all of it opt-in ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .sky::after { animation: drift 38s ease-in-out infinite alternate; }
+  @keyframes drift { to { transform: translate(40vw, 20vh) scale(1.2); } }
+  .enter { animation: rise 900ms var(--ease-settle) both; animation-delay: calc(var(--d, 0) * 90ms); }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .log__rail { animation: draw 1300ms var(--ease-settle) 250ms both; }
+  @keyframes draw { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  .entry .core { animation: light 600ms var(--ease-settle) both; animation-delay: calc(400ms + var(--i) * 110ms); }
+  @keyframes light { 0% { transform: scale(0); } 60% { transform: scale(1.5); } 100% { transform: scale(1); } }
+  .entry .entry__card, .entry .entry__date, .month span { animation: slide 700ms var(--ease-settle) both; animation-delay: calc(480ms + var(--i, 0) * 110ms); }
+  @keyframes slide { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+  .notice { animation: rise 700ms var(--ease-settle) both; animation-delay: calc(var(--i) * 140ms); }
+  .route li.is-here::before { animation: here 2.4s var(--ease-standard) infinite; }
+  @keyframes here { 0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 30%, transparent), 0 0 16px var(--c); } 50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--c) 0%, transparent), 0 0 22px var(--c); } }
+}
+</style>
+
+<div class="sky" aria-hidden="true"></div>
+
+<div class="proto" role="region" aria-label="Prototype controls">
+  <div class="wrap">
+    <span class="proto__tag">Prototype · Notes</span>
+    <nav class="proto__views" aria-label="Prototype views">
+      <a href="#notes" data-view="notes">Notes</a>
+      <a href="#note-press-start" data-view="note">A note</a>
+      <a href="#home" data-view="home">Home</a>
+      <a href="#line-giogio" data-view="line">Project page</a>
+    </nav>
+    <div class="proto__toggle" role="group" aria-label="Published notes">
+      <span>Published</span>
+      <button type="button" id="many" aria-pressed="true">8 notes</button>
+      <button type="button" id="few" aria-pressed="false">2 notes</button>
+    </div>
+    <p class="proto__hint">The notes are examples, written to show length and tone. EN only here; HR works the same way.</p>
+  </div>
+</div>
+
+<header class="top">
+  <div class="wrap">
+    <a class="lockup" href="#home" aria-label="Fromnowhere, home">
+      <svg viewBox="-10.67 -10.67 85.33 85.33" aria-hidden="true">
+        <rect x="-10.67" y="-10.67" width="85.33" height="85.33" rx="15.36" fill="#181c38"/>
+        <rect x="14" y="10" width="11" height="44" rx="1.5" fill="#eeedf6"/>
+        <rect x="29" y="10" width="23" height="11" rx="1.5" fill="#eeedf6"/>
+        <rect x="29" y="29" width="17" height="11" rx="1.5" fill="#eeedf6"/>
+        <circle cx="34.5" cy="48.5" r="5.5" fill="#a796ff"/>
+      </svg>
+      <span>FNW</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a class="nav__text" href="#home">Projects</a>
+      <a class="nav__text nav__notes" href="#notes" id="nav-notes">Notes</a>
+      <a class="nav__text" href="#home">About</a>
+      <span class="lang" aria-hidden="true"><span>EN</span><span>HR</span></span>
+      <a class="btn" href="#home">Get in touch</a>
+    </nav>
+  </div>
+</header>
+
+<main id="content" tabindex="-1"></main>
+
+<footer>
+  <div class="wrap">
+    <span class="sp">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="14" y="10" width="11" height="44" rx="1.5" fill="currentColor"/><rect x="29" y="10" width="23" height="11" rx="1.5" fill="currentColor"/><rect x="29" y="29" width="17" height="11" rx="1.5" fill="currentColor"/><circle cx="34.5" cy="48.5" r="5.5" fill="currentColor"/></svg>
+      Fromnowhere, 2026
+    </span>
+    <a href="#notes" id="foot-notes">Notes</a>
+    <a href="#home">About</a>
+    <a href="#home">Privacy</a>
+    <a href="#home">Contact</a>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ARROW = '<svg class="arrow" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M40 128h176M144 56l72 72-72 72"/></svg>';
+
+  /* A note with no project is about the studio itself: it wears the point and is not a line. */
+  const LINES = {
+    point:  { n: null, name: 'Fromnowhere', kind: 'The studio', c: 'var(--accent)', addr: 'fromnowhere.dev' },
+    locals: { n: '01', name: 'Locals', kind: 'Community', c: 'var(--line-1)', addr: 'yugioh.fromnowhere.dev',
+              sum: 'In-person Yu-Gi-Oh! events: seasons, standings, a gallery, and a Discord bot that runs the day.' },
+    giogio: { n: '02', name: 'Giogio', kind: 'Music', c: 'var(--line-2)', addr: 'giogio.music',
+              sum: 'An artist’s site, a producer’s site, and an album you can play as a pixel game.' },
+    nmt:    { n: '03', name: 'Nowhere’s Medical Toolbox', short: 'NMT', kind: 'Product', c: 'var(--line-3)', addr: null,
+              sum: 'An on-premise system for clinics: charts, a diary and patient records, plus a website product clinics can buy on its own.' },
+    gati:   { n: '04', name: 'Gati', kind: 'Client', c: 'var(--line-4)', addr: 'gati.hr',
+              sum: 'Website and editor for a homeopathy practice in Varaždin.' },
+  };
+
+  const NOTES = [
+    { slug: 'every-line-reports-in', line: 'point', date: '2026-11-16', title: 'Every line reports in now',
+      sum: 'The departures board checks each address every five minutes. A site that stops answering shows as Delayed until it’s back.',
+      body: [
+        '<p>Until today the board showed what I told it: a line said Running because I had set it to Running. Now the site knocks on every address every five minutes and writes down whether anything answered.</p>',
+        '<p>One missed knock is a blip and changes nothing. After two in a row, the line shows Delayed:</p>',
+        '<ul><li>its trains stop where they are,</li><li>its terminal and its status turn the colour of street light,</li><li>the board says “Not answering just now”.</li></ul>',
+        '<p>When the site answers again, the line runs again. Only lines I’ve marked as running can be delayed. A line under construction stays under construction, whatever its address does.</p>' ] },
+    { slug: 'links-arrive-with-a-map', line: 'point', date: '2026-11-16', title: 'Links arrive with a map',
+      sum: 'Paste a project’s page into a chat and its preview draws the route map, with that project’s line lit.',
+      body: [
+        '<p>Every page here has a share card: the picture a chat app shows under a link. They used to be plain. Now each one is drawn from the same geometry as the map on the home page, so a link to Giogio arrives as the map with line 02 lit and the others dimmed.</p>',
+        '<p>Chat apps keep these pictures for days, so a card shows the line as I set it, not the live status from the board.</p>' ] },
+    { slug: 'the-diary-has-a-day-view', line: 'nmt', date: '2026-11-09', title: 'The diary has a day view',
+      sum: 'The clinic diary shows a whole day at once now, room by room. Patient records are the next stretch of track.',
+      body: [
+        '<p>Nowhere’s Medical Toolbox is still under construction, and this is one of the pieces that holds the rest up: a diary where a clinic sees its day at a glance, each room in its own column.</p>',
+        '<p>Next comes the patient record, which the diary links into. The line stays marked as building until a clinic can use all of it.</p>' ] },
+    { slug: 'standings-while-the-event-runs', line: 'locals', date: '2026-11-01', title: 'Standings while the event runs',
+      sum: 'Standings update after every round, on the site and in the Discord channel, so nobody waits for the end of the day.',
+      body: [
+        '<p>Before, standings went up once the event was over. Now each round’s results update them straight away, and the bot posts the new table in the event’s channel.</p>',
+        '<p>The season page adds up every event, so a player can see where they stand before the next one.</p>' ] },
+    { slug: 'press-start', line: 'giogio', date: '2026-10-20', title: 'Press Start is playable in the browser',
+      sum: 'The album is a small pixel game now: walk the map, find the tracks, play them in order or not at all.',
+      body: [
+        '<p><code>presstart.giogio.music</code> is the album as a game. Each track is a place on a small pixel map; walk to it and it plays.</p>',
+        '<p>It runs in the browser, on a phone too, with nothing to install. It’s the third stop on Giogio’s line, after the artist’s site and the producer’s.</p>' ] },
+    { slug: 'the-practice-edits-its-own-site', line: 'gati', date: '2026-10-05', title: 'The practice edits its own site',
+      sum: 'Gati’s site has an editor now, so opening hours and articles change without waiting for me.',
+      body: [
+        '<p>gati.hr was built for a homeopathy practice in Varaždin. Until now every change went through me.</p>',
+        '<p>The editor covers what changes most: opening hours, the articles and the contact details. The rest of the site stays as designed.</p>' ] },
+    { slug: 'a-bot-runs-the-day', line: 'locals', date: '2026-09-13', title: 'A Discord bot runs the day',
+      sum: 'Check-in, pairings and results happen in the channel the players already use.',
+      body: [
+        '<p>Running an in-person event means a lot of calling names across a room. The bot takes the check-in, posts each round’s pairings and collects the results as players report them.</p>',
+        '<p>Everything it records ends up on <code>yugioh.fromnowhere.dev</code>, in the season’s standings.</p>' ] },
+    { slug: 'a-second-stop', line: 'giogio', date: '2026-08-28', title: 'A second stop: prod.giogio.music',
+      sum: 'The producer work has its own site now, on the same line as the artist’s.',
+      body: [
+        '<p>Giogio makes music and produces it for others. Those are different visitors, so they get different sites: <code>giogio.music</code> for the music, <code>prod.giogio.music</code> for production work.</p>',
+        '<p>On the route map they’re stops on one line, because they’re one person’s work.</p>' ] },
+  ];
+
+  let few = false;
+  const published = () => (few ? NOTES.slice(0, 2) : NOTES);
+  const open = () => published().length >= 3; // the vision: hidden until there are at least three
+
+  const d = iso => new Date(iso + 'T12:00:00Z');
+  const fmt = (iso, opts) => d(iso).toLocaleDateString('en-GB', { timeZone: 'UTC', ...opts });
+  const short = iso => fmt(iso, { day: 'numeric', month: 'short' });
+  const long = iso => fmt(iso, { day: 'numeric', month: 'long', year: 'numeric' });
+  const month = iso => fmt(iso, { month: 'long', year: 'numeric' });
+  const lineLabel = L => L.n ? `<span class="no" style="--c:${L.c}">${L.n}</span>${L.short || L.name}` : `<span class="pt"></span>${L.name}`;
+
+  /* ---------- Views ---------- */
+  function notesView(filter) {
+    const all = published();
+    const list = filter ? all.filter(n => n.line === filter) : all;
+    const lines = Object.keys(LINES).filter(id => id !== 'point' && all.some(n => n.line === id));
+    const F = filter && LINES[filter];
+    const chips = [`<a class="chip chip--all" href="#notes" style="--c:var(--accent)"${filter ? '' : ' aria-current="page"'}>All <small>${all.length}</small></a>`]
+      .concat(lines.map(id => {
+        const L = LINES[id];
+        const count = all.filter(n => n.line === id).length;
+        return `<a class="chip" href="#notes-${id}" style="--c:${L.c}"${filter === id ? ' aria-current="page"' : ''}><span class="no">${L.n}</span>${L.short || L.name} <small>${count}</small></a>`;
+      })).join('');
+
+    let rows = '', last = '', i = 0;
+    list.forEach(n => {
+      const L = LINES[n.line];
+      const m = month(n.date);
+      if (m !== last) { rows += `<li class="month" aria-hidden="true" style="--i:${i}"><span>${m}</span></li>`; last = m; }
+      rows += `<li class="entry" data-line="${n.line}" style="--c:${L.c};--i:${i++}">
+        <time class="entry__date" datetime="${n.date}">${short(n.date)}<small>${fmt(n.date, { weekday: 'short' })}</small></time>
+        <span class="entry__stop" aria-hidden="true"><span class="pulse"></span><span class="core"></span></span>
+        <article class="entry__card">
+          <p class="entry__line">${lineLabel(L)}<span class="when">· ${short(n.date)}</span></p>
+          <h2><a href="#note-${n.slug}">${n.title}</a></h2>
+          <p>${n.sum}</p>
+        </article>
+      </li>`;
+    });
+
+    const title = F ? `Notes on line ${F.n}` : 'Notes';
+    const lede = F
+      ? `What’s changed on ${F.name}, the newest first.`
+      : 'Short, dated notes on what I’m building, the newest first.';
+    return `
+      <section class="page-head wrap narrow" aria-labelledby="h1">
+        <p class="kicker enter" style="--d:0;--c:${F ? F.c : 'var(--accent)'}"><i></i>Platform 00 · notices</p>
+        <h1 id="h1" class="enter" style="--d:1">${title}<span class="dot" aria-hidden="true"${F ? ` style="background:${F.c};box-shadow:0 0 18px ${F.c}"` : ''}></span></h1>
+        <div class="page-head__row">
+          <p class="lede enter" style="--d:2">${lede}</p>
+          <div class="tally enter" style="--d:3"><span><b>${list.length}</b>Notes</span><span><b>${F ? 1 : lines.length}</b>${F ? 'Line' : 'Lines'}</span><span><b>${short(list[list.length - 1].date)}</b>First</span></div>
+        </div>
+        <nav class="chips enter" style="--d:3" aria-label="Notes by line">${chips}</nav>
+      </section>
+      <section class="wrap narrow log-wrap" aria-label="${title}">
+        <ol class="log" id="log"${F ? ` data-filtered style="--lc:${F.c}"` : ''}>
+          <li class="log__rail" aria-hidden="true"></li>
+          <li class="log__train" aria-hidden="true"></li>
+          ${rows}
+        </ol>
+      </section>`;
+  }
+
+  function noteView(slug) {
+    const n = published().find(x => x.slug === slug);
+    if (!n) return lostView();
+    const L = LINES[n.line];
+    const studio = n.line === 'point';
+    const mine = studio ? published().filter(x => x.slug !== slug).slice(0, 4) : published().filter(x => x.line === n.line);
+    const stops = mine.map(x => x.slug === slug
+      ? `<li class="is-here"><div aria-current="page">${x.title}<em>You are here</em><time datetime="${x.date}">${long(x.date)}</time></div></li>`
+      : `<li style="--c:${LINES[x.line].c}"><a href="#note-${x.slug}">${studio ? `<span class="entry__line" style="font-size:11px">${lineLabel(LINES[x.line])}</span>` : ''}${x.title}<time datetime="${x.date}">${long(x.date)}</time></a></li>`).join('');
+    const exits = studio
+      ? `<a href="#notes">All notes ${ARROW}</a>`
+      : `<a href="#line-${n.line}">${L.name}’s page here ${ARROW}</a>${L.addr ? `<a href="#home">${L.addr} <span class="mono" aria-hidden="true">↗</span></a>` : ''}`;
+    return `
+      <article class="note wrap narrow" style="--c:${L.c}">
+        <a class="back" href="#notes">${ARROW}All notes</a>
+        <p class="kicker enter" style="--d:0"><i></i>${studio ? L.name : `<a href="#notes-${n.line}">Line ${L.n} · ${L.short || L.name}</a>`}<span aria-hidden="true">·</span><time datetime="${n.date}">${long(n.date)}</time></p>
+        <h1 class="enter" style="--d:1">${n.title}</h1>
+        <p class="lede enter" style="--d:2">${n.sum}</p>
+        <div class="note__grid">
+          <div class="prose enter" style="--d:3">${n.body.join('')}</div>
+          <aside class="route enter${studio ? ' route--studio' : ''}" style="--d:4" aria-label="${studio ? 'More notes' : `Notes on line ${L.n}`}">
+            ${studio ? '<p class="route__name" style="margin:0">More notes</p>' : `<p class="route__head"><span class="no">${L.n}</span>${mine.length} ${mine.length === 1 ? 'note' : 'notes'} on this line</p>
+            <p class="route__name"><a href="#notes-${n.line}">${L.name}</a></p>`}
+            <ol>${stops}</ol>
+            <div class="route__exits">${exits}</div>
+          </aside>
+        </div>
+      </article>`;
+  }
+
+  function homeView() {
+    const newest = published().slice(0, 3);
+    const notices = open() ? `
+      <section class="wrap" aria-labelledby="notices-title">
+        <div class="board">
+          <div class="board__head">
+            <h2 class="board__title" id="notices-title"><small>Platform 00 · notices</small>Latest notes</h2>
+            <a class="more" href="#notes">All notes <b>${published().length}</b>${ARROW}</a>
+          </div>
+          <ol class="notices">${newest.map((n, i) => {
+            const L = LINES[n.line];
+            return `<li class="notice" data-line="${n.line}" style="--c:${L.c};--i:${i}">
+              <p class="entry__line">${lineLabel(L)}<time class="when" datetime="${n.date}">· ${short(n.date)}</time></p>
+              <h3><a href="#note-${n.slug}">${n.title}</a></h3>
+              <p>${n.sum}</p>
+            </li>`;
+          }).join('')}</ol>
+        </div>
+      </section>` : `
+      <div class="wrap"><div class="annot" style="margin-top:40px"><b>Prototype</b>With fewer than three notes published, the home page has no notices panel and nothing links to /notes.</div></div>`;
+    return `
+      <section class="page-head wrap" aria-labelledby="h1">
+        <p class="kicker enter" style="--d:0"><i></i>Fromnowhere · one-person software studio</p>
+        <h1 id="h1" class="enter" style="--d:1" >Every project starts at the same point<span class="dot" aria-hidden="true"></span></h1>
+        <div class="placeholder">The route map and the departures board, as they are now</div>
+      </section>
+      ${notices}
+      <div class="wrap"><div class="placeholder" style="min-height:96px">The contact band, as it is now</div></div>`;
+  }
+
+  function lineView(id) {
+    const L = LINES[id];
+    if (!L || !L.n) return lostView(true);
+    const mine = published().filter(n => n.line === id);
+    const section = open() && mine.length ? `
+      <section class="lnotes" aria-labelledby="ln-title">
+        <h2 id="ln-title"><small>Notices on line ${L.n}</small>Notes</h2>
+        <ol>${mine.map(n => `<li><a href="#note-${n.slug}"><time datetime="${n.date}">${long(n.date)}</time><span class="t">${n.title}</span>${ARROW}<span class="s">${n.sum}</span></a></li>`).join('')}</ol>
+        ${mine.length > 1 ? `<a class="more lnotes__all" href="#notes-${id}">Only line ${L.n} in the notes ${ARROW}</a>` : ''}
+      </section>` : `<div class="annot" style="margin-top:40px"><b>Prototype</b>${open() ? 'This line has no notes yet, so its page shows no notes section.' : 'With fewer than three notes published, project pages show no notes either.'}</div>`;
+    return `
+      <section class="page-head project-head wrap narrow" style="--c:${L.c}" aria-labelledby="h1">
+        <p class="kicker enter" style="--d:0"><i></i>Line ${L.n} · ${L.kind}</p>
+        <h1 id="h1" class="enter" style="--d:1">${L.name}</h1>
+        <p class="lede enter" style="--d:2;margin-top:20px">${L.sum}</p>
+        <div class="placeholder">The trip, the exit plates and the window, as they are now</div>
+        ${section}
+      </section>`;
+  }
+
+  function lostView(plain) {
+    return `
+      <section class="lost wrap narrow" aria-labelledby="h1">
+        <p class="kicker"><i></i>404</p>
+        <h1 id="h1">This line doesn’t go anywhere</h1>
+        <p><a href="#home">Back to the point</a></p>
+        ${plain ? '' : `<div class="annot"><b>Prototype</b>${open() ? 'There is no note at this address.' : 'Fewer than three notes are published, so /notes and every note answer 404, and nothing links to them. Switch to 8 notes in the bar above.'}</div>`}
+      </section>`;
+  }
+
+  /* ---------- Router: one view per hash ---------- */
+  const main = document.getElementById('content');
+  let firstRender = true;
+  function render() {
+    const h = location.hash.slice(1) || 'notes';
+    let html, view;
+    if (h === 'home') { view = 'home'; html = homeView(); }
+    else if (h.startsWith('line-')) { view = 'line'; html = lineView(h.slice(5)); }
+    else if (!open() && (h === 'notes' || h.startsWith('notes-') || h.startsWith('note-'))) { view = h.startsWith('note-') ? 'note' : 'notes'; html = lostView(); }
+    else if (h.startsWith('note-')) { view = 'note'; html = noteView(h.slice(5)); }
+    else if (h.startsWith('notes-') && LINES[h.slice(6)]?.n) { view = 'notes'; html = notesView(h.slice(6)); }
+    else if (h === 'notes') { view = 'notes'; html = notesView(null); }
+    else { view = ''; html = lostView(true); }
+    main.innerHTML = html;
+
+    document.querySelectorAll('.proto__views a').forEach(a => a.toggleAttribute('aria-current', a.dataset.view === view));
+    const navNotes = document.getElementById('nav-notes');
+    navNotes.hidden = !open();
+    document.getElementById('foot-notes').hidden = !open();
+    if (view === 'notes' || view === 'note') navNotes.setAttribute('aria-current', 'page'); else navNotes.removeAttribute('aria-current');
+
+    lighting();
+    runTrain();
+    if (!firstRender) { scrollTo(0, 0); main.focus({ preventScroll: true }); }
+    firstRender = false;
+  }
+
+  /* Pointing at or focusing a note lights it, as a line lights on the map. */
+  function lighting() {
+    main.querySelectorAll('.entry, .notice').forEach(row => {
+      const on = () => row.classList.add('is-active');
+      const off = () => row.classList.remove('is-active');
+      row.addEventListener('pointerenter', on);
+      row.addEventListener('pointerleave', off);
+      row.addEventListener('focusin', on);
+      row.addEventListener('focusout', off);
+    });
+  }
+
+  /* One train runs down the log, and each stop pulses as it passes. Web Animations only, no frame loop. */
+  let anims = [];
+  function runTrain() {
+    anims.forEach(a => a.cancel());
+    anims = [];
+    const log = document.getElementById('log');
+    if (reduce || !log) return;
+    const train = log.querySelector('.log__train');
+    const top = log.getBoundingClientRect().top;
+    const h = log.offsetHeight - 24;
+    const D = Math.max(7000, h * 8);
+    const start = 1700;
+    anims.push(train.animate([
+      { transform: 'translateY(0)', opacity: 0 },
+      { opacity: 1, offset: 0.03 },
+      { opacity: 1, offset: 0.95 },
+      { transform: `translateY(${h}px)`, opacity: 0 },
+    ], { duration: D, delay: start, iterations: Infinity }));
+    log.querySelectorAll('.pulse').forEach(p => {
+      const y = p.getBoundingClientRect().top - top - 3;
+      const f = Math.min(0.99, Math.max(0, y / h));
+      anims.push(p.animate([
+        { transform: 'scale(1)', opacity: 0.9 },
+        { transform: 'scale(3.2)', opacity: 0, offset: 0.09 },
+        { transform: 'scale(3.2)', opacity: 0 },
+      ], { duration: D, delay: start + f * D, iterations: Infinity, easing: 'linear' }));
+    });
+  }
+  document.addEventListener('visibilitychange', () => anims.forEach(a => (document.hidden ? a.pause() : a.play())));
+  let rt;
+  addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(runTrain, 150); });
+
+  const many = document.getElementById('many');
+  const fewBtn = document.getElementById('few');
+  const setFew = v => { few = v; many.setAttribute('aria-pressed', String(!v)); fewBtn.setAttribute('aria-pressed', String(v)); render(); };
+  many.addEventListener('click', () => setFew(false));
+  fewBtn.addEventListener('click', () => setFew(true));
+
+  addEventListener('hashchange', render);
+  render();
+})();
+</script>

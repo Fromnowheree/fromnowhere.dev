@@ -10,6 +10,7 @@ import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
 import { Media } from './collections/Media'
+import { Notes } from './collections/Notes'
 import { Pages } from './collections/Pages'
 import { Projects } from './collections/Projects'
 import { ShortLinks } from './collections/ShortLinks'
@@ -73,7 +74,7 @@ export default buildConfig({
     defaultLocale,
     fallback: true,
   },
-  collections: [Projects, Pages, ShortLinks, StatusChecks, Media, Users],
+  collections: [Projects, Notes, Pages, ShortLinks, StatusChecks, Media, Users],
   globals: [Studio],
   editor: lexicalEditor({
     features: ({ defaultFeatures }) => [
@@ -83,7 +84,7 @@ export default buildConfig({
       // renderer (src/components/RichText.tsx) checks the rule again and drops the link, keeping
       // its words, when the target is not public.
       LinkFeature({
-        enabledCollections: ['pages', 'projects'],
+        enabledCollections: ['pages', 'projects', 'notes'],
         fields: ({ defaultFields }) =>
           defaultFields.map((field) =>
             field.type === 'text' && !field.hasMany && field.name === 'url'

@@ -6,8 +6,8 @@ Guidance for anyone, human or agent, working in this repository. Read it first.
 
 **fromnowhere.dev**, the Fromnowhere studio site: the crossroad to the projects. One point (the
 point in the FNW mark), one line per project, a departures board, a page per project with exit
-plates and a window onto the destination, About, Privacy and a contact form, in English and
-Croatian. The vision, with the concept, pages, content model, stack and build order, is
+plates and a window onto the destination, dated notes, About, Privacy and a contact form, in
+English and Croatian. The vision, with the concept, pages, content model, stack and build order, is
 [`docs/vision.html`](docs/vision.html) (published at
 https://claude.ai/artifact/5Y2Cxdt9jEJv9pzCXxGYYM). Read it before changing what the site is.
 
@@ -34,14 +34,15 @@ clinic layer (blocks, services, team, locations, brand colour, Tailwind, booking
 | Tests    | Vitest 5 (`tests/int`, against a real Postgres), Playwright (`tests/e2e`, not in CI)                                                                                                                                                                                                                 |
 | Deploy   | `Dockerfile` (built in CI, never on the server), `compose.yml` (+ `compose.stats.yml`), `caddy/` (+ `caddy/sites/` for the other sites on the server), `scripts/` (first admin, age-encrypted backups, restore)                                                                                      |
 
-Layout: `src/payload.config.ts` wires everything; `src/collections/` (Projects, Pages,
+Layout: `src/payload.config.ts` wires everything; `src/collections/` (Projects, Notes, Pages,
 ShortLinks, StatusChecks, Media, Users), `src/jobs/` (the status check), `src/globals/Studio.ts`, `src/fields/`, `src/components/` (`fnw.tsx`
 the system's components, `site/` the site's chrome, map, board and signs, with `HomeMotion.tsx`
-the home page's one motion island, `contact/` the form, `admin/`), `src/lib/` (`links.ts` the link
+the home page's one motion island, `Notes.tsx` the notes' log, panel and lists with
+`NotesMotion.tsx` their train, `contact/` the form, `admin/`), `src/lib/` (`links.ts` the link
 rule, `payload.ts` every query, `routeMap.ts` the map's geometry, `status.ts` a line's live status, `probe.ts` one knock on an
-address, `shortLinks.ts`, `relay/`),
+address, `notes.ts` when the notes open, `shortLinks.ts`, `relay/`),
 `src/i18n/`, `src/proxy.ts`, `src/app/(frontend)/[locale]/(site)/` (home `page.tsx`,
-`projects/[slug]`, `contact`, `[slug]` for text pages), `src/app/(frontend)/pick-language/`
+`projects/[slug]`, `notes`, `notes/[slug]`, `contact`, `[slug]` for text pages), `src/app/(frontend)/pick-language/`
 (addresses without a language, and short links), `src/app/(frontend)/og/` (share cards),
 `src/seed/` (the starting content). `src/payload-types.ts` and
 `src/app/(payload)/admin/importMap.js` are generated; never edit them by hand.
@@ -101,7 +102,8 @@ pixels.
   it beside the site before UI work. It is built on the design system (`design/`,
   `src/styles/fnw/`: its components, spacing, type and motion tokens still apply) with the
   site's own layer over it: `site.css` (the night palette, the sky, the chrome, the pages),
-  `routemap.css` (the map), `board.css` (the departures board, status, the ticker). Every colour,
+  `routemap.css` (the map), `board.css` (the departures board, status, the ticker), `notes.css`
+  (the notes, [`docs/prototypes/notes.html`](docs/prototypes/notes.html)). Every colour,
   size and duration is a token; add one to `site.css`'s `:root` rather than a raw value. Its
   signature pieces: the headline whose full stop is the point, the route map, the board with the
   visitor's clock, the ticker of short links, lit terminals, windows.
@@ -132,7 +134,8 @@ pixels.
   `aria-hidden`; each terminal's card is one link to the project's page here, named "Line 02,
   Giogio, Running", and the whole card is its target. The board is the accessible list.
 - **Motion** (every animation is declared inside `@media (prefers-reduced-motion:
-no-preference)`, which `tests/int/routeMap.int.spec.ts` checks for all three stylesheets):
+no-preference)`, which `tests/int/routeMap.int.spec.ts` checks for site.css, routemap.css,
+  board.css and notes.css):
   - **The home page's opening plays on every visit** (a load, a soft navigation back, the other
     language): CSS on the map's insertion, under `.map:not(.is-settled)`, never keyed on
     `fnw-calm`. The point appears, lines draw out of it one after another, each terminal lights
@@ -152,7 +155,8 @@ no-preference)`, which `tests/int/routeMap.int.spec.ts` checks for all three sty
     JavaScript (the server cannot know the visitor's time).
   - Other pages keep the system's `.fnw-enter` / `.fnw-reveal`, played by
     `src/components/Motion.tsx` once per page per visit (`fnw-calm`, `playedKey`: a page counts
-    as played in both languages); a project page's trip draws on each load.
+    as played in both languages); a project page's trip draws on each load, and so does the
+    notes' rail, down which `NotesMotion` runs one train (Web Animations, paused off screen).
   - Transforms, opacity and stroke dashes only. No counting numbers, typewriter or split-flap.
 - **Accessibility holds the design**: a visible 2px focus ring (`--focus`), every control at
   least 44px tall, no sideways scroll at 320px, the page centred. The map is never read twice:
@@ -189,6 +193,14 @@ no-preference)`, which `tests/int/routeMap.int.spec.ts` checks for all three sty
   absolute `https:`/`mailto:`/`tel:` address; checked by shape at save time (`src/fields/link.ts`)
   and again at render (`resolveLink`). Project addresses and profiles are https only
   (`httpsRule`).
+- **Notes** (`src/collections/Notes.ts`, `src/lib/notes.ts`): title, day, summary, text and an
+  optional project. A note on a project's line wears its number and colour; a note with no
+  project is about the studio itself and wears the point (it is not a line, and has no chip).
+  **Nothing about notes is public until three are published** (`NOTES_OPEN_AT`): `getNotes`
+  returns none, so /notes and every note answer 404, and the nav, footer, home panel, project
+  lists, sitemap, share cards and links in text all leave them out. A note whose project is a
+  draft reads as a note about the studio. The seed writes two true notes about the studio, one
+  short of opening. Their dates are days, kept at noon UTC and shown in UTC.
 - **Short links** are one word at the root (`fromnowhere.dev/giogio`), answered in
   `pick-language`; `isShortAlias` keeps the languages and the paths the site answers itself out.
   A short link and a page never share a word (both refused at save time), and pick-language
@@ -278,7 +290,10 @@ for enum".
 4. **Done (Phase 2, 16 November 2026):** the status check (a Payload job knocking on each
    address every 5 minutes; the board, map, tally and project pages show Delayed and quiet
    stops) and share cards drawn from the route map with the project's line lit.
-5. **Phase 3, launch** ([`docs/launch.md`](docs/launch.md)): one Oracle Cloud Ampere server
+5. **Notes** (17 November 2026, [`docs/prototypes/notes.html`](docs/prototypes/notes.html)):
+   /notes as a log on one rail, a note page with its line's route, the latest three under the
+   board, a project's own notes on its page; hidden until three are published.
+6. **Phase 3, launch** ([`docs/launch.md`](docs/launch.md)): one Oracle Cloud Ampere server
    (linux/arm64, `scripts/build-image.sh`) shared with yugioh.fromnowhere.dev through
    `compose.shared.yml` (only Caddy joins the `fromnowhere-sites` network; each other site's web
    container joins it by alias, with its block in `caddy/sites/`). The About draft, Privacy and

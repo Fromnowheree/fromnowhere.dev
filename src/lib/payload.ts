@@ -5,6 +5,7 @@ import { cache } from 'react'
 import { defaultLocale, locales, type Locale } from '@/i18n/locales'
 import type { Project } from '@/payload-types'
 import { isSlug, projectHref, type PublishedIndex } from './links'
+import { openNotes, signOf, type NoteSign } from './notes'
 import { withService, type AddressCheck, type LiveProject } from './status'
 
 export const getPayloadClient = () => getPayload({ config })
@@ -107,10 +108,48 @@ export const getPage = cache(async (slug: string, locale: Locale) => {
   return docs[0] ?? null
 })
 
+/**
+ * Every published note, newest first, as the lists show them; none at all while fewer than three
+ * are published (src/lib/notes.ts). A note's project comes with it only while it is published.
+ */
+export const getNotes = cache(async (locale: Locale): Promise<NoteSign[]> => {
+  const { docs } = await (
+    await getPayloadClient()
+  ).find({
+    collection: 'notes',
+    where: published,
+    sort: ['-date', '-createdAt'],
+    depth: 1,
+    limit: 1000,
+    pagination: false,
+    locale,
+    select: { title: true, slug: true, date: true, summary: true, project: true },
+    populate: { projects: { slug: true, name: true, line: true, _status: true } },
+  })
+  return openNotes(docs.flatMap((note) => signOf(note) ?? []))
+})
+
+/** One published note with its text, or null (also while the notes are closed). */
+export const getNote = cache(async (slug: string, locale: Locale) => {
+  if (!isSlug(slug)) return null
+  const sign = (await getNotes(locale)).find((note) => note.slug === slug)
+  if (!sign) return null
+  const { docs } = await (
+    await getPayloadClient()
+  ).find({
+    collection: 'notes',
+    where: { and: [{ id: { equals: sign.id } }, published] },
+    depth: 2,
+    limit: 1,
+    locale,
+  })
+  return docs[0] ? { ...docs[0], project: sign.project } : null
+})
+
 /** Every published page and project by slug, with when it last changed (not localised). */
 export const getPublishedSummaries = cache(async () => {
   const payload = await getPayloadClient()
-  const [pages, projects] = await Promise.all([
+  const [pages, projects, notes] = await Promise.all([
     payload.find({
       collection: 'pages',
       where: published,
@@ -125,18 +164,31 @@ export const getPublishedSummaries = cache(async () => {
       limit: 99,
       select: { slug: true, updatedAt: true },
     }),
+    payload.find({
+      collection: 'notes',
+      where: published,
+      depth: 0,
+      limit: 1000,
+      pagination: false,
+      select: { slug: true, updatedAt: true },
+    }),
   ])
   const pick = (docs: { slug?: string | null; updatedAt: string }[]) =>
     docs.flatMap((doc) => (doc.slug ? [{ slug: doc.slug, updatedAt: doc.updatedAt }] : []))
-  return { pages: pick(pages.docs), projects: pick(projects.docs) }
+  return {
+    pages: pick(pages.docs),
+    projects: pick(projects.docs),
+    notes: openNotes(pick(notes.docs)),
+  }
 })
 
-/** What a site path may link to: published pages and published projects. */
+/** What a site path may link to: published pages, projects and (while they are open) notes. */
 export const getPublishedIndex = cache(async (): Promise<PublishedIndex> => {
-  const { pages, projects } = await getPublishedSummaries()
+  const { pages, projects, notes } = await getPublishedSummaries()
   return {
     pages: new Set(pages.map((page) => page.slug)),
     projects: new Set(projects.map((project) => project.slug)),
+    notes: new Set(notes.map((note) => note.slug)),
   }
 })
 

@@ -68,6 +68,7 @@ export interface Config {
   blocks: {};
   collections: {
     projects: Project;
+    notes: Note;
     pages: Page;
     'short-links': ShortLink;
     'status-checks': StatusCheck;
@@ -82,6 +83,7 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     projects: ProjectsSelect<false> | ProjectsSelect<true>;
+    notes: NotesSelect<false> | NotesSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     'short-links': ShortLinksSelect<false> | ShortLinksSelect<true>;
     'status-checks': StatusChecksSelect<false> | StatusChecksSelect<true>;
@@ -286,6 +288,67 @@ export interface Media {
       filename?: string | null;
     };
   };
+}
+/**
+ * Short, dated notes on what you are building. They appear on the site once at least three are published.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notes".
+ */
+export interface Note {
+  id: number;
+  title: string;
+  /**
+   * The newest is shown first.
+   */
+  date: string;
+  /**
+   * Whose line it belongs to. Empty for a note about the studio itself.
+   */
+  project?: (number | null) | Project;
+  /**
+   * Shown in the lists and under the title.
+   */
+  summary: string;
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * How the page appears in search results. Left empty, the default text is used.
+   */
+  meta?: {
+    /**
+     * Up to ~60 characters, e.g. "Physiotherapy after a knee injury".
+     */
+    title?: string | null;
+    /**
+     * Up to ~155 characters. Say briefly what a visitor finds here.
+     */
+    description?: string | null;
+    /**
+     * Left empty, a card with the page title and the logo is shown. A landscape photo of at least 1200 × 630 px looks best.
+     */
+    image?: (number | null) | Media;
+  };
+  /**
+   * Part of the web address, e.g. "physiotherapy". The same in every language. Leave empty to generate it.
+   */
+  slug?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * Text pages such as About and the privacy policy. The home page, projects and contact are built in.
@@ -538,6 +601,10 @@ export interface PayloadLockedDocument {
         value: number | Project;
       } | null)
     | ({
+        relationTo: 'notes';
+        value: number | Note;
+      } | null)
+    | ({
         relationTo: 'pages';
         value: number | Page;
       } | null)
@@ -622,6 +689,28 @@ export interface ProjectsSelect<T extends boolean = true> {
   window?: T;
   windowAddress?: T;
   windowCaption?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notes_select".
+ */
+export interface NotesSelect<T extends boolean = true> {
+  title?: T;
+  date?: T;
+  project?: T;
+  summary?: T;
+  content?: T;
   meta?:
     | T
     | {

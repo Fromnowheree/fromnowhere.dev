@@ -6,11 +6,12 @@ import { MAX_LINK_LENGTH, MAX_SLUG_LENGTH } from './content'
  * path rules beneath it are this site's.
  *
  * A link is either
- *   - a path on this site, WITHOUT its language ("/contact", "/projects/giogio", "/about", "/"):
+ *   - a path on this site, WITHOUT its language ("/contact", "/projects/giogio", "/about",
+ *     "/notes", "/notes/<slug>", "/"):
  *     the visitor's language is added when it renders, so one link serves every language; or
  *   - an absolute https:, mailto: or tel: address.
- * A site path must name something public: the home page, the contact page, a published project or
- * a published page. That is checked at save time (src/fields/link.ts) and again when the link
+ * A site path must name something public: the home page, the contact page, a published project, a
+ * published page, or the notes while they are open (src/lib/notes.ts). That is checked at save time (src/fields/link.ts) and again when the link
  * renders, so a page unpublished later hides the link instead of sending visitors to a 404.
  */
 
@@ -20,8 +21,11 @@ export const PROJECTS_SEGMENT = 'projects'
 /** The built-in contact page: /<language>/contact. */
 export const CONTACT_SEGMENT = 'contact'
 
+/** The notes: /<language>/notes, and one note at /<language>/notes/<slug>. */
+export const NOTES_SEGMENT = 'notes'
+
 /** Built-in first segments a page slug may not take, or the built-in route would hide the page. */
-export const RESERVED_PAGE_SLUGS = [PROJECTS_SEGMENT, CONTACT_SEGMENT]
+export const RESERVED_PAGE_SLUGS = [PROJECTS_SEGMENT, CONTACT_SEGMENT, NOTES_SEGMENT]
 
 /** A page or project address segment, as `slugify` (src/fields/slug.ts) writes it. */
 export const isSlug = (value: unknown): value is string =>
@@ -32,6 +36,12 @@ export const pageHref = (slug: string): string => `/${slug}`
 
 /** A project's page, without its language. */
 export const projectHref = (slug: string): string => `/${PROJECTS_SEGMENT}/${slug}`
+
+/** The notes, without the language. */
+export const notesHref = `/${NOTES_SEGMENT}`
+
+/** One note, without its language. */
+export const noteHref = (slug: string): string => `/${NOTES_SEGMENT}/${slug}`
 
 const LINK_SCHEMES = new Set(['https:', 'mailto:', 'tel:'])
 
@@ -62,6 +72,8 @@ export type LinkTarget =
   | { kind: 'contact' }
   | { kind: 'page'; slug: string }
   | { kind: 'project'; slug: string }
+  | { kind: 'notes' }
+  | { kind: 'note'; slug: string }
 
 /**
  * What an authored link points at, or null when it fails the rule or is a site path that cannot
@@ -76,17 +88,25 @@ export const linkTarget = (value: unknown): LinkTarget | null => {
   if (bare === '') return { kind: 'home' }
   const segments = bare.slice(1).split('/')
   if (segments.length === 1 && segments[0] === CONTACT_SEGMENT) return { kind: 'contact' }
+  if (segments.length === 1 && segments[0] === NOTES_SEGMENT) return { kind: 'notes' }
   if (segments.length === 1 && isSlug(segments[0]) && !RESERVED_PAGE_SLUGS.includes(segments[0]))
     return { kind: 'page', slug: segments[0] }
   if (segments.length === 2 && segments[0] === PROJECTS_SEGMENT && isSlug(segments[1]))
     return { kind: 'project', slug: segments[1] }
+  if (segments.length === 2 && segments[0] === NOTES_SEGMENT && isSlug(segments[1]))
+    return { kind: 'note', slug: segments[1] }
   return null
 }
 
-/** The slugs a site path may point at: published pages and published projects. */
+/**
+ * The slugs a site path may point at: published pages, published projects, and the published
+ * notes while the notes are open (empty while fewer than three are published, so /notes and every
+ * note count as absent).
+ */
 export interface PublishedIndex {
   pages: ReadonlySet<string>
   projects: ReadonlySet<string>
+  notes: ReadonlySet<string>
 }
 
 /**
@@ -98,6 +118,8 @@ export const resolveLink = (value: unknown, index: PublishedIndex): string | nul
   if (target === null) return null
   if (target.kind === 'page' && !index.pages.has(target.slug)) return null
   if (target.kind === 'project' && !index.projects.has(target.slug)) return null
+  if (target.kind === 'notes' && index.notes.size === 0) return null
+  if (target.kind === 'note' && !index.notes.has(target.slug)) return null
   return value as string
 }
 

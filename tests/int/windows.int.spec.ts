@@ -58,7 +58,7 @@ afterAll(async () => {
 /** Back to an empty site, so the next seed runs again. */
 async function emptySite() {
   const all = { id: { exists: true } }
-  for (const collection of ['short-links', 'projects', 'pages', 'media'] as const)
+  for (const collection of ['notes', 'short-links', 'projects', 'pages', 'media'] as const)
     await payload.delete({ collection, where: all })
 }
 

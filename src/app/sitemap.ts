@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 
 import type { Locale } from '@/i18n/locales'
-import { pageHref, projectHref } from '@/lib/links'
+import { noteHref, notesHref, pageHref, projectHref } from '@/lib/links'
 import { localizedPath } from '@/lib/metadata'
 import { getPublishedSummaries, getServedLocales } from '@/lib/payload'
 import { serverUrl } from '@/lib/serverUrl'
@@ -9,12 +9,13 @@ import { serverUrl } from '@/lib/serverUrl'
 export const dynamic = 'force-dynamic'
 
 /**
- * The home page, the contact page and every published page and project, in every language, each
+ * The home page, the contact page, every published page and project and (while they are open) the
+ * notes, in every language, each
  * entry naming its other languages so a search engine pairs them. Paths are the same in every
  * language; a draft is absent.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [served, { pages, projects }] = await Promise.all([
+  const [served, { pages, projects, notes }] = await Promise.all([
     getServedLocales(),
     getPublishedSummaries(),
   ])
@@ -27,6 +28,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: project.updatedAt,
     })),
     ...pages.map((page) => ({ path: pageHref(page.slug), lastModified: page.updatedAt })),
+    ...(notes.length > 0
+      ? [
+          {
+            path: notesHref,
+            lastModified: notes
+              .map((note) => note.updatedAt)
+              .sort()
+              .at(-1),
+          },
+        ]
+      : []),
+    ...notes.map((note) => ({ path: noteHref(note.slug), lastModified: note.updatedAt })),
   ]
 
   const url = (locale: Locale, path: string) => `${serverUrl}${localizedPath(locale, path)}`

@@ -4,11 +4,11 @@ import { Mark } from '@/components/fnw'
 import { LanguageSwitch } from '@/components/LanguageSwitch'
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/locales'
-import { displayAddress } from '@/lib/links'
+import { displayAddress, notesHref } from '@/lib/links'
 import { getPublishedIndex, getStudio } from '@/lib/payload'
 
 /**
- * The header: the tile and FNW (the letters give way on a phone), Projects and About, the
+ * The header: the tile and FNW (the letters give way on a phone), Projects, Notes and About, the
  * language pill and one action. Every control is a 44px target. It is held still while pages
  * change (`view-transition-name` in site.css).
  */
@@ -28,6 +28,11 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
           <li>
             <Link href="/#projects">{t('projects')}</Link>
           </li>
+          {index.notes.size > 0 && (
+            <li className="site-nav__notes">
+              <Link href={notesHref}>{t('notes')}</Link>
+            </li>
+          )}
           {index.pages.has('about') && (
             <li className="site-nav__about">
               <Link href="/about">{t('about')}</Link>
@@ -45,8 +50,8 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
 
 /**
  * The footer: the mark and the name, the studio's address, its pages and its profiles elsewhere.
- * No attribution: this is where the attribution on every other site points. Links to About and
- * Privacy appear only while those pages are published.
+ * No attribution: this is where the attribution on every other site points. Links to Notes, About
+ * and Privacy appear only while there is something there.
  */
 export async function SiteFooter({ locale }: { locale: Locale }) {
   const [t, tNav, studio, index] = await Promise.all([
@@ -80,6 +85,11 @@ export async function SiteFooter({ locale }: { locale: Locale }) {
               </a>
             </li>
           ))}
+          {index.notes.size > 0 && (
+            <li>
+              <Link href={notesHref}>{tNav('notes')}</Link>
+            </li>
+          )}
           {index.pages.has('about') && (
             <li>
               <Link href="/about">{tNav('about')}</Link>

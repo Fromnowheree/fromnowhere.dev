@@ -162,7 +162,11 @@ describe('a site link, when the site renders it', () => {
   })
 
   it('is dropped when it fails the rule, even if it reached the database some other way', () => {
-    const index = { pages: new Set(['about']), projects: new Set(['giogio']) }
+    const index = {
+      pages: new Set(['about']),
+      projects: new Set(['giogio']),
+      notes: new Set<string>(),
+    }
     for (const bad of ['javascript:alert(1)', '//evil.example', '/en/about'])
       expect(resolveLink(bad, index), bad).toBeNull()
   })

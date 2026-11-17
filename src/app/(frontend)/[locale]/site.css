@@ -359,7 +359,8 @@ a {
 
 @media (max-width: 640px) {
   .site-nav__fnw,
-  .site-nav__about {
+  .site-nav__about,
+  .site-nav__notes {
     display: none;
   }
   .site-nav__links a {

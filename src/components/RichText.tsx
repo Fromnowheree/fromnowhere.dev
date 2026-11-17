@@ -4,7 +4,14 @@ import {
   type JSXConvertersFunction,
 } from '@payloadcms/richtext-lexical/react'
 
-import { pageHref, projectHref, resolveLink, withLocale, type PublishedIndex } from '@/lib/links'
+import {
+  noteHref,
+  pageHref,
+  projectHref,
+  resolveLink,
+  withLocale,
+  type PublishedIndex,
+} from '@/lib/links'
 
 type LinkFields = {
   linkType?: 'custom' | 'internal'
@@ -15,7 +22,7 @@ type LinkFields = {
 
 /**
  * Where a link in rich text goes, in the visitor's language, or null. A custom link passes the
- * site's link rule (src/lib/links.ts); an internal one names a page or project by relationship.
+ * site's link rule (src/lib/links.ts); an internal one names a page, project or note by relationship.
  * Either way a site path must still name something public: a page unpublished since the text was
  * written loses its link and keeps its words.
  */
@@ -29,6 +36,8 @@ const hrefOf = (fields: LinkFields, locale: string, index: PublishedIndex): stri
       return withLocale(locale, pageHref(slug))
     if (fields.doc?.relationTo === 'projects' && index.projects.has(slug))
       return withLocale(locale, projectHref(slug))
+    if (fields.doc?.relationTo === 'notes' && index.notes.has(slug))
+      return withLocale(locale, noteHref(slug))
     return null
   }
   const href = resolveLink(fields.url, index)

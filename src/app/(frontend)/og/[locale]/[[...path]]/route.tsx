@@ -3,8 +3,8 @@ import { getTranslations } from 'next-intl/server'
 import { isSlug } from '@/fields/slug'
 import { isLocale, type Locale } from '@/i18n/locales'
 import { lineNumber } from '@/lib/format'
-import { CONTACT_SEGMENT, PROJECTS_SEGMENT } from '@/lib/links'
-import { getPage, getProject, getProjects, getStudio } from '@/lib/payload'
+import { CONTACT_SEGMENT, NOTES_SEGMENT, PROJECTS_SEGMENT } from '@/lib/links'
+import { getNote, getNotes, getPage, getProject, getProjects, getStudio } from '@/lib/payload'
 import { serverUrl } from '@/lib/serverUrl'
 import { cardLineColour } from '@/lib/shareCard'
 import { renderShareCard, type CardLine } from './ShareCard'
@@ -30,6 +30,26 @@ async function cardText(locale: Locale, segments: string[]): Promise<CardText | 
   if (segments.length === 1 && segments[0] === CONTACT_SEGMENT) {
     const t = await getTranslations({ locale, namespace: 'contact' })
     return { kicker: 'fromnowhere.dev', title: t('title') }
+  }
+  if (segments.length === 1 && segments[0] === NOTES_SEGMENT) {
+    if ((await getNotes(locale)).length === 0) return null
+    const t = await getTranslations({ locale, namespace: 'notes' })
+    return { kicker: t('kicker'), title: t('title') }
+  }
+  if (segments.length === 2 && segments[0] === NOTES_SEGMENT) {
+    // A note's card lights its project's line; a note about the studio lights them all.
+    const note = await getNote(segments[1], locale)
+    if (!note) return null
+    const t = await getTranslations({ locale, namespace: 'notes' })
+    const project = note.project
+    return project
+      ? {
+          kicker: `${lineNumber(project.line)} · ${project.name} · ${t('title')}`,
+          title: note.title,
+          slug: project.slug,
+          accent: cardLineColour(project.line),
+        }
+      : { kicker: `${t('studio')} · ${t('title')}`, title: note.title }
   }
   if (segments.length === 1) {
     const page = await getPage(segments[0], locale)

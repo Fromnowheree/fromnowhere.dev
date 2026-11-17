@@ -8,7 +8,9 @@ import { WINDOWS, type WindowSeed } from './windowSeeds'
 /**
  * Fills an EMPTY database with the site's starting content, in English and Croatian: the four
  * lines from the vision (docs/vision.html), their short links, the studio's words and the About
- * and privacy pages. It never overwrites: if any project exists, it does nothing.
+ * and privacy pages, and the first two notes (about the studio itself: with fewer than three
+ * published, the notes stay hidden until a third is written). It never overwrites: if any project
+ * exists, it does nothing.
  *
  * Statuses and addresses are the launch plan, not a promise: check them in the admin before
  * going live. NMT has no address yet, so its line is dashed and ends at its page here.
@@ -194,6 +196,73 @@ const PROJECTS: ProjectSeed[] = [
   },
 ]
 
+/**
+ * The first notes, both about the studio itself and both true of the site as it launches. Two is
+ * one short of opening the notes (src/lib/notes.ts): they appear once a third is published.
+ */
+export const NOTES = [
+  {
+    slug: 'every-line-reports-in',
+    date: '2026-11-16T12:00:00.000Z',
+    en: {
+      title: 'Every line reports in now',
+      summary:
+        'The departures board checks each address every five minutes. A site that stops answering shows as Delayed until it’s back.',
+      content: [
+        'Until now the board showed what I told it: a line said Running because I had set it to Running. Now the site knocks on every address every five minutes and writes down whether anything answered.',
+        'One missed knock is a blip and changes nothing. After two in a row, the line shows Delayed:',
+        {
+          ul: [
+            'its trains stop where they are,',
+            'its terminal and its status turn the colour of street light,',
+            'the board says “Not answering just now”.',
+          ],
+        },
+        'When the site answers again, the line runs again. Only lines I’ve marked as running can be delayed. A line under construction stays under construction, whatever its address does.',
+      ],
+    },
+    hr: {
+      title: 'Svaka linija se sada javlja',
+      summary:
+        'Ploča polazaka svakih pet minuta provjerava svaku adresu. Web koji se prestane javljati prikazuje se kao Kasni dok se ne vrati.',
+      content: [
+        'Dosad je ploča prikazivala ono što sam joj rekao: linija je pisala Radi zato što sam je tako označio. Sada web svakih pet minuta pokuca na svaku adresu i zapiše je li se itko javio.',
+        'Jedno propušteno kucanje je slučajnost i ne mijenja ništa. Nakon dva zaredom linija se prikazuje kao Kasni:',
+        {
+          ul: [
+            'njezini vlakovi stanu gdje jesu,',
+            'njezina završna stanica i status poprime boju ulične rasvjete,',
+            'ploča piše „Trenutačno ne odgovara”.',
+          ],
+        },
+        'Kad se web ponovno javi, linija ponovno vozi. Kasniti mogu samo linije koje sam označio kao aktivne. Linija u izgradnji ostaje u izgradnji, što god njezina adresa radila.',
+      ],
+    },
+  },
+  {
+    slug: 'links-arrive-with-a-map',
+    date: '2026-11-16T12:00:00.000Z',
+    en: {
+      title: 'Links arrive with a map',
+      summary:
+        'Paste a project’s page into a chat and its preview draws the route map, with that project’s line lit.',
+      content: [
+        'Every page here has a share card: the picture a chat app shows under a link. Each one is drawn from the same geometry as the map on the home page, so a link to a project arrives as the map with that project’s line lit and the others dimmed.',
+        'Chat apps keep these pictures for days, so a card shows the line as I set it, not the live status from the board.',
+      ],
+    },
+    hr: {
+      title: 'Poveznice stižu s kartom',
+      summary:
+        'Zalijepite stranicu projekta u razgovor i njezin pregled nacrta kartu linija, s osvijetljenom linijom tog projekta.',
+      content: [
+        'Svaka stranica ovdje ima karticu za dijeljenje: sliku koju aplikacija za razgovor prikaže ispod poveznice. Svaka je nacrtana iz iste geometrije kao karta na početnoj stranici, pa poveznica na projekt stiže kao karta na kojoj je linija tog projekta osvijetljena, a ostale prigušene.',
+        'Aplikacije za razgovor te slike čuvaju danima, pa kartica prikazuje liniju onako kako sam je postavio, a ne trenutačni status s ploče.',
+      ],
+    },
+  },
+]
+
 type SeedOptions = {
   /** Where the captures are. Resolved from the working directory, never from this module's own
    * address: the seed is bundled into .next/server/chunks, and the standalone server runs in /app. */
@@ -326,6 +395,28 @@ export async function seed(
       id: created.id,
       locale: 'hr',
       data: { title: page.hr.title, lead: page.hr.lead, content: richText(page.hr.content) },
+    })
+  }
+
+  // Oldest first: notes of the same day list newest-created first, so they read in NOTES' order.
+  for (const note of [...NOTES].reverse()) {
+    const created = await payload.create({
+      collection: 'notes',
+      locale: 'en',
+      data: {
+        _status: 'published',
+        slug: note.slug,
+        date: note.date,
+        title: note.en.title,
+        summary: note.en.summary,
+        content: richText(note.en.content),
+      },
+    })
+    await payload.update({
+      collection: 'notes',
+      id: created.id,
+      locale: 'hr',
+      data: { title: note.hr.title, summary: note.hr.summary, content: richText(note.hr.content) },
     })
   }
 

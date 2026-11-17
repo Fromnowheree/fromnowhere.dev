@@ -7,6 +7,7 @@
   "nav": {
     "main": "Glavni izbornik",
     "projects": "Projekti",
+    "notes": "Bilješke",
     "about": "O meni",
     "contact": "Javite se",
     "home": "Početna stranica Fromnowherea"
@@ -80,6 +81,28 @@
     "allProjects": "Svi projekti",
     "window": "Pogled na odredište",
     "notAnswering": "Trenutačno ne odgovara"
+  },
+  "notes": {
+    "title": "Bilješke",
+    "kicker": "Peron 00 · obavijesti",
+    "lead": "Kratke bilješke s datumom o onome što izrađujem, najnovije prve.",
+    "titleLine": "Bilješke s linije {number}",
+    "leadLine": "Što se promijenilo na projektu {name}, najnovije prvo.",
+    "tally": "Bilješke na prvi pogled",
+    "tallyNotes": "Bilješke",
+    "tallyLines": "Linije",
+    "tallyFirst": "Prva",
+    "filter": "Bilješke po liniji",
+    "all": "Sve",
+    "studio": "Fromnowhere",
+    "allNotes": "Sve bilješke",
+    "latest": "Najnovije bilješke",
+    "more": "Još bilješki",
+    "onThisLine": "{count, plural, one {# bilješka na ovoj liniji} few {# bilješke na ovoj liniji} other {# bilješki na ovoj liniji}}",
+    "here": "Ovdje ste",
+    "projectKicker": "Obavijesti s linije {number}",
+    "onlyLine": "Samo linija {number} u bilješkama",
+    "projectPage": "Stranica projekta"
   },
   "footer": {
     "label": "Podnožje",

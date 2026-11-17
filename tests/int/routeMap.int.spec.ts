@@ -314,7 +314,7 @@ describe('the stylesheets', () => {
   const read = (name: string) =>
     readFileSync(path.join(dir, name), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
   const sheets = Object.fromEntries(
-    ['site.css', 'routemap.css', 'board.css'].map((name) => [name, read(name)]),
+    ['site.css', 'routemap.css', 'board.css', 'notes.css'].map((name) => [name, read(name)]),
   )
 
   /** Every declaration of a property, with the at-rules and selectors around it. */

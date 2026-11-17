@@ -3,12 +3,13 @@ import { getTranslations } from 'next-intl/server'
 import type React from 'react'
 
 import { HomeMotion } from '@/components/site/HomeMotion'
+import { LatestNotes } from '@/components/site/Notes'
 import { RouteMap } from '@/components/site/RouteMap'
 import { Board } from '@/components/site/Signs'
 import { Link } from '@/i18n/navigation'
 import { asLocale } from '@/i18n/server'
 import { pageMetadata } from '@/lib/metadata'
-import { getProjects, getShortLinks, getStudio } from '@/lib/payload'
+import { getNotes, getProjects, getShortLinks, getStudio } from '@/lib/payload'
 import { serverUrl } from '@/lib/serverUrl'
 import { serviceOf, type Service } from '@/lib/status'
 
@@ -31,16 +32,18 @@ const delay = (d: number) => ({ '--d': d }) as React.CSSProperties
  * The origin (Night transit, docs/prototypes/night-transit.html): the headline whose full stop is
  * the point, the tally, the route map (one coloured line per project, drawn out of the point on
  * every visit, with trains running), the departures board listing the same projects in the same
- * order, the ticker of short links, and the way to get in touch. Everything is the CMS's: the
+ * order, the ticker of short links, the latest notes (once there are three), and the way to get in
+ * touch. Everything is the CMS's: the
  * studio's words, the published projects, the short links; the tally is counted from them.
  */
 export default async function Home({ params }: Props) {
   const locale = asLocale((await params).locale)
-  const [t, studio, projects, shortLinks] = await Promise.all([
+  const [t, studio, projects, shortLinks, notes] = await Promise.all([
     getTranslations({ locale, namespace: 'home' }),
     getStudio(locale),
     getProjects(locale),
     getShortLinks(),
+    getNotes(locale),
   ])
 
   // The headline's own full stop gives way to the point.
@@ -106,6 +109,8 @@ export default async function Home({ params }: Props) {
           </>
         )}
       </section>
+
+      {await LatestNotes({ notes, locale })}
 
       <section className="band home-band" aria-labelledby="band-title">
         <div>

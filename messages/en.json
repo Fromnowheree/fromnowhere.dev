@@ -6,7 +6,9 @@
   },
   "nav": {
     "main": "Main",
-    "projects": "Projects",
+    "projects": "Work",
+    "services": "Services",
+    "capabilities": "Capabilities",
     "notes": "Notes",
     "about": "About",
     "contact": "Get in touch",
@@ -16,17 +18,27 @@
     "label": "Language"
   },
   "home": {
-    "kicker": "Fromnowhere · one-person software studio",
+    "kicker": "Fromnowhere · software studio",
+    "heroAction": "Start a project",
+    "heroServices": "See the services",
     "tally": "The lines at a glance",
     "tallyLines": "Lines",
     "tallyRunning": "Running",
     "tallyDelayed": "Delayed",
     "tallyBuilding": "Under construction",
     "tallyPaused": "Paused",
-    "contactKicker": "Get in touch",
+    "servicesKicker": "Platform 00 · services",
+    "servicesTitle": "Services",
+    "servicesLead": "What Fromnowhere can be hired for, and the lines behind each.",
+    "servicesAll": "All services",
+    "capabilitiesKicker": "Platform 00 · the works",
+    "capabilitiesTitle": "Under the lines",
+    "capabilitiesLead": "The engineering a visitor never sees and an owner relies on.",
+    "capabilitiesAll": "All capabilities",
+    "contactKicker": "Start a project",
     "contactTitle": "Something to build?",
-    "contactLead": "Tell me what it is. I’ll reply myself.",
-    "contactAction": "Write to me",
+    "contactLead": "Say what it is in a few lines. Every message gets a reply.",
+    "contactAction": "Start a project",
     "empty": "No projects are published yet."
   },
   "map": {
@@ -74,18 +86,28 @@
   "project": {
     "line": "Line {number}",
     "leaves": "Leaves fromnowhere.dev",
+    "madeFor": "Made for",
+    "scope": "The studio’s part",
+    "services": "Services",
     "builtWith": "Built with",
     "started": "Started",
     "addresses": "Addresses",
     "noAddress": "This line has no address of its own yet. It ends here for now.",
     "allProjects": "All projects",
     "window": "A glimpse of the destination",
+    "chapters": "The case study",
+    "chapter": {
+      "brief": "The brief",
+      "story": "What was built",
+      "engineering": "Under the surface",
+      "outcome": "Where it stands"
+    },
     "notAnswering": "Not answering just now"
   },
   "notes": {
     "title": "Notes",
     "kicker": "Platform 00 · notices",
-    "lead": "Short, dated notes on what I’m building, the newest first.",
+    "lead": "Short, dated notes on what the studio is building, the newest first.",
     "titleLine": "Notes on line {number}",
     "leadLine": "What’s changed on {name}, the newest first.",
     "tally": "The notes at a glance",
@@ -105,6 +127,47 @@
     "projectPage": "The project’s page",
     "feed": "Follow the notes in a feed reader (Atom)"
   },
+  "services": {
+    "title": "Services",
+    "kicker": "Platform 00 · services",
+    "lead": "What Fromnowhere can be hired for. Each service names the lines behind it.",
+    "description": "What the Fromnowhere studio can be hired for, each service with the projects that show it.",
+    "tally": "The services at a glance",
+    "tallyServices": "Services",
+    "tallyLines": "Lines behind them",
+    "list": "Services by letter",
+    "service": "Service {letter}",
+    "proof": "Lines behind it",
+    "bandKicker": "Start a project",
+    "bandTitle": "Need one of these?",
+    "bandLead": "Say which one, and what for. Every message gets a reply.",
+    "bandAction": "Start a project",
+    "capabilities": "What is under each of them"
+  },
+  "capabilities": {
+    "title": "Capabilities",
+    "kicker": "Platform 00 · the works",
+    "lead": "The engineering under the lines, one claim at a time, each with the sites it is built into.",
+    "description": "The engineering behind Fromnowhere’s sites: design, build, security and operations, each claim with the sites that back it.",
+    "tally": "The capabilities at a glance",
+    "tallyCapabilities": "Capabilities",
+    "tallyAreas": "Areas",
+    "area": {
+      "design": "Design",
+      "build": "Build",
+      "security": "Security",
+      "operations": "Operations"
+    },
+    "areaLead": {
+      "design": "How a site looks, moves and reads.",
+      "build": "What it is made of and how it is checked.",
+      "security": "What keeps an owner and their visitors safe.",
+      "operations": "What keeps it running after launch."
+    },
+    "proof": "Built into",
+    "thisSite": "This site",
+    "services": "What can be hired"
+  },
   "footer": {
     "label": "Footer",
     "privacy": "Privacy",
@@ -113,7 +176,7 @@
   },
   "contact": {
     "title": "Get in touch",
-    "lead": "A project, a question or an idea. Write a few lines and I’ll reply by e-mail.",
+    "lead": "A project, a question or an idea. Write a few lines and the reply comes by e-mail.",
     "writeDirectly": "Or write directly to",
     "noForm": "The form is not available right now. Write to the address below instead."
   },
@@ -126,7 +189,7 @@
     "submit": "Send the message",
     "sending": "Sending…",
     "sent": "Your message has been sent",
-    "sentDetail": "Thank you. I’ll reply to {email}.",
+    "sentDetail": "Thank you. The reply will go to {email}.",
     "fixFields": "Check the marked fields.",
     "needsScript": "This form needs JavaScript, which is off in your browser.",
     "reach": {
@@ -146,10 +209,10 @@
     },
     "errors": {
       "name": "Enter your name.",
-      "email": "Enter your e-mail address, so I can reply.",
+      "email": "Enter your e-mail address, so the reply can reach you.",
       "emailInvalid": "That e-mail address does not look right.",
       "message": "Write a message.",
-      "consent": "Tick the box, so I may answer."
+      "consent": "Tick the box, so your message may be answered."
     },
     "proof": {
       "label": "I am not a robot",

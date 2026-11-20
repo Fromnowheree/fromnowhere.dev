@@ -7,6 +7,7 @@ import { readRelayConfig } from '../../src/lib/relay/config'
 import config from '../../src/payload.config.js'
 
 const en = JSON.parse(readFileSync('messages/en.json', 'utf8'))
+const hr = JSON.parse(readFileSync('messages/hr.json', 'utf8'))
 
 /** Whether the server shows the form at all (see contact.e2e.spec.ts): its CONTACT_* account. */
 const formShown = readRelayConfig(process.env) !== null
@@ -14,8 +15,17 @@ const formShown = readRelayConfig(process.env) !== null
 /** The address the contact test shows when the studio has none of its own (a reserved domain). */
 const PROBE_EMAIL = 'e2e-probe@example.com'
 
-/** Pages a visitor reaches first: the home page (map and board), a project page, the contact page. */
-const PAGES = ['/en', '/en/projects/giogio', '/en/contact']
+/** Pages a visitor reaches first: the home page (map and board), a project page, the contact
+ * page, and what the studio offers (in Croatian too: its words are longer). */
+const PAGES = [
+  '/en',
+  '/en/projects/giogio',
+  '/en/contact',
+  '/en/services',
+  '/hr/services',
+  '/en/capabilities',
+  '/hr/capabilities',
+]
 
 /** A phone, a large phone and a tablet. */
 const SCREENS = [320, 390, 768]
@@ -36,12 +46,14 @@ for (const width of SCREENS) {
         await expect(page.locator('#content h1')).toBeVisible()
 
         const header = page.locator('header.site-nav')
+        const nav = (path.startsWith('/hr') ? hr : en).nav
+        // A phone keeps one link beside the action: Services (the logo leads to the work).
         await expect(
           header
-            .getByRole('navigation', { name: en.nav.main })
-            .getByRole('link', { name: en.nav.projects }),
+            .getByRole('navigation', { name: nav.main })
+            .getByRole('link', { name: width <= 440 ? nav.services : nav.projects }),
         ).toBeVisible()
-        await expect(header.getByRole('link', { name: en.nav.contact })).toBeVisible()
+        await expect(header.getByRole('link', { name: nav.contact })).toBeVisible()
         // The language switch: EN and HR, each the same page in its language.
         await expect(header.locator('a[hreflang="en"]')).toBeVisible()
         await expect(header.locator('a[hreflang="hr"]')).toBeVisible()

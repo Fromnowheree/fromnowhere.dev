@@ -1,0 +1,633 @@
+/*
+ * What the studio offers, in Night transit's signs (src/components/site/Offer.tsx): the services
+ * (lettered roundels, platform signs with a track per line they run on, the services page's one
+ * rail), the capabilities (the works: tracks under sodium work lights), the proof chips, the
+ * hero's actions, and a project page's case study (chapters as stops down its line).
+ *
+ * Colours are site.css's tokens. Every animation is inside prefers-reduced-motion: no-preference
+ * (tests/int/routeMap.int.spec.ts); the base state is the finished page.
+ */
+
+/* ── the hero's pitch: what the studio does, and the way to start ─────── */
+.hero__pitch {
+  display: grid;
+  gap: 22px;
+}
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 22px;
+  margin: 0;
+}
+.hero__actions .btn {
+  min-height: 50px;
+  padding: 14px 22px;
+  font-size: 17px;
+}
+.hero__more {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--text-muted);
+  text-decoration-color: var(--accent-soft);
+  text-underline-offset: 5px;
+  transition:
+    color var(--nt-fast),
+    text-decoration-color var(--nt-fast);
+}
+.hero__more:hover {
+  color: var(--text);
+  text-decoration-color: var(--accent);
+}
+
+/* ── shared: a band's head, a service's roundel, proof chips ──────────── */
+.offer,
+.works-band {
+  margin-top: clamp(48px, 7vw, 88px);
+  scroll-margin-top: 16px;
+}
+.offer__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 32px;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.offer__lead {
+  margin: 10px 0 0;
+  max-width: 52ch;
+  color: var(--text-muted);
+  font-size: 17px;
+  text-wrap: pretty;
+}
+
+/* A service's letter in a lit ring, like the sign over a platform. */
+.roundel {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 1;
+  box-shadow:
+    0 0 18px var(--accent-soft),
+    inset 0 0 12px var(--accent-haze);
+}
+
+/* Where something is in service: a chip per line, and the point for this site. */
+.proof {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+}
+.proof__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.proof__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.proof__chip {
+  --c: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px 0 10px;
+  border: 1px solid color-mix(in srgb, var(--c) 30%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--text);
+  font-size: 14px;
+  text-decoration: none;
+  transition:
+    border-color var(--nt-slow),
+    box-shadow var(--nt-slow),
+    background var(--nt-slow);
+}
+a.proof__chip:hover {
+  border-color: color-mix(in srgb, var(--c) 60%, transparent);
+  background: color-mix(in srgb, var(--c) 8%, var(--surface));
+  box-shadow: 0 0 28px -6px color-mix(in srgb, var(--c) 45%, transparent);
+}
+.proof__chip--here {
+  padding-left: 14px;
+  color: var(--text-muted);
+}
+
+/* ── home: the services, one platform sign each ───────────────────────── */
+.offer__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sign {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 12px;
+  padding: 22px 22px 20px;
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    180deg,
+    var(--surface),
+    color-mix(in srgb, var(--surface) 60%, var(--night))
+  );
+  transition:
+    border-color var(--nt-slow),
+    box-shadow var(--nt-slow),
+    transform var(--nt-slow) var(--nt-ease);
+}
+.sign:hover,
+.sign:focus-within {
+  border-color: var(--accent-soft);
+  box-shadow:
+    0 0 0 1px var(--accent-haze),
+    0 0 48px -8px var(--accent-soft);
+  transform: translateY(-3px);
+}
+.sign h3 {
+  margin: 6px 0 0;
+  font-weight: 500;
+  font-size: 21px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.sign h3 a {
+  color: var(--text);
+  text-decoration: none;
+}
+/* The whole sign is the link's target. */
+.sign h3 a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+}
+.sign > p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 15px;
+  text-wrap: pretty;
+}
+/* The lines a service runs on: each a short track in its line's colour, ending in a terminal. */
+.sign__tracks {
+  display: grid;
+  gap: 8px;
+  margin: 6px 0 0;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--divider);
+  list-style: none;
+}
+.sign__tracks li {
+  display: grid;
+  grid-template-columns: auto auto minmax(28px, 1fr);
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.sign__tracks .line-no {
+  grid-column: 1;
+  grid-row: 1;
+}
+.sign__name {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sign__track {
+  grid-column: 3;
+  grid-row: 1;
+  position: relative;
+  height: 14px;
+  container-type: inline-size;
+  /* Decoration over the sign's link: a click on it is a click on the sign. */
+  pointer-events: none;
+  background: linear-gradient(var(--c), var(--c)) left center / calc(100% - 6px) 2px no-repeat;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--c) 55%, transparent));
+}
+.sign__track::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--c);
+  border-radius: 50%;
+  background: var(--ground);
+}
+.sign__train {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 12px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--train-core);
+  box-shadow: 0 0 8px var(--c);
+  opacity: 0;
+}
+
+/* ── home: the capabilities, four areas side by side ──────────────────── */
+.works-band__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--divider);
+  border-radius: var(--radius-lg);
+  background: var(--divider);
+}
+.works-band__area {
+  padding: 22px 22px 24px;
+  background: linear-gradient(
+    180deg,
+    var(--surface),
+    color-mix(in srgb, var(--surface) 60%, var(--night))
+  );
+}
+.works-band__area h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-weight: 500;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+}
+.works__no {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: var(--sodium);
+}
+.works-band__area ul {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.works-band__area li {
+  position: relative;
+  padding-left: 18px;
+  color: var(--text-muted);
+  font-size: 14.5px;
+  line-height: 1.4;
+}
+.works-band__area li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0.5em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sodium);
+  box-shadow: 0 0 8px var(--sodium-glow);
+}
+
+/* ── the services page: stops down one rail ───────────────────────────── */
+.services-page,
+.works-page {
+  display: grid;
+  gap: clamp(40px, 6vw, 72px);
+}
+.services-page .band,
+.works-page .band {
+  margin-top: 0;
+}
+.services-page__more {
+  margin: 0;
+}
+.services {
+  --stop: 56px;
+  position: relative;
+  display: grid;
+  gap: clamp(40px, 6vw, 72px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.services::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--stop) / 2 - 1px);
+  top: calc(var(--stop) / 2);
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(var(--accent) 70%, transparent);
+  box-shadow: 0 0 14px var(--accent-soft);
+  transform-origin: top;
+}
+.service {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--stop) minmax(0, 1fr);
+  gap: clamp(16px, 3vw, 40px);
+  align-items: start;
+  scroll-margin-top: 24px;
+}
+.service__stop .roundel {
+  position: relative;
+  width: var(--stop);
+  height: var(--stop);
+  font-size: 22px;
+  transition:
+    background var(--nt-slow),
+    color var(--nt-slow);
+}
+/* Arrived at from a card on the home page: this stop is lit. A soft navigation sets no :target,
+   so PageTransition's mark on the place it moved focus to counts too. */
+.service:target .roundel,
+.service[data-focus-target] .roundel {
+  background: var(--accent);
+  color: var(--night);
+}
+.service__body {
+  display: grid;
+  gap: 14px;
+  padding-top: 4px;
+}
+.service__body .board__kicker {
+  margin: 0;
+}
+.service h2 {
+  margin: 0;
+  font-weight: 500;
+  font-size: clamp(26px, 3.4vw, 40px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.service__summary {
+  margin: 0;
+  max-width: 54ch;
+  color: var(--text-muted);
+  font-size: clamp(16px, 1.6vw, 19px);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+.service .proof {
+  margin-top: 8px;
+}
+/* Wide: what the service is on the left, what is in it on the right. */
+@media (min-width: 1000px) {
+  .service__body {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: clamp(32px, 5vw, 72px);
+    align-content: start;
+  }
+  .service__body > * {
+    grid-column: 1;
+  }
+  .service__body > .prose {
+    grid-column: 2;
+    grid-row: 1 / span 4;
+    align-self: start;
+    padding-top: 30px;
+  }
+}
+@media (max-width: 600px) {
+  .services {
+    --stop: 44px;
+  }
+  .service__stop .roundel {
+    font-size: 18px;
+  }
+}
+
+/* ── the capabilities page: each area a track under work lights ───────── */
+.works {
+  display: grid;
+  gap: 24px;
+  scroll-margin-top: 24px;
+}
+.works__head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 14px;
+  align-items: baseline;
+}
+.works__head h2 {
+  margin: 0;
+  font-weight: 500;
+  font-size: clamp(26px, 3.4vw, 40px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.works__head p {
+  grid-column: 2;
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 17px;
+}
+.works__stops {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  row-gap: 36px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* The stops of a row share one track: each carries its own stretch of it. */
+.works__stop {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  padding: 26px 28px 0 0;
+  border-top: 2px solid color-mix(in srgb, var(--sodium) 40%, transparent);
+}
+.works__lamp {
+  position: absolute;
+  left: 0;
+  top: -8px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--sodium);
+  border-radius: 50%;
+  background: var(--ground);
+  box-shadow: 0 0 12px var(--sodium-glow);
+}
+.works__lamp::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: var(--sodium);
+}
+.works__stop h3 {
+  margin: 0;
+  font-weight: 500;
+  font-size: 19px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.works__stop > p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 15px;
+  text-wrap: pretty;
+}
+.works__stop .proof {
+  margin-top: 4px;
+}
+/* The label over its chips, so every stop reads the same whatever its proof. */
+.works__stop .proof__label {
+  flex: 0 0 100%;
+}
+
+/* ── a project page's case study: chapters as stops down its line ─────── */
+.chapters {
+  position: relative;
+  display: grid;
+  gap: clamp(32px, 4.5vw, 52px);
+  margin: 0;
+  padding: 0 0 0 36px;
+  list-style: none;
+}
+.chapters::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 12px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(var(--c) 75%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--c) 45%, transparent);
+  transform-origin: top;
+}
+.chapter {
+  position: relative;
+  display: grid;
+  gap: 14px;
+}
+.chapter__stop {
+  position: absolute;
+  left: -36px;
+  top: 7px;
+  width: 16px;
+  height: 16px;
+  border: 3px solid var(--c);
+  border-radius: 50%;
+  background: var(--ground);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--c) 50%, transparent);
+}
+.chapter h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0;
+  font-weight: 500;
+  font-size: clamp(22px, 2.6vw, 30px);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.chapter__no {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: var(--c);
+}
+
+/* The services a project is proof of, among its facts. */
+.facts__services {
+  display: grid;
+}
+.facts__services a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  color: var(--text);
+  text-decoration: none;
+  transition: color var(--nt-fast);
+}
+.facts__services a:hover {
+  color: var(--link);
+}
+.facts__services .roundel {
+  width: 28px;
+  height: 28px;
+  border-width: 1.5px;
+  font-size: 13px;
+  box-shadow: 0 0 10px var(--accent-soft);
+}
+
+@keyframes nt-draw-y {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes nt-sign-train {
+  0% {
+    transform: translateX(-12px);
+    opacity: 0;
+  }
+  10%,
+  80% {
+    opacity: 1;
+  }
+  90%,
+  100% {
+    transform: translateX(calc(100cqw - 20px));
+    opacity: 0;
+  }
+}
+
+/* Everything that moves stops under reduced motion: the base state is the finished page. */
+@media (prefers-reduced-motion: no-preference) {
+  /* A train on each track a service runs on, each sign's a beat after the last. */
+  .sign__train {
+    animation: nt-sign-train 3.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    animation-delay: calc(var(--i, 0) * 450ms);
+  }
+  .sign__tracks li:nth-child(2) .sign__train {
+    animation-duration: 4.1s;
+  }
+  .sign__tracks li:nth-child(3) .sign__train {
+    animation-duration: 3.8s;
+  }
+  /* The rails draw down as their page opens. */
+  .services::before,
+  .chapters::before {
+    animation: nt-draw-y var(--nt-draw) var(--nt-ease) both;
+    animation-delay: 300ms;
+  }
+  /* Work lights: each lamp's core blinks, out of step with its neighbours. */
+  .works__lamp::after {
+    animation: nt-blink 1.6s ease-in-out infinite alternate;
+    animation-delay: calc(var(--i, 0) * 370ms);
+  }
+}

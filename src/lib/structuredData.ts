@@ -125,3 +125,26 @@ export const noteNode = ({
       : undefined,
   })
 }
+
+/** The services page: what the studio offers, as a list of services it provides. */
+export const servicesNode = ({
+  locale,
+  services,
+}: {
+  locale: Locale
+  services: { name: string; summary: string; slug: string }[]
+}) => ({
+  '@type': 'ItemList',
+  itemListElement: services.map((service, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    item: present({
+      '@type': 'Service',
+      name: service.name,
+      description: service.summary,
+      url: `${pageUrl(locale, '/services')}#${service.slug}`,
+      inLanguage: locale,
+      provider: { '@type': 'Organization', '@id': STUDIO_ID, name: 'Fromnowhere', url: serverUrl },
+    }),
+  })),
+})

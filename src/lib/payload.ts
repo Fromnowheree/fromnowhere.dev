@@ -3,7 +3,8 @@ import { getPayload } from 'payload'
 import { cache } from 'react'
 
 import { defaultLocale, locales, type Locale } from '@/i18n/locales'
-import type { Project } from '@/payload-types'
+import { CAPABILITY_AREAS, type CapabilityArea } from '@/collections/Capabilities'
+import type { Capability, Project, Service } from '@/payload-types'
 import { isSlug, projectHref, type PublishedIndex } from './links'
 import { openNotes, signOf, type NoteSign } from './notes'
 import { withService, type AddressCheck, type LiveProject } from './status'
@@ -146,10 +147,111 @@ export const getNote = cache(async (slug: string, locale: Locale) => {
   return docs[0] ? { ...docs[0], project: sign.project } : null
 })
 
-/** Every published page and project by slug, with when it last changed (not localised). */
+/** A project as a service or a capability names it: its line, name and page. */
+export type ProofProject = { slug: string; name: string; line: number }
+
+/** The published ones of the projects a document names, in line order. */
+const proofOf = (projects: (number | Project)[] | null | undefined): ProofProject[] =>
+  (projects ?? [])
+    .flatMap((project) =>
+      typeof project === 'object' && project._status === 'published' && project.slug
+        ? [{ slug: project.slug, name: project.name, line: project.line }]
+        : [],
+    )
+    .sort((a, b) => a.line - b.line)
+
+const proofSelect = { projects: { slug: true, name: true, line: true, _status: true } } as const
+
+/** A service as the site shows it: lettered by its place, with the published projects behind it. */
+export type ServiceSign = Pick<Service, 'id' | 'name' | 'summary' | 'text' | 'updatedAt'> & {
+  slug: string
+  /** A, B, C… by its place among the published services. */
+  letter: string
+  proof: ProofProject[]
+}
+
+/** Every published service, in order. A draft project it names is left out of its proof. */
+export const getServices = cache(async (locale: Locale): Promise<ServiceSign[]> => {
+  const { docs } = await (
+    await getPayloadClient()
+  ).find({
+    collection: 'services',
+    where: published,
+    sort: ['order', 'createdAt'],
+    depth: 1,
+    limit: 26,
+    locale,
+    populate: proofSelect,
+  })
+  return docs
+    .filter((service) => service.slug)
+    .map((service, i) => ({
+      id: service.id,
+      name: service.name,
+      summary: service.summary,
+      text: service.text,
+      updatedAt: service.updatedAt,
+      slug: service.slug!,
+      letter: String.fromCharCode(65 + i),
+      proof: proofOf(service.projects),
+    }))
+})
+
+/** A capability as the site shows it, with where it is in service. */
+export type CapabilitySign = Pick<Capability, 'id' | 'title' | 'text' | 'area'> & {
+  onThisSite: boolean
+  proof: ProofProject[]
+}
+
+/** Every published capability, by area in the page's order, each area's in their own order. */
+export const getCapabilities = cache(
+  async (locale: Locale): Promise<{ area: CapabilityArea; items: CapabilitySign[] }[]> => {
+    const { docs } = await (
+      await getPayloadClient()
+    ).find({
+      collection: 'capabilities',
+      where: published,
+      sort: ['order', 'createdAt'],
+      depth: 1,
+      limit: 200,
+      pagination: false,
+      locale,
+      populate: proofSelect,
+    })
+    return CAPABILITY_AREAS.map((area) => ({
+      area,
+      items: docs
+        .filter((capability) => capability.area === area)
+        .map((capability) => ({
+          id: capability.id,
+          title: capability.title,
+          text: capability.text,
+          area: capability.area,
+          onThisSite: Boolean(capability.onThisSite),
+          proof: proofOf(capability.projects),
+        })),
+    })).filter((group) => group.items.length > 0)
+  },
+)
+
+/**
+ * Every published page and project by slug, with when it last changed (not localised), and when
+ * the services and the capabilities last changed (null while none is published).
+ */
 export const getPublishedSummaries = cache(async () => {
   const payload = await getPayloadClient()
-  const [pages, projects, notes] = await Promise.all([
+  const latest = async (collection: 'services' | 'capabilities') => {
+    const { docs } = await payload.find({
+      collection,
+      where: published,
+      depth: 0,
+      limit: 1,
+      sort: '-updatedAt',
+      select: { updatedAt: true },
+    })
+    return docs[0]?.updatedAt ?? null
+  }
+  const [pages, projects, notes, services, capabilities] = await Promise.all([
     payload.find({
       collection: 'pages',
       where: published,
@@ -172,6 +274,8 @@ export const getPublishedSummaries = cache(async () => {
       pagination: false,
       select: { slug: true, updatedAt: true },
     }),
+    latest('services'),
+    latest('capabilities'),
   ])
   const pick = (docs: { slug?: string | null; updatedAt: string }[]) =>
     docs.flatMap((doc) => (doc.slug ? [{ slug: doc.slug, updatedAt: doc.updatedAt }] : []))
@@ -179,13 +283,20 @@ export const getPublishedSummaries = cache(async () => {
     pages: pick(pages.docs),
     projects: pick(projects.docs),
     notes: openNotes(pick(notes.docs)),
+    services,
+    capabilities,
   }
 })
 
-/** What a site path may link to: published pages, projects and (while they are open) notes. */
+/**
+ * What a site path may link to: published pages, projects and (while they are open) notes, and
+ * the services and capabilities pages while one of each is published.
+ */
 export const getPublishedIndex = cache(async (): Promise<PublishedIndex> => {
-  const { pages, projects, notes } = await getPublishedSummaries()
+  const { pages, projects, notes, services, capabilities } = await getPublishedSummaries()
   return {
+    services: services !== null,
+    capabilities: capabilities !== null,
     pages: new Set(pages.map((page) => page.slug)),
     projects: new Set(projects.map((project) => project.slug)),
     notes: new Set(notes.map((note) => note.slug)),

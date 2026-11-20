@@ -117,6 +117,8 @@ describe('the rules', () => {
       pages: new Set<string>(),
       projects: new Set<string>(),
       notes: new Set<string>(),
+      services: false,
+      capabilities: false,
     }
     const open = { ...closed, notes: new Set(['a-note']) }
     expect(resolveLink('/notes', closed)).toBeNull()

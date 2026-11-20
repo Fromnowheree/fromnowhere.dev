@@ -205,17 +205,99 @@ export const Projects: CollectionConfig = {
       ],
     },
     {
-      name: 'story',
-      type: 'richText',
-      label: l('The story', 'Priča'),
-      localized: true,
-      validate: richTextRule,
+      type: 'row',
+      fields: [
+        {
+          name: 'client',
+          type: 'text',
+          label: l('Made for', 'Izrađeno za'),
+          localized: true,
+          maxLength: 160,
+          admin: {
+            width: '50%',
+            description: l(
+              'Who it is for, without naming a private person. E.g. "A homeopathy practice in Varaždin".',
+              'Za koga je, bez imena privatnih osoba. Npr. "Homeopatska praksa u Varaždinu".',
+            ),
+          },
+        },
+        {
+          name: 'scope',
+          type: 'text',
+          hasMany: true,
+          localized: true,
+          label: l('The studio’s part', 'Udio studija'),
+          maxRows: 8,
+          admin: {
+            width: '50%',
+            description: l(
+              'What the studio did, a word or two each. E.g. Design, Build, Hosting.',
+              'Što je studio napravio, riječ ili dvije. Npr. Dizajn, Izrada, Hosting.',
+            ),
+          },
+        },
+      ],
+    },
+    {
+      type: 'collapsible',
+      label: l('The case study', 'Studija slučaja'),
       admin: {
         description: l(
-          'Who it is for, what was built and why. Shown on the project’s page.',
-          'Za koga je, što je izrađeno i zašto. Prikazuje se na stranici projekta.',
+          'Four chapters, shown on the project’s page as stops along its line. Each is optional: an empty one is left out, and with only "What was built" the page shows plain text.',
+          'Četiri poglavlja, na stranici projekta prikazana kao stanice uz njegovu liniju. Svako je neobavezno: prazno se izostavlja, a ako je ispunjeno samo "Što je izrađeno", stranica prikazuje običan tekst.',
         ),
       },
+      fields: [
+        {
+          name: 'brief',
+          type: 'richText',
+          label: l('The brief', 'Zadatak'),
+          localized: true,
+          validate: richTextRule,
+          admin: {
+            description: l('Who needed what, and why.', 'Kome je što trebalo i zašto.'),
+          },
+        },
+        {
+          name: 'story',
+          type: 'richText',
+          label: l('What was built', 'Što je izrađeno'),
+          localized: true,
+          validate: richTextRule,
+          admin: {
+            description: l(
+              'What a visitor and an owner can do with it.',
+              'Što s time mogu posjetitelj i vlasnik.',
+            ),
+          },
+        },
+        {
+          name: 'engineering',
+          type: 'richText',
+          label: l('Under the surface', 'Ispod površine'),
+          localized: true,
+          validate: richTextRule,
+          admin: {
+            description: l(
+              'The parts that took real engineering. Only what is true of the code as it is.',
+              'Dijelovi koji su tražili pravo inženjerstvo. Samo ono što vrijedi za kod kakav jest.',
+            ),
+          },
+        },
+        {
+          name: 'outcome',
+          type: 'richText',
+          label: l('Where it stands', 'Gdje je sada'),
+          localized: true,
+          validate: richTextRule,
+          admin: {
+            description: l(
+              'What is in service today and what comes next.',
+              'Što je danas u pogonu i što slijedi.',
+            ),
+          },
+        },
+      ],
     },
     {
       name: 'window',

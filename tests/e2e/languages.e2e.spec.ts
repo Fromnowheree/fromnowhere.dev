@@ -2,7 +2,16 @@ import { expect, test, type APIRequestContext } from '@playwright/test'
 
 /** The seeded pages (src/seed/index.ts), by their address without a language (the same in every
  * language). */
-const pages = ['', '/contact', '/about', '/privacy', '/projects/giogio', '/projects/nmt']
+const pages = [
+  '',
+  '/contact',
+  '/about',
+  '/privacy',
+  '/services',
+  '/capabilities',
+  '/projects/giogio',
+  '/projects/nmt',
+]
 
 /** The page's HTML without its scripts: what a visitor and a search engine read. */
 const visible = async (request: APIRequestContext, path: string) => {

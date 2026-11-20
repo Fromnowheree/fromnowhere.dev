@@ -16,6 +16,7 @@ import './routemap.css'
 import './board.css'
 import './window.css'
 import './notes.css'
+import './offer.css'
 import './transition.css'
 
 // Content comes from the CMS on every request, so edits in the admin show up immediately

@@ -5,7 +5,8 @@
  *
  * Every colour, size and duration below comes from a token. The night palette is defined here,
  * over the system's dark tokens, so the system's own components (fields, alerts, tags) take it too.
- * Dark only: there is no light theme. The map is routemap.css, the board board.css.
+ * Dark only: there is no light theme. The map is routemap.css, the board board.css, the notes
+ * notes.css, the services, capabilities and case studies offer.css.
  */
 
 @font-face {
@@ -357,6 +358,13 @@ a {
   border-radius: 999px;
 }
 
+/* The header's links give way as it narrows; the footer keeps them all. */
+@media (max-width: 900px) {
+  .site-nav__works,
+  .site-nav--offer .site-nav__notes {
+    display: none;
+  }
+}
 @media (max-width: 640px) {
   .site-nav__fnw,
   .site-nav__about,
@@ -377,6 +385,13 @@ a {
     margin-left: 4px;
     padding-inline: 12px;
     font-size: 14px;
+  }
+}
+/* A phone keeps one link beside the action: Services when there are any, the work otherwise
+   (the logo leads to it too). */
+@media (max-width: 440px) {
+  .site-nav--offer .site-nav__work {
+    display: none;
   }
 }
 /* The narrowest phones: everything stays on one row, nothing scrolls sideways. */

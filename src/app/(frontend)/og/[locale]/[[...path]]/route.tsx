@@ -3,8 +3,23 @@ import { getTranslations } from 'next-intl/server'
 import { isSlug } from '@/fields/slug'
 import { isLocale, type Locale } from '@/i18n/locales'
 import { lineNumber } from '@/lib/format'
-import { CONTACT_SEGMENT, NOTES_SEGMENT, PROJECTS_SEGMENT } from '@/lib/links'
-import { getNote, getNotes, getPage, getProject, getProjects, getStudio } from '@/lib/payload'
+import {
+  CAPABILITIES_SEGMENT,
+  CONTACT_SEGMENT,
+  NOTES_SEGMENT,
+  PROJECTS_SEGMENT,
+  SERVICES_SEGMENT,
+} from '@/lib/links'
+import {
+  getCapabilities,
+  getNote,
+  getNotes,
+  getPage,
+  getProject,
+  getProjects,
+  getServices,
+  getStudio,
+} from '@/lib/payload'
 import { serverUrl } from '@/lib/serverUrl'
 import { cardLineColour } from '@/lib/shareCard'
 import { renderShareCard, type CardLine } from './ShareCard'
@@ -30,6 +45,16 @@ async function cardText(locale: Locale, segments: string[]): Promise<CardText | 
   if (segments.length === 1 && segments[0] === CONTACT_SEGMENT) {
     const t = await getTranslations({ locale, namespace: 'contact' })
     return { kicker: 'fromnowhere.dev', title: t('title') }
+  }
+  if (segments.length === 1 && segments[0] === SERVICES_SEGMENT) {
+    if ((await getServices(locale)).length === 0) return null
+    const t = await getTranslations({ locale, namespace: 'services' })
+    return { kicker: t('kicker'), title: t('title') }
+  }
+  if (segments.length === 1 && segments[0] === CAPABILITIES_SEGMENT) {
+    if ((await getCapabilities(locale)).length === 0) return null
+    const t = await getTranslations({ locale, namespace: 'capabilities' })
+    return { kicker: t('kicker'), title: t('title') }
   }
   if (segments.length === 1 && segments[0] === NOTES_SEGMENT) {
     if ((await getNotes(locale)).length === 0) return null

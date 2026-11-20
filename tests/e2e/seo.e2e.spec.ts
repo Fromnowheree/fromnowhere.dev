@@ -14,7 +14,14 @@ test.describe('/llms.txt', () => {
     expect(response.headers()['content-type']).toContain('text/markdown')
     const text = await response.text()
     expect(text.startsWith('# Fromnowhere\n\n> ')).toBe(true)
-    for (const heading of ['## Projects', '## Pages', '## Notes', '## Optional'])
+    for (const heading of [
+      '## Services',
+      '## Capabilities',
+      '## Projects',
+      '## Pages',
+      '## Notes',
+      '## Optional',
+    ])
       expect(text).toContain(`\n${heading}\n`)
     expect(text).toContain(`- [Giogio](${baseURL}/en/projects/giogio): Line 02`)
     expect(text).toContain('https://giogio.music')

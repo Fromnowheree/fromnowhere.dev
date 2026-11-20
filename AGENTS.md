@@ -4,12 +4,18 @@ Guidance for anyone, human or agent, working in this repository. Read it first.
 
 ## 1. What this is
 
-**fromnowhere.dev**, the Fromnowhere studio site: the crossroad to the projects. One point (the
-point in the FNW mark), one line per project, a departures board, a page per project with exit
-plates and a window onto the destination, dated notes, About, Privacy and a contact form, in
-English and Croatian. The vision, with the concept, pages, content model, stack and build order, is
-[`docs/vision.html`](docs/vision.html) (published at
+**fromnowhere.dev**, the Fromnowhere studio's front page: what the studio can be hired for, shown
+through the work. One point (the point in the FNW mark), one line per project, a departures board,
+the services (each with the lines it runs on), the capabilities (the engineering under every
+line), a case study per project with exit plates and a window onto the destination, dated notes,
+About, Privacy and a contact form, in English and Croatian. The vision, with the concept, pages,
+content model, stack and build order, is [`docs/vision.html`](docs/vision.html) (published at
 https://claude.ai/artifact/5Y2Cxdt9jEJv9pzCXxGYYM). Read it before changing what the site is.
+
+**Who it is for** (decided 20 November 2026): clients with something to build. It began as a
+crossroad to the projects and read as a portfolio; it is now the business's front page, and every
+page should help a client decide to write. The studio never says how many people it is (see
+"Voice").
 
 The projects it links to live elsewhere: yugioh.fromnowhere.dev (fnwygo), giogio.music (giogio),
 medical.fromnowhere.dev (NMT's showcase, not built yet), gati.hr (Gati). This site never talks to
@@ -21,32 +27,35 @@ clinic layer (blocks, services, team, locations, brand colour, Tailwind, booking
 
 ## 2. Stack (check package.json before trusting prose)
 
-| Concern  | Choice                                                                                                                                                                                                                                                                                               |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Runtime  | Node **26** (`.nvmrc`), pnpm **12.20.0** pinned by `packageManager`, enforced by `pnpm-workspace.yaml` (`pmOnFail: error`, `engineStrict`, `strictDepBuilds`, a three-day `minimumReleaseAge`)                                                                                                       |
-| App      | Next.js 16 (App Router, RSC, Server Actions), React 19, `output: 'standalone'`                                                                                                                                                                                                                       |
-| CMS      | Payload 3 in the same app: editor at `/admin`, REST at `/api`. **GraphQL is off**                                                                                                                                                                                                                    |
-| Database | PostgreSQL 17 (`@payloadcms/db-postgres`)                                                                                                                                                                                                                                                            |
-| i18n     | `next-intl` 4 with `[locale]` routing (en main, hr), `messages/*.json`; Payload `localization` (en, hr) and a bilingual admin                                                                                                                                                                        |
-| Styling  | The **Fromnowhere design system**: `design/` (README, patterns, motion, logo, tokens) and `src/styles/fnw/` (`tokens.css`, `bundle.css`), copied as fnwygo does; over it the site's **Night transit** layer in `src/app/(frontend)/[locale]/` (`site.css`, `routemap.css`, `board.css`). No Tailwind |
-| Mail     | Contact form: its own `nodemailer` relay over `CONTACT_SMTP_*`. Admin mail: `SMTP_*`                                                                                                                                                                                                                 |
-| Spam     | `altcha` + `altcha-lib` (self-hosted proof of work), honeypot, rate limit, signed fill-in time (`src/lib/relay/`)                                                                                                                                                                                    |
-| Tests    | Vitest 5 (`tests/int`, against a real Postgres), Playwright (`tests/e2e`, not in CI)                                                                                                                                                                                                                 |
-| Deploy   | `Dockerfile` (built in CI, never on the server), `compose.yml` (+ `compose.stats.yml`), `caddy/` (+ `caddy/sites/` for the other sites on the server), `scripts/` (first admin, age-encrypted backups, restore)                                                                                      |
+| Concern  | Choice                                                                                                                                                                                                                                                                                                                         |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Runtime  | Node **26** (`.nvmrc`), pnpm **12.20.0** pinned by `packageManager`, enforced by `pnpm-workspace.yaml` (`pmOnFail: error`, `engineStrict`, `strictDepBuilds`, a three-day `minimumReleaseAge`)                                                                                                                                 |
+| App      | Next.js 16 (App Router, RSC, Server Actions), React 19, `output: 'standalone'`                                                                                                                                                                                                                                                 |
+| CMS      | Payload 3 in the same app: editor at `/admin`, REST at `/api`. **GraphQL is off**                                                                                                                                                                                                                                              |
+| Database | PostgreSQL 17 (`@payloadcms/db-postgres`)                                                                                                                                                                                                                                                                                      |
+| i18n     | `next-intl` 4 with `[locale]` routing (en main, hr), `messages/*.json`; Payload `localization` (en, hr) and a bilingual admin                                                                                                                                                                                                  |
+| Styling  | The **Fromnowhere design system**: `design/` (README, patterns, motion, logo, tokens) and `src/styles/fnw/` (`tokens.css`, `bundle.css`), copied as fnwygo does; over it the site's **Night transit** layer in `src/app/(frontend)/[locale]/` (`site.css`, `routemap.css`, `board.css`, `notes.css`, `offer.css`). No Tailwind |
+| Mail     | Contact form: its own `nodemailer` relay over `CONTACT_SMTP_*`. Admin mail: `SMTP_*`                                                                                                                                                                                                                                           |
+| Spam     | `altcha` + `altcha-lib` (self-hosted proof of work), honeypot, rate limit, signed fill-in time (`src/lib/relay/`)                                                                                                                                                                                                              |
+| Tests    | Vitest 5 (`tests/int`, against a real Postgres), Playwright (`tests/e2e`, not in CI)                                                                                                                                                                                                                                           |
+| Deploy   | `Dockerfile` (built in CI, never on the server), `compose.yml` (+ `compose.stats.yml`), `caddy/` (+ `caddy/sites/` for the other sites on the server), `scripts/` (first admin, age-encrypted backups, restore)                                                                                                                |
 
-Layout: `src/payload.config.ts` wires everything; `src/collections/` (Projects, Notes, Pages,
-ShortLinks, StatusChecks, Media, Users), `src/jobs/` (the status check), `src/globals/Studio.ts`, `src/fields/`, `src/components/` (`fnw.tsx`
+Layout: `src/payload.config.ts` wires everything; `src/collections/` (Projects, Services,
+Capabilities, Notes, Pages, ShortLinks, StatusChecks, Media, Users), `src/jobs/` (the status check), `src/globals/Studio.ts`, `src/fields/`, `src/components/` (`fnw.tsx`
 the system's components, `site/` the site's chrome, map, board and signs, with `HomeMotion.tsx`
 the home page's one motion island, `Notes.tsx` the notes' log, panel and lists with
-`NotesMotion.tsx` their train, `contact/` the form, `admin/`), `src/lib/` (`links.ts` the link
+`NotesMotion.tsx` their train, `Offer.tsx` the services, capabilities and proof chips, `contact/`
+the form, `admin/`), `src/lib/` (`links.ts` the link
 rule, `payload.ts` every query, `routeMap.ts` the map's geometry, `status.ts` a line's live status, `probe.ts` one knock on an
 address, `notes.ts` when the notes open, `shortLinks.ts`, `relay/`),
 `src/i18n/`, `src/proxy.ts`, `src/app/(frontend)/[locale]/(site)/` (home `page.tsx`,
-`projects/[slug]`, `notes`, `notes/[slug]`, `contact`, `[slug]` for text pages), `src/app/(frontend)/pick-language/`
+`projects/[slug]`, `services`, `capabilities`, `notes`, `notes/[slug]`, `contact`, `[slug]` for
+text pages), `src/app/(frontend)/pick-language/`
 (addresses without a language, and short links), `src/app/(frontend)/og/` (share cards), `src/app/llms.txt/` (the site for language models),
 `src/app/.well-known/security.txt/`, `src/app/manifest.ts` (icons from `scripts/make-icons.mjs`),
 `src/app/global-error.tsx` and the two `error.tsx` (the error page),
-`src/seed/` (the starting content). `src/payload-types.ts` and
+`src/seed/` (the starting content: `index.ts` the projects with their case studies, pages, notes
+and the studio's words, `offer.ts` the services and capabilities). `src/payload-types.ts` and
 `src/app/(payload)/admin/importMap.js` are generated; never edit them by hand.
 
 ## 3. Commands
@@ -105,10 +114,15 @@ pixels.
   `src/styles/fnw/`: its components, spacing, type and motion tokens still apply) with the
   site's own layer over it: `site.css` (the night palette, the sky, the chrome, the pages),
   `routemap.css` (the map), `board.css` (the departures board, status, the ticker), `notes.css`
-  (the notes, [`docs/prototypes/notes.html`](docs/prototypes/notes.html)). Every colour,
+  (the notes, [`docs/prototypes/notes.html`](docs/prototypes/notes.html)), `offer.css` (the
+  services, the capabilities, proof chips, the hero's actions, a case study's chapters). Every colour,
   size and duration is a token; add one to `site.css`'s `:root` rather than a raw value. Its
   signature pieces: the headline whose full stop is the point, the route map, the board with the
-  visitor's clock, the ticker of short links, lit terminals, windows.
+  visitor's clock, the ticker of short links, lit terminals, windows. The offer wears the same
+  signs: a **service** is a lettered roundel (A, B, C, by its place) with a short track for each
+  line it runs on; a **capability** is a stop on a track under sodium work lights ("the works");
+  **proof** is a chip per line in that line's colour, and the point for this site; a **case
+  study** is chapters as stops down the project's own line.
 - **The palette** (`site.css`, over the system's tokens so its fields and alerts take it too):
   `--night` (the page), `--ground`, `--surface`, `--surface-2`, `--track` (the casing under
   every line), `--text`, `--text-muted`, `--text-dim` (small mono labels, 4.5:1), `--accent`
@@ -137,7 +151,7 @@ pixels.
   Giogio, Running", and the whole card is its target. The board is the accessible list.
 - **Motion** (every animation is declared inside `@media (prefers-reduced-motion:
 no-preference)`, which `tests/int/routeMap.int.spec.ts` checks for site.css, routemap.css,
-  board.css and notes.css):
+  board.css, notes.css and offer.css):
   - **The home page's opening plays on every visit** (a load, a soft navigation back, the other
     language): CSS on the map's insertion, under `.map:not(.is-settled)`, never keyed on
     `fnw-calm`. The point appears, lines draw out of it one after another, each terminal lights
@@ -175,7 +189,12 @@ no-preference)`, which `tests/int/routeMap.int.spec.ts` checks for site.css, rou
   pathname changes, so the next Tab starts inside the new page; after a full load it starts at
   the document. `#content` takes focus without an outline: it is a target, not a control.
 - **Voice**: plain, short, sentence case, no exclamation marks, no emoji. The studio speaks as
-  "I", never "we". The name is **Fromnowhere** (one word), the monogram **FNW**.
+  **Fromnowhere** or "the studio" ("Fromnowhere builds…", "every message gets a reply"), never
+  "I" and never "we", and **never says how many people it is**: no "one-person", "solo",
+  "freelance", no team either. That holds for interface text, the seed, notes and anything
+  written for the site later (`tests/int/voice.int.spec.ts` checks the messages and the seed in
+  both languages; a visitor's own words, like the consent line, may say "I"). The name is
+  **Fromnowhere** (one word), the monogram **FNW**.
 
 ### Content and links
 
@@ -191,10 +210,33 @@ no-preference)`, which `tests/int/routeMap.int.spec.ts` checks for site.css, rou
   Local API skips access control. A draft project is how a project is hidden (mtnet.hr waits as
   one).
 - **Every authored link follows one rule** (`src/lib/links.ts`): a site path without its
-  language that names something public (`/`, `/contact`, `/<page>`, `/projects/<slug>`), or an
+  language that names something public (`/`, `/contact`, `/services`, `/capabilities`, `/<page>`,
+  `/projects/<slug>`), or an
   absolute `https:`/`mailto:`/`tel:` address; checked by shape at save time (`src/fields/link.ts`)
   and again at render (`resolveLink`). Project addresses and profiles are https only
   (`httpsRule`).
+- **Services** (`src/collections/Services.ts`): what the studio can be hired for. Name, one
+  sentence, what is in it, an order and the projects that prove it. Each published one is a card
+  on the home page (linking to its section) and a section of `/services`, lettered by its place
+  among the published ones. **Capabilities** (`src/collections/Capabilities.ts`): the engineering
+  under the sites, one claim each, in four areas (design, build, security, operations), each with
+  where it is built in: this site (`onThisSite`), projects, or both; listed on `/capabilities`
+  and named on the home page. Like the notes, nothing about either is public until one is
+  published: the page answers 404 and the header, footer, home band, sitemap, share card,
+  llms.txt and links in text leave it out (`PublishedIndex.services` / `.capabilities`). Proof
+  shows published projects only (`proofOf` in `src/lib/payload.ts`).
+- **A claim names its proof, and both are true.** A service or capability lists a project only
+  where that project's code does what the sentence says; a case study says what was built, never
+  that something is live (the board's status says that, checked against the address), which is
+  why proof is labelled "Lines behind it" and "Built into", not "in service on". A client's case
+  study, like a window, is published with the client's agreement. The seeded
+  ones were checked against each project's repository on 20 November 2026; change a sentence and
+  its proof together.
+- **A project page is a case study** when more than one of its four chapters is written (the
+  brief, what was built, under the surface, where it stands; `brief`, `story`, `engineering`,
+  `outcome`): they render as stops down the line. With only `story` the page is plain text, as
+  before. Its facts add who it was made for (`client`, never a private person's name), the
+  studio's part (`scope`) and the services it proves.
 - **Notes** (`src/collections/Notes.ts`, `src/lib/notes.ts`): title, day, summary, text and an
   optional project. A note on a project's line wears its number and colour; a note with no
   project is about the studio itself and wears the point (it is not a line, and has no chip).
@@ -261,8 +303,8 @@ no-preference)`, which `tests/int/routeMap.int.spec.ts` checks for site.css, rou
 - **The editor answers only to `ADMIN_ALLOW`** (Caddy, `caddy/Caddyfile`): /admin and the API
   it works through give 404 to every other address; uploaded files and `/api/contact/*` stay
   public. Compose refuses to start Caddy without it (no default that opens it to everyone).
-- **The REST API reads nothing to a visitor** (`signedIn`, `src/access.ts`): projects, pages,
-  notes, short links, status checks, uploads' documents, users and the studio's settings all
+- **The REST API reads nothing to a visitor** (`signedIn`, `src/access.ts`): projects, services,
+  capabilities, pages, notes, short links, status checks, uploads' documents, users and the studio's settings all
   answer 403 without a session. The site reads through the Local API and never over HTTP; only
   uploaded files are public (`isReadingStaticFile`). A new collection gets `read: signedIn` too.
 - **GraphQL stays off** and there are no route files under `src/app/(payload)/api/graphql*`.
@@ -311,7 +353,12 @@ for enum".
 5. **Notes** (17 November 2026, [`docs/prototypes/notes.html`](docs/prototypes/notes.html)):
    /notes as a log on one rail, a note page with its line's route, the latest three under the
    board, a project's own notes on its page; hidden until three are published.
-6. **Phase 3, launch** ([`docs/launch.md`](docs/launch.md)): one Oracle Cloud Ampere server
+6. **The studio's front page** (20 November 2026): the site turned from a crossroad that read as
+   a portfolio into the business's front page for clients. Studio voice with no headcount; a
+   pitch and two actions in the hero; services and capabilities (two collections, two pages, two
+   bands on the home page); project pages as case studies; `offer.css`. The map, the board and
+   Night transit stay as they were.
+7. **Phase 3, launch** ([`docs/launch.md`](docs/launch.md)): one Oracle Cloud Ampere server
    (linux/arm64, `scripts/build-image.sh`) shared with yugioh.fromnowhere.dev through
    `compose.shared.yml` (only Caddy joins the `fromnowhere-sites` network; each other site's web
    container joins it by alias, with its block in `caddy/sites/`). The About draft, Privacy and

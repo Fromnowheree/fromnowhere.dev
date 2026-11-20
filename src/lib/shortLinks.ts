@@ -4,7 +4,7 @@ import { isSlug, RESERVED_PAGE_SLUGS } from './links'
 /**
  * First segments the site itself answers, which a short link may never take: the languages, the
  * paths the proxy leaves alone (src/proxy.ts matcher) or rewrites to, and the built-in pages
- * (/contact, /projects), whose address without a language would otherwise lead off to the link.
+ * (/contact, /projects, /services, /capabilities), whose address without a language would otherwise lead off to the link.
  */
 const TAKEN = new Set([
   'api',

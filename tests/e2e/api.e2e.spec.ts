@@ -28,6 +28,11 @@ test.describe('API surface', () => {
       '/api/pages/versions',
       '/api/notes',
       '/api/notes/versions',
+      '/api/services',
+      '/api/services?draft=true',
+      '/api/services/versions',
+      '/api/capabilities',
+      '/api/capabilities/versions',
       '/api/globals/studio',
       '/api/globals/studio/versions',
       '/api/payload-jobs',
@@ -36,7 +41,15 @@ test.describe('API surface', () => {
   })
 
   test('writes nothing for a visitor', async ({ request }) => {
-    for (const collection of ['projects', 'pages', 'notes', 'short-links', 'media'])
+    for (const collection of [
+      'projects',
+      'pages',
+      'notes',
+      'services',
+      'capabilities',
+      'short-links',
+      'media',
+    ])
       expect(
         (await request.post(`/api/${collection}`, { data: { title: 'x' } })).status(),
         collection,

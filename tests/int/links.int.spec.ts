@@ -166,6 +166,8 @@ describe('a site link, when the site renders it', () => {
       pages: new Set(['about']),
       projects: new Set(['giogio']),
       notes: new Set<string>(),
+      services: false,
+      capabilities: false,
     }
     for (const bad of ['javascript:alert(1)', '//evil.example', '/en/about'])
       expect(resolveLink(bad, index), bad).toBeNull()

@@ -4,13 +4,22 @@ import type React from 'react'
 
 import { JsonLd } from '@/components/JsonLd'
 import { HomeMotion } from '@/components/site/HomeMotion'
-import { LatestNotes } from '@/components/site/Notes'
+import { LatestNotes, NoteArrow } from '@/components/site/Notes'
+import { CapabilitiesBand, ServicesBand, StartBand } from '@/components/site/Offer'
 import { RouteMap } from '@/components/site/RouteMap'
 import { Board } from '@/components/site/Signs'
 import { Link } from '@/i18n/navigation'
 import { asLocale } from '@/i18n/server'
 import { pageMetadata } from '@/lib/metadata'
-import { getNotes, getProjects, getServedLocales, getShortLinks, getStudio } from '@/lib/payload'
+import {
+  getCapabilities,
+  getNotes,
+  getProjects,
+  getServedLocales,
+  getServices,
+  getShortLinks,
+  getStudio,
+} from '@/lib/payload'
 import { serverUrl } from '@/lib/serverUrl'
 import { serviceOf, type Service } from '@/lib/status'
 import { studioGraph } from '@/lib/structuredData'
@@ -22,7 +31,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const studio = await getStudio(locale)
   return pageMetadata(locale, null, {
     title: studio.headline || 'Fromnowhere',
-    description: studio.lede,
+    // The description written for search results; the lede only reads on the page itself.
+    description: studio.defaultDescription || studio.lede,
     path: '/',
     absoluteTitle: true,
   })
@@ -31,23 +41,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 const delay = (d: number) => ({ '--d': d }) as React.CSSProperties
 
 /**
- * The origin (Night transit, docs/prototypes/night-transit.html): the headline whose full stop is
- * the point, the tally, the route map (one coloured line per project, drawn out of the point on
- * every visit, with trains running), the departures board listing the same projects in the same
- * order, the ticker of short links, the latest notes (once there are three), and the way to get in
- * touch. Everything is the CMS's: the
- * studio's words, the published projects, the short links; the tally is counted from them.
+ * The origin (Night transit, docs/prototypes/night-transit.html), and the studio's front page: the
+ * headline whose full stop is the point, what the studio does and the way to start a project, the
+ * tally, the route map (one coloured line per project, drawn out of the point on every visit, with
+ * trains running), the departures board listing the same projects in the same order, the ticker
+ * of short links, then what can be hired (the services, each with the lines it runs on), what is
+ * under every line (the capabilities), the latest notes (once there are three), and the way to
+ * get in touch. Everything is the CMS's: the studio's words, the published projects, services and
+ * capabilities, the short links; the tally is counted from them.
  */
 export default async function Home({ params }: Props) {
   const locale = asLocale((await params).locale)
-  const [t, studio, projects, shortLinks, notes, languages] = await Promise.all([
-    getTranslations({ locale, namespace: 'home' }),
-    getStudio(locale),
-    getProjects(locale),
-    getShortLinks(),
-    getNotes(locale),
-    getServedLocales(),
-  ])
+  const [t, studio, projects, shortLinks, notes, languages, services, capabilities] =
+    await Promise.all([
+      getTranslations({ locale, namespace: 'home' }),
+      getStudio(locale),
+      getProjects(locale),
+      getShortLinks(),
+      getNotes(locale),
+      getServedLocales(),
+      getServices(locale),
+      getCapabilities(locale),
+    ])
 
   // The headline's own full stop gives way to the point.
   const headline = (studio.headline || 'Fromnowhere').replace(/[.。]\s*$/, '')
@@ -84,15 +99,26 @@ export default async function Home({ params }: Props) {
           <span className="hero__point" aria-hidden="true" />
         </h1>
         <div className="hero__row">
-          {studio.lede ? (
-            <p className="hero__lede enter" style={delay(2)}>
-              {studio.lede}
+          <div className="hero__pitch">
+            {studio.lede && (
+              <p className="hero__lede enter" style={delay(2)}>
+                {studio.lede}
+              </p>
+            )}
+            <p className="hero__actions enter" style={delay(3)}>
+              <Link className="btn" href="/contact">
+                {t('heroAction')}
+                <NoteArrow />
+              </Link>
+              {services.length > 0 && (
+                <Link className="hero__more" href="/#services">
+                  {t('heroServices')}
+                </Link>
+              )}
             </p>
-          ) : (
-            <span />
-          )}
+          </div>
           {projects.length > 0 && (
-            <dl className="tally enter" style={delay(3)} aria-label={t('tally')}>
+            <dl className="tally enter" style={delay(4)} aria-label={t('tally')}>
               {tally.map(({ label, count }) => (
                 <div key={label}>
                   <dt>{label}</dt>
@@ -121,35 +147,19 @@ export default async function Home({ params }: Props) {
         )}
       </section>
 
+      {await ServicesBand({ services, locale })}
+
+      {await CapabilitiesBand({ groups: capabilities, locale })}
+
       {await LatestNotes({ notes, locale })}
 
-      <section className="band home-band" aria-labelledby="band-title">
-        <div>
-          <p className="kicker">{t('contactKicker')}</p>
-          <h2 id="band-title">{t('contactTitle')}</h2>
-          <p className="band__lead">{t('contactLead')}</p>
-        </div>
-        <div className="band__go">
-          <span className="band__rail" aria-hidden="true">
-            <span className="band__mover" />
-          </span>
-          <Link className="btn" href="/contact">
-            {t('contactAction')}
-            <svg
-              viewBox="0 0 256 256"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="20"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-              focusable="false"
-            >
-              <path d="M40 128h176M144 56l72 72-72 72" />
-            </svg>
-          </Link>
-        </div>
-      </section>
+      <StartBand
+        className="home-band"
+        kicker={t('contactKicker')}
+        title={t('contactTitle')}
+        lead={t('contactLead')}
+        action={t('contactAction')}
+      />
 
       {/* Keyed on what the map draws: when the home page is fetched again in place (the brand
           link on /en) with a line changed (a delay, a new address), the island starts over on

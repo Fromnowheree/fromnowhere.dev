@@ -9,10 +9,12 @@ import type SMTPTransport from 'nodemailer/lib/smtp-transport'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
+import { Capabilities } from './collections/Capabilities'
 import { Media } from './collections/Media'
 import { Notes } from './collections/Notes'
 import { Pages } from './collections/Pages'
 import { Projects } from './collections/Projects'
+import { Services } from './collections/Services'
 import { ShortLinks } from './collections/ShortLinks'
 import { StatusChecks } from './collections/StatusChecks'
 import { Users } from './collections/Users'
@@ -74,7 +76,17 @@ export default buildConfig({
     defaultLocale,
     fallback: true,
   },
-  collections: [Projects, Notes, Pages, ShortLinks, StatusChecks, Media, Users],
+  collections: [
+    Projects,
+    Services,
+    Capabilities,
+    Notes,
+    Pages,
+    ShortLinks,
+    StatusChecks,
+    Media,
+    Users,
+  ],
   globals: [Studio],
   editor: lexicalEditor({
     features: ({ defaultFeatures }) => [

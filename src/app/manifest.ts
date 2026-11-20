@@ -9,7 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Fromnowhere',
     short_name: 'FNW',
-    description: 'Fromnowhere, a one-person software studio: one line per project.',
+    description: 'Fromnowhere, a software studio: websites, products and the servers they run on.',
     start_url: '/',
     scope: '/',
     display: 'browser',

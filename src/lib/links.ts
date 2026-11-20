@@ -7,12 +7,14 @@ import { MAX_LINK_LENGTH, MAX_SLUG_LENGTH } from './content'
  *
  * A link is either
  *   - a path on this site, WITHOUT its language ("/contact", "/projects/giogio", "/about",
- *     "/notes", "/notes/<slug>", "/"):
+ *     "/notes", "/notes/<slug>", "/services", "/capabilities", "/"):
  *     the visitor's language is added when it renders, so one link serves every language; or
  *   - an absolute https:, mailto: or tel: address.
  * A site path must name something public: the home page, the contact page, a published project, a
- * published page, or the notes while they are open (src/lib/notes.ts). That is checked at save time (src/fields/link.ts) and again when the link
- * renders, so a page unpublished later hides the link instead of sending visitors to a 404.
+ * published page, the notes while they are open (src/lib/notes.ts), or the services and
+ * capabilities pages while one of each is published. That is checked by shape at save time
+ * (src/fields/link.ts) and again when the link renders, so a page unpublished later hides the
+ * link instead of sending visitors to a 404.
  */
 
 /** Where a project's own page lives: /<language>/projects/<slug>. */
@@ -24,8 +26,20 @@ export const CONTACT_SEGMENT = 'contact'
 /** The notes: /<language>/notes, and one note at /<language>/notes/<slug>. */
 export const NOTES_SEGMENT = 'notes'
 
+/** What the studio can be hired for: /<language>/services, one section per service. */
+export const SERVICES_SEGMENT = 'services'
+
+/** The engineering under the sites: /<language>/capabilities. */
+export const CAPABILITIES_SEGMENT = 'capabilities'
+
 /** Built-in first segments a page slug may not take, or the built-in route would hide the page. */
-export const RESERVED_PAGE_SLUGS = [PROJECTS_SEGMENT, CONTACT_SEGMENT, NOTES_SEGMENT]
+export const RESERVED_PAGE_SLUGS = [
+  PROJECTS_SEGMENT,
+  CONTACT_SEGMENT,
+  NOTES_SEGMENT,
+  SERVICES_SEGMENT,
+  CAPABILITIES_SEGMENT,
+]
 
 /** A page or project address segment, as `slugify` (src/fields/slug.ts) writes it. */
 export const isSlug = (value: unknown): value is string =>
@@ -42,6 +56,15 @@ export const notesHref = `/${NOTES_SEGMENT}`
 
 /** One note, without its language. */
 export const noteHref = (slug: string): string => `/${NOTES_SEGMENT}/${slug}`
+
+/** The services page, without the language. */
+export const servicesHref = `/${SERVICES_SEGMENT}`
+
+/** One service's section of the services page, without the language. */
+export const serviceHref = (slug: string): string => `/${SERVICES_SEGMENT}#${slug}`
+
+/** The capabilities page, without the language. */
+export const capabilitiesHref = `/${CAPABILITIES_SEGMENT}`
 
 const LINK_SCHEMES = new Set(['https:', 'mailto:', 'tel:'])
 
@@ -74,6 +97,8 @@ export type LinkTarget =
   | { kind: 'project'; slug: string }
   | { kind: 'notes' }
   | { kind: 'note'; slug: string }
+  | { kind: 'services' }
+  | { kind: 'capabilities' }
 
 /**
  * What an authored link points at, or null when it fails the rule or is a site path that cannot
@@ -89,6 +114,8 @@ export const linkTarget = (value: unknown): LinkTarget | null => {
   const segments = bare.slice(1).split('/')
   if (segments.length === 1 && segments[0] === CONTACT_SEGMENT) return { kind: 'contact' }
   if (segments.length === 1 && segments[0] === NOTES_SEGMENT) return { kind: 'notes' }
+  if (segments.length === 1 && segments[0] === SERVICES_SEGMENT) return { kind: 'services' }
+  if (segments.length === 1 && segments[0] === CAPABILITIES_SEGMENT) return { kind: 'capabilities' }
   if (segments.length === 1 && isSlug(segments[0]) && !RESERVED_PAGE_SLUGS.includes(segments[0]))
     return { kind: 'page', slug: segments[0] }
   if (segments.length === 2 && segments[0] === PROJECTS_SEGMENT && isSlug(segments[1]))
@@ -101,12 +128,15 @@ export const linkTarget = (value: unknown): LinkTarget | null => {
 /**
  * The slugs a site path may point at: published pages, published projects, and the published
  * notes while the notes are open (empty while fewer than three are published, so /notes and every
- * note count as absent).
+ * note count as absent). The services and capabilities pages are there only while at least one
+ * service or capability is published.
  */
 export interface PublishedIndex {
   pages: ReadonlySet<string>
   projects: ReadonlySet<string>
   notes: ReadonlySet<string>
+  services: boolean
+  capabilities: boolean
 }
 
 /**
@@ -120,6 +150,8 @@ export const resolveLink = (value: unknown, index: PublishedIndex): string | nul
   if (target.kind === 'project' && !index.projects.has(target.slug)) return null
   if (target.kind === 'notes' && index.notes.size === 0) return null
   if (target.kind === 'note' && !index.notes.has(target.slug)) return null
+  if (target.kind === 'services' && !index.services) return null
+  if (target.kind === 'capabilities' && !index.capabilities) return null
   return value as string
 }
 

@@ -7,13 +7,14 @@ import { JsonLd } from '@/components/JsonLd'
 import { RichText } from '@/components/RichText'
 import { ProjectNotes } from '@/components/site/Notes'
 import { ExitPlate, StatusTag } from '@/components/site/Signs'
+import { Roundel } from '@/components/site/Offer'
 import { Window } from '@/components/site/Window'
 import { Link } from '@/i18n/navigation'
 import { asLocale } from '@/i18n/server'
 import { lineNumber } from '@/lib/format'
-import { displayAddress, projectHref } from '@/lib/links'
+import { displayAddress, projectHref, serviceHref } from '@/lib/links'
 import { pageMetadata } from '@/lib/metadata'
-import { getNotes, getProject, getPublishedIndex } from '@/lib/payload'
+import { getNotes, getProject, getPublishedIndex, getServices } from '@/lib/payload'
 import { lineColour } from '@/lib/routeMap'
 import { serviceOf } from '@/lib/status'
 import { projectNode } from '@/lib/structuredData'
@@ -35,23 +36,42 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 /**
  * One project (docs/vision.html, "One page per project"), on its own line: the page takes the
  * line's colour, and its hero draws a short trip from the point to this terminal (dashed past the
- * frontier while it is being built). Then its story, a window onto the destination in its own
- * look, an exit for every address, lit in the line's colour, the facts, and its notes.
+ * frontier while it is being built). Then its case study (up to four chapters, stops down the
+ * line: the brief, what was built, under the surface, where it stands; with only "what was built"
+ * it is plain text), a window onto the destination in its own look, an exit for every address,
+ * lit in the line's colour, the facts (who it is for, the studio's part, the services it proves,
+ * the stack), and its notes.
  */
+const CHAPTERS = ['brief', 'story', 'engineering', 'outcome'] as const
+
+/**
+ * Whether a rich-text field has anything in it: an emptied editor leaves one empty paragraph. A
+ * node with no children of its own (a picture, a rule) is something.
+ */
+const written = (value: unknown): boolean => {
+  const children = (value as { root?: { children?: { children?: unknown }[] } } | null)?.root
+    ?.children
+  return Boolean(
+    children?.some((node) => !Array.isArray(node.children) || node.children.length > 0),
+  )
+}
+
 export default async function ProjectPage({ params }: Props) {
   const { locale: raw, slug } = await params
   const locale = asLocale(raw)
-  const [project, index, t, tKind, tStatus, tBoard, tMap, format, notes] = await Promise.all([
-    getProject(slug, locale),
-    getPublishedIndex(),
-    getTranslations({ locale, namespace: 'project' }),
-    getTranslations({ locale, namespace: 'kind' }),
-    getTranslations({ locale, namespace: 'status' }),
-    getTranslations({ locale, namespace: 'board' }),
-    getTranslations({ locale, namespace: 'map' }),
-    getFormatter({ locale }),
-    getNotes(locale),
-  ])
+  const [project, index, t, tKind, tStatus, tBoard, tMap, format, notes, services] =
+    await Promise.all([
+      getProject(slug, locale),
+      getPublishedIndex(),
+      getTranslations({ locale, namespace: 'project' }),
+      getTranslations({ locale, namespace: 'kind' }),
+      getTranslations({ locale, namespace: 'status' }),
+      getTranslations({ locale, namespace: 'board' }),
+      getTranslations({ locale, namespace: 'map' }),
+      getFormatter({ locale }),
+      getNotes(locale),
+      getServices(locale),
+    ])
   if (!project) notFound()
 
   const addresses = project.addresses ?? []
@@ -60,6 +80,12 @@ export default async function ProjectPage({ params }: Props) {
     : null
   const status = serviceOf(project)
   const quiet = new Set(project.unanswered ?? [])
+  const chapters = CHAPTERS.filter((name) => written(project[name]))
+  // The services this project is proof of, as the services page letters them.
+  const proves = services.filter((service) =>
+    service.proof.some((proof) => proof.slug === project.slug),
+  )
+  const scope = project.scope ?? []
 
   return (
     <article className="project" style={{ '--c': lineColour(project.line) } as React.CSSProperties}>
@@ -114,9 +140,31 @@ export default async function ProjectPage({ params }: Props) {
       </header>
 
       <div className="project__body">
-        <div className="project__story">
-          <RichText data={project.story} locale={locale} index={index} />
-        </div>
+        {chapters.length > 1 ? (
+          // role="list": VoiceOver drops list semantics under list-style: none.
+          <ol className="chapters" role="list" aria-label={t('chapters')}>
+            {chapters.map((name, i) => (
+              <li
+                key={name}
+                className="chapter fnw-reveal"
+                style={{ '--i': i } as React.CSSProperties}
+              >
+                <span className="chapter__stop" aria-hidden="true" />
+                <h2>
+                  <span className="chapter__no" aria-hidden="true">
+                    {lineNumber(i + 1)}
+                  </span>
+                  {t(`chapter.${name}`)}
+                </h2>
+                <RichText data={project[name]} locale={locale} index={index} />
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <div className="project__story">
+            <RichText data={project[chapters[0] ?? 'story']} locale={locale} index={index} />
+          </div>
+        )}
 
         <aside className="project__facts">
           {/* Look through the window, then go out the door. */}
@@ -137,6 +185,37 @@ export default async function ProjectPage({ params }: Props) {
             )}
           </section>
           <dl className="facts">
+            {project.client && (
+              <div>
+                <dt>{t('madeFor')}</dt>
+                <dd>{project.client}</dd>
+              </div>
+            )}
+            {scope.length > 0 && (
+              <div>
+                <dt>{t('scope')}</dt>
+                <dd className="facts__tags">
+                  {scope.map((item) => (
+                    <span key={item} className="facts__tag">
+                      {item}
+                    </span>
+                  ))}
+                </dd>
+              </div>
+            )}
+            {proves.length > 0 && (
+              <div>
+                <dt>{t('services')}</dt>
+                <dd className="facts__services">
+                  {proves.map((service) => (
+                    <Link key={service.slug} href={serviceHref(service.slug)}>
+                      <Roundel letter={service.letter} />
+                      {service.name}
+                    </Link>
+                  ))}
+                </dd>
+              </div>
+            )}
             {started && (
               <div>
                 <dt>{t('started')}</dt>

@@ -46,7 +46,7 @@ export const Pages: CollectionConfig = {
     defaultColumns: ['title', 'slug', '_status', 'updatedAt'],
     description: l(
       'Text pages such as About and the privacy policy. The home page, projects and contact are built in.',
-      'Tekstualne stranice poput O meni i pravila privatnosti. Početna, projekti i kontakt su ugrađeni.',
+      'Tekstualne stranice poput O studiju i pravila privatnosti. Početna, projekti i kontakt su ugrađeni.',
     ),
   },
   // The editor's, over the API: the site reads through the Local API (src/lib/payload.ts), which

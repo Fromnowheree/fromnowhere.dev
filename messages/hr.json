@@ -6,9 +6,11 @@
   },
   "nav": {
     "main": "Glavni izbornik",
-    "projects": "Projekti",
+    "projects": "Radovi",
+    "services": "Usluge",
+    "capabilities": "Vještine",
     "notes": "Bilješke",
-    "about": "O meni",
+    "about": "O studiju",
     "contact": "Javite se",
     "home": "Početna stranica Fromnowherea"
   },
@@ -16,17 +18,27 @@
     "label": "Jezik"
   },
   "home": {
-    "kicker": "Fromnowhere · softverski studio jednog čovjeka",
+    "kicker": "Fromnowhere · softverski studio",
+    "heroAction": "Pokrenite projekt",
+    "heroServices": "Pogledajte usluge",
     "tally": "Linije ukratko",
     "tallyLines": "Linije",
     "tallyRunning": "U prometu",
     "tallyDelayed": "Kasni",
     "tallyBuilding": "U izgradnji",
     "tallyPaused": "Obustavljeno",
-    "contactKicker": "Javite se",
+    "servicesKicker": "Peron 00 · usluge",
+    "servicesTitle": "Usluge",
+    "servicesLead": "Za što se Fromnowhere može angažirati i linije koje stoje iza svake usluge.",
+    "servicesAll": "Sve usluge",
+    "capabilitiesKicker": "Peron 00 · pogon",
+    "capabilitiesTitle": "Ispod linija",
+    "capabilitiesLead": "Inženjerstvo koje posjetitelj ne vidi, a vlasnik se na njega oslanja.",
+    "capabilitiesAll": "Sve vještine",
+    "contactKicker": "Pokrenite projekt",
     "contactTitle": "Imate nešto za izraditi?",
-    "contactLead": "Recite mi što je to. Odgovaram osobno.",
-    "contactAction": "Pišite mi",
+    "contactLead": "Opišite ga u nekoliko redaka. Na svaku poruku stiže odgovor.",
+    "contactAction": "Pokrenite projekt",
     "empty": "Još nema objavljenih projekata."
   },
   "map": {
@@ -74,18 +86,28 @@
   "project": {
     "line": "Linija {number}",
     "leaves": "Napušta fromnowhere.dev",
+    "madeFor": "Izrađeno za",
+    "scope": "Udio studija",
+    "services": "Usluge",
     "builtWith": "Izrađeno s",
     "started": "Početak",
     "addresses": "Adrese",
     "noAddress": "Ova linija još nema svoju adresu. Zasad završava ovdje.",
     "allProjects": "Svi projekti",
     "window": "Pogled na odredište",
+    "chapters": "Studija slučaja",
+    "chapter": {
+      "brief": "Zadatak",
+      "story": "Što je izrađeno",
+      "engineering": "Ispod površine",
+      "outcome": "Gdje je sada"
+    },
     "notAnswering": "Trenutačno ne odgovara"
   },
   "notes": {
     "title": "Bilješke",
     "kicker": "Peron 00 · obavijesti",
-    "lead": "Kratke bilješke s datumom o onome što izrađujem, najnovije prve.",
+    "lead": "Kratke bilješke s datumom o onome što studio izrađuje, najnovije prve.",
     "titleLine": "Bilješke s linije {number}",
     "leadLine": "Što se promijenilo na projektu {name}, najnovije prvo.",
     "tally": "Bilješke na prvi pogled",
@@ -105,6 +127,47 @@
     "projectPage": "Stranica projekta",
     "feed": "Pratite bilješke u čitaču vijesti (Atom)"
   },
+  "services": {
+    "title": "Usluge",
+    "kicker": "Peron 00 · usluge",
+    "lead": "Za što se Fromnowhere može angažirati. Svaka usluga navodi linije koje stoje iza nje.",
+    "description": "Za što se studio Fromnowhere može angažirati, svaka usluga s projektima koji je pokazuju.",
+    "tally": "Usluge ukratko",
+    "tallyServices": "Usluge",
+    "tallyLines": "Linije iza njih",
+    "list": "Usluge po slovu",
+    "service": "Usluga {letter}",
+    "proof": "Linije iza usluge",
+    "bandKicker": "Pokrenite projekt",
+    "bandTitle": "Treba vam nešto od ovoga?",
+    "bandLead": "Recite što i za što. Na svaku poruku stiže odgovor.",
+    "bandAction": "Pokrenite projekt",
+    "capabilities": "Što je ispod svake od njih"
+  },
+  "capabilities": {
+    "title": "Vještine",
+    "kicker": "Peron 00 · pogon",
+    "lead": "Inženjerstvo ispod linija, tvrdnja po tvrdnja, svaka s webovima u koje je ugrađena.",
+    "description": "Inženjerstvo iza Fromnowhereovih webova: dizajn, izrada, sigurnost i održavanje, svaka tvrdnja s webovima koji je potvrđuju.",
+    "tally": "Vještine ukratko",
+    "tallyCapabilities": "Vještine",
+    "tallyAreas": "Područja",
+    "area": {
+      "design": "Dizajn",
+      "build": "Izrada",
+      "security": "Sigurnost",
+      "operations": "Održavanje"
+    },
+    "areaLead": {
+      "design": "Kako web izgleda, kreće se i čita.",
+      "build": "Od čega je napravljen i kako se provjerava.",
+      "security": "Što čuva vlasnika i njegove posjetitelje.",
+      "operations": "Što ga drži u pogonu nakon objave."
+    },
+    "proof": "Gdje je ugrađeno",
+    "thisSite": "Ovaj web",
+    "services": "Što se može naručiti"
+  },
   "footer": {
     "label": "Podnožje",
     "privacy": "Privatnost",
@@ -113,7 +176,7 @@
   },
   "contact": {
     "title": "Javite se",
-    "lead": "Projekt, pitanje ili ideja. Napišite nekoliko redaka i odgovorit ću e-poštom.",
+    "lead": "Projekt, pitanje ili ideja. Napišite nekoliko redaka i odgovor stiže e-poštom.",
     "writeDirectly": "Ili pišite izravno na",
     "noForm": "Obrazac trenutačno nije dostupan. Pišite na adresu ispod."
   },
@@ -124,9 +187,9 @@
     "website": "Web stranica",
     "consent": "Moji podaci smiju se koristiti za odgovor na ovu poruku (<privacy>privatnost</privacy>).",
     "submit": "Pošalji poruku",
-    "sending": "Šaljem…",
+    "sending": "Slanje…",
     "sent": "Vaša poruka je poslana",
-    "sentDetail": "Hvala. Odgovorit ću na {email}.",
+    "sentDetail": "Hvala. Odgovor stiže na {email}.",
     "fixFields": "Provjerite označena polja.",
     "needsScript": "Za ovaj obrazac potreban je JavaScript, koji je isključen u vašem pregledniku.",
     "reach": {
@@ -146,19 +209,19 @@
     },
     "errors": {
       "name": "Upišite svoje ime.",
-      "email": "Upišite adresu e-pošte, da vam mogu odgovoriti.",
+      "email": "Upišite adresu e-pošte, da vam odgovor može stići.",
       "emailInvalid": "Ta adresa e-pošte ne izgleda ispravno.",
       "message": "Napišite poruku.",
-      "consent": "Označite kućicu, da vam smijem odgovoriti."
+      "consent": "Označite kućicu, da se na poruku smije odgovoriti."
     },
     "proof": {
       "label": "Nisam robot",
       "loading": "Učitavanje…",
       "verify": "Provjeri",
-      "verifying": "Provjeravam…",
+      "verifying": "Provjera…",
       "verified": "Provjereno",
       "verificationRequired": "Pričekajte da provjera završi.",
-      "waitAlert": "Provjeravam… pričekajte.",
+      "waitAlert": "Provjera u tijeku… pričekajte.",
       "error": "Provjera nije uspjela. Pokušajte kasnije.",
       "expired": "Provjera je istekla. Pokušajte ponovno.",
       "reload": "Pokušaj ponovno"

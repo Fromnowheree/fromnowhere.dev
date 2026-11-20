@@ -26,11 +26,17 @@ const pages = [
   { path: '/hr', name: 'hr' },
   { path: '/en/projects/giogio', name: 'en-giogio' },
   { path: '/en/projects/nmt', name: 'en-nmt' },
+  { path: '/en/projects/gati', name: 'en-gati' },
+  { path: '/en/services', name: 'en-services' },
+  { path: '/hr/services', name: 'hr-services' },
+  { path: '/en/capabilities', name: 'en-capabilities' },
   { path: '/en/contact', name: 'en-contact' },
   { path: '/en/about', name: 'en-about' },
   { path: '/en/no-such-page', name: 'en-404' },
 ]
 const widths = [1440, 375]
+// VISUAL_ONLY=en-services,en names the pages to capture, when only some changed.
+const only = process.env.VISUAL_ONLY?.split(',')
 
 let detach: (() => Promise<void>) | undefined
 
@@ -65,7 +71,7 @@ async function open(page: Page, address: string, width: number) {
 const shoot = (page: Page, name: string, fullPage = true) =>
   page.screenshot({ path: path.join(outDir, `${name}.png`), fullPage })
 
-for (const { path: address, name } of pages) {
+for (const { path: address, name } of pages.filter(({ name }) => !only || only.includes(name))) {
   test(`${name} at ${widths.join(' and ')}`, async ({ page }) => {
     for (const width of widths) {
       await open(page, address, width)

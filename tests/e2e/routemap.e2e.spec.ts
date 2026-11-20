@@ -340,7 +340,11 @@ test.describe('touch targets', () => {
   test('every control on the home page is at least 44px tall', async ({ page }) => {
     await page.goto('/en')
     const small = await page.evaluate(() =>
-      [...document.querySelectorAll('.site-nav a, .term, .row a, .band a, .site-footer a')]
+      [
+        ...document.querySelectorAll(
+          '.site-nav a, .hero__actions a, .term, .row a, .offer__head a, .band a, .site-footer a',
+        ),
+      ]
         // Shown only: a link the phone layout hides (About, in the footer instead) has no box.
         .filter((el) => el.getClientRects().length > 0)
         .map((el) => ({ el: el.outerHTML.slice(0, 80), height: el.getBoundingClientRect().height }))

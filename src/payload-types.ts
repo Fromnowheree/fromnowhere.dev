@@ -68,6 +68,8 @@ export interface Config {
   blocks: {};
   collections: {
     projects: Project;
+    services: Service;
+    capabilities: Capability;
     notes: Note;
     pages: Page;
     'short-links': ShortLink;
@@ -83,6 +85,8 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     projects: ProjectsSelect<false> | ProjectsSelect<true>;
+    services: ServicesSelect<false> | ServicesSelect<true>;
+    capabilities: CapabilitiesSelect<false> | CapabilitiesSelect<true>;
     notes: NotesSelect<false> | NotesSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     'short-links': ShortLinksSelect<false> | ShortLinksSelect<true>;
@@ -182,9 +186,71 @@ export interface Project {
   started?: string | null;
   stack?: string[] | null;
   /**
-   * Who it is for, what was built and why. Shown on the project’s page.
+   * Who it is for, without naming a private person. E.g. "A homeopathy practice in Varaždin".
+   */
+  client?: string | null;
+  /**
+   * What the studio did, a word or two each. E.g. Design, Build, Hosting.
+   */
+  scope?: string[] | null;
+  /**
+   * Who needed what, and why.
+   */
+  brief?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * What a visitor and an owner can do with it.
    */
   story?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * The parts that took real engineering. Only what is true of the code as it is.
+   */
+  engineering?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * What is in service today and what comes next.
+   */
+  outcome?: {
     root: {
       type: string;
       children: {
@@ -288,6 +354,86 @@ export interface Media {
       filename?: string | null;
     };
   };
+}
+/**
+ * What the studio can be hired for. Each published service is a card on the home page and a section of the Services page.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "services".
+ */
+export interface Service {
+  id: number;
+  /**
+   * E.g. "Websites with an editor".
+   */
+  name: string;
+  /**
+   * What a client gets. Shown on the card and under the name.
+   */
+  summary: string;
+  /**
+   * A short list reads best. Shown on the Services page.
+   */
+  text?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * The first is service A, the second B.
+   */
+  order: number;
+  /**
+   * The projects where this was done. Only published ones show.
+   */
+  projects?: (number | Project)[] | null;
+  /**
+   * Part of the web address, e.g. "physiotherapy". The same in every language. Leave empty to generate it.
+   */
+  slug?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * The engineering under the sites, one claim at a time, each with the site that proves it.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "capabilities".
+ */
+export interface Capability {
+  id: number;
+  /**
+   * E.g. "Encrypted backups".
+   */
+  title: string;
+  /**
+   * One or two plain sentences a client can check.
+   */
+  text: string;
+  area: 'design' | 'build' | 'security' | 'operations';
+  /**
+   * Within its area.
+   */
+  order: number;
+  onThisSite?: boolean | null;
+  /**
+   * The projects where this is true today. Only published ones show.
+   */
+  projects?: (number | Project)[] | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * Short, dated notes on what you are building. They appear on the site once at least three are published.
@@ -601,6 +747,14 @@ export interface PayloadLockedDocument {
         value: number | Project;
       } | null)
     | ({
+        relationTo: 'services';
+        value: number | Service;
+      } | null)
+    | ({
+        relationTo: 'capabilities';
+        value: number | Capability;
+      } | null)
+    | ({
         relationTo: 'notes';
         value: number | Note;
       } | null)
@@ -685,7 +839,12 @@ export interface ProjectsSelect<T extends boolean = true> {
       };
   started?: T;
   stack?: T;
+  client?: T;
+  scope?: T;
+  brief?: T;
   story?: T;
+  engineering?: T;
+  outcome?: T;
   window?: T;
   windowAddress?: T;
   windowCaption?: T;
@@ -697,6 +856,36 @@ export interface ProjectsSelect<T extends boolean = true> {
         image?: T;
       };
   slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "services_select".
+ */
+export interface ServicesSelect<T extends boolean = true> {
+  name?: T;
+  summary?: T;
+  text?: T;
+  order?: T;
+  projects?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "capabilities_select".
+ */
+export interface CapabilitiesSelect<T extends boolean = true> {
+  title?: T;
+  text?: T;
+  area?: T;
+  order?: T;
+  onThisSite?: T;
+  projects?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;

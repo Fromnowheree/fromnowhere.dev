@@ -4,13 +4,15 @@ import { Mark } from '@/components/fnw'
 import { LanguageSwitch } from '@/components/LanguageSwitch'
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/locales'
-import { displayAddress, notesHref } from '@/lib/links'
+import { capabilitiesHref, displayAddress, notesHref, servicesHref } from '@/lib/links'
 import { getPublishedIndex, getStudio } from '@/lib/payload'
 
 /**
- * The header: the tile and FNW (the letters give way on a phone), Projects, Notes and About, the
- * language pill and one action. Every control is a 44px target. It is held still while pages
- * change (`view-transition-name` in site.css).
+ * The header: the tile and FNW (the letters give way on a phone), Work, Services, Capabilities,
+ * Notes and About (each only while there is something there; a phone keeps Services, or Work
+ * while there are none, and the footer has the rest), the language pill and one action. Every
+ * control is a 44px target. It is held still while pages change (`view-transition-name` in
+ * site.css).
  */
 export async function SiteHeader({ locale }: { locale: Locale }) {
   const [t, index] = await Promise.all([
@@ -18,16 +20,26 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
     getPublishedIndex(),
   ])
   return (
-    <header className="site-nav wrap">
+    <header className={index.services ? 'site-nav site-nav--offer wrap' : 'site-nav wrap'}>
       <Link className="fnw-nav__brand" href="/" aria-label={t('home')}>
         <Mark size={36} />
         <span className="site-nav__fnw">FNW</span>
       </Link>
       <nav className="site-nav__links" aria-label={t('main')}>
         <ul>
-          <li>
+          <li className="site-nav__work">
             <Link href="/#projects">{t('projects')}</Link>
           </li>
+          {index.services && (
+            <li>
+              <Link href={servicesHref}>{t('services')}</Link>
+            </li>
+          )}
+          {index.capabilities && (
+            <li className="site-nav__works">
+              <Link href={capabilitiesHref}>{t('capabilities')}</Link>
+            </li>
+          )}
           {index.notes.size > 0 && (
             <li className="site-nav__notes">
               <Link href={notesHref}>{t('notes')}</Link>
@@ -50,8 +62,8 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
 
 /**
  * The footer: the mark and the name, the studio's address, its pages and its profiles elsewhere.
- * No attribution: this is where the attribution on every other site points. Links to Notes, About
- * and Privacy appear only while there is something there.
+ * No attribution: this is where the attribution on every other site points. Links to Services,
+ * Capabilities, Notes, About and Privacy appear only while there is something there.
  */
 export async function SiteFooter({ locale }: { locale: Locale }) {
   const [t, tNav, studio, index] = await Promise.all([
@@ -85,6 +97,16 @@ export async function SiteFooter({ locale }: { locale: Locale }) {
               </a>
             </li>
           ))}
+          {index.services && (
+            <li>
+              <Link href={servicesHref}>{tNav('services')}</Link>
+            </li>
+          )}
+          {index.capabilities && (
+            <li>
+              <Link href={capabilitiesHref}>{tNav('capabilities')}</Link>
+            </li>
+          )}
           {index.notes.size > 0 && (
             <li>
               <Link href={notesHref}>{tNav('notes')}</Link>

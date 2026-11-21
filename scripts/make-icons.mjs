@@ -31,5 +31,8 @@ await png(mark(180, { rounded: false, pad: 27, background: tile }), 'src/app/app
 await png(mark(192, { rounded: true, pad: 29, background: tile }), 'public/icons/icon-192.png')
 await png(mark(512, { rounded: true, pad: 77, background: tile }), 'public/icons/icon-512.png')
 // Maskable: full bleed, the mark inside the middle 80% (a 51px margin and more on every side).
-await png(mark(512, { rounded: false, pad: 128, background: tile }), 'public/icons/maskable-512.png')
+await png(
+  mark(512, { rounded: false, pad: 128, background: tile }),
+  'public/icons/maskable-512.png',
+)
 console.log('Wrote src/app/apple-icon.png and public/icons/*.png')

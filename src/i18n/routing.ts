@@ -17,4 +17,7 @@ export const routing = defineRouting({
   // next-intl would advertise every locale in a Link header, disabled ones included. The pages
   // state their alternates in their metadata instead (src/lib/metadata.ts).
   alternateLinks: false,
+  // The cookie that remembers a visitor's language never crosses the network in clear text. In
+  // production only: development runs on plain http://, where some browsers drop a Secure cookie.
+  localeCookie: { secure: process.env.NODE_ENV === 'production' },
 })

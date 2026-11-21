@@ -87,7 +87,8 @@ export default defineConfig({
         env: {
           DATABASE_URL: shellDatabaseUrl!,
           PAYLOAD_SEED: 'true',
-          PAYLOAD_SECRET: process.env.PAYLOAD_SECRET || 'e2e-only-secret',
+          // Production refuses a short secret (src/lib/secret.ts).
+          PAYLOAD_SECRET: process.env.PAYLOAD_SECRET || 'e2e-only-secret-not-a-real-one-0123456789',
           SITE_URL: url,
           MEDIA_DIR: process.env.MEDIA_DIR!,
           // No knocking on the real addresses: the specs write the checks they need.

@@ -54,6 +54,28 @@ describe('GraphQL', () => {
   })
 })
 
+describe('an uploaded file that is not there', () => {
+  const file = (name: string) =>
+    REST_GET(config)(new Request(`http://localhost:3000/api/media/file/${name}`), {
+      params: Promise.resolve({ slug: ['media', 'file', name] }),
+    })
+
+  // Payload's own answer is 500 with an error in the log, on an address anyone can ask for.
+  it('answers 404, not a server error', async () => {
+    const response = await file('no-such-picture.webp')
+    expect(response.status).toBe(404)
+    expect(await response.text()).toBe('Not found')
+  })
+
+  it('leaves a name that would leave the uploads folder to Payload, which refuses it', async () => {
+    const { isMissingUpload } = await import('@/collections/Media')
+    expect(isMissingUpload('no-such-picture.webp', '/tmp')).toBe(true)
+    expect(isMissingUpload('../etc/passwd', '/tmp')).toBe(false)
+    expect(isMissingUpload('../no-such-file', '/tmp')).toBe(false)
+    expect((await file('..%2F..%2Fpackage.json')).status).not.toBe(200)
+  })
+})
+
 describe('the health check', () => {
   // compose.yml's container health check, which Caddy waits for before it starts.
   it('answers 200 once Payload is up and the database answers', async () => {

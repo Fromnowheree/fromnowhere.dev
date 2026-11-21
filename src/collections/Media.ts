@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import path from 'path'
 import type { CollectionConfig } from 'payload'
 
@@ -5,6 +6,16 @@ import { l } from '../i18n/label'
 
 /** Where uploads live on disk (a volume in production). The share cards read the logo from here. */
 export const mediaDir = process.env.MEDIA_DIR || path.resolve(process.cwd(), 'media')
+
+/**
+ * Whether a file of this name is missing from the uploads folder. A name that would leave the
+ * folder is not this check's business (Payload refuses it), so it counts as not missing.
+ */
+export const isMissingUpload = (filename: string, dir: string = mediaDir): boolean => {
+  const root = path.resolve(dir)
+  const file = path.resolve(root, filename)
+  return file.startsWith(root + path.sep) && !existsSync(file)
+}
 
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -37,6 +48,13 @@ export const Media: CollectionConfig = {
   ],
   upload: {
     staticDir: mediaDir,
+    // A picture that is not there is "not found". Payload's own answer is 500 and an error in
+    // the log for every such request, on an address anyone can ask for: a crawler following an
+    // old link, or someone guessing names, would read as the server failing.
+    handlers: [
+      (_req, { params }) =>
+        isMissingUpload(params.filename) ? new Response('Not found', { status: 404 }) : undefined,
+    ],
     mimeTypes: ['image/*'],
     focalPoint: true,
     adminThumbnail: 'thumbnail',

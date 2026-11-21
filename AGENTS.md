@@ -320,6 +320,12 @@ no-preference)`, which `tests/int/routeMap.int.spec.ts` checks for site.css, rou
 - **The session cookie counts only from the site's own origin** (`csrf`,
   `src/lib/siteOrigins.ts`); never empty that list. **Cookies stay host-only**: never set
   `auth.cookies.domain`, or the cookie would reach every *.fromnowhere.dev site.
+- **Production refuses a weak `PAYLOAD_SECRET`** (`src/lib/secret.ts`, checked in
+  `src/instrumentation.node.ts` before Payload boots): shorter than 32 characters, or a few
+  characters repeated, and the server ends with the reason in the log. The language cookie
+  (`NEXT_LOCALE`) is `Secure` in production too.
+- **An uploaded file that is not on the disk answers 404** (`Media`'s upload handler), not
+  Payload's 500 with an error in the log.
 - **The first admin is made at provisioning** (`scripts/create-admin.sh`, `src/lib/provision.ts`),
   never by whoever opens `/admin` first; Caddy answers `/api/users/first-register` with 404.
 - **Every response carries a Content-Security-Policy** (`next.config.ts`); uploads get one of

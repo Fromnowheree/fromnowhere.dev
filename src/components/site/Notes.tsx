@@ -149,7 +149,7 @@ export async function LatestNotes({ notes, locale }: { notes: NoteSign[]; locale
   if (notes.length === 0) return null
   const [t, d] = await Promise.all([getTranslations({ locale, namespace: 'notes' }), dates(locale)])
   return (
-    <section className="home__notes" aria-labelledby="latest-notes">
+    <section className="home__notes" id="notes" aria-labelledby="latest-notes">
       <div className="board notes-board">
         <div className="board__head">
           <div>

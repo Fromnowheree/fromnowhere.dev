@@ -3,11 +3,13 @@ import { getTranslations } from 'next-intl/server'
 import type React from 'react'
 
 import { JsonLd } from '@/components/JsonLd'
+import { HeroLines } from '@/components/site/HeroLines'
 import { HomeMotion } from '@/components/site/HomeMotion'
 import { LatestNotes, NoteArrow } from '@/components/site/Notes'
 import { CapabilitiesBand, ServicesBand, StartBand } from '@/components/site/Offer'
 import { RouteMap } from '@/components/site/RouteMap'
 import { Board } from '@/components/site/Signs'
+import { StripMap } from '@/components/site/StripMap'
 import { Link } from '@/i18n/navigation'
 import { asLocale } from '@/i18n/server'
 import { pageMetadata } from '@/lib/metadata'
@@ -41,14 +43,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 const delay = (d: number) => ({ '--d': d }) as React.CSSProperties
 
 /**
- * The origin (Night transit, docs/prototypes/night-transit.html), and the studio's front page: the
- * headline whose full stop is the point, what the studio does and the way to start a project, the
- * tally, the route map (one coloured line per project, drawn out of the point on every visit, with
- * trains running), the departures board listing the same projects in the same order, the ticker
- * of short links, then what can be hired (the services, each with the lines it runs on), what is
- * under every line (the capabilities), the latest notes (once there are three), and the way to
- * get in touch. Everything is the CMS's: the studio's words, the published projects, services and
- * capabilities, the short links; the tally is counted from them.
+ * The origin (Night transit, docs/prototypes/night-transit.html), and the studio's front page. The
+ * first screen is the hero's alone: the headline whose full stop is the point, tracks of light
+ * leaving that point behind it, what the studio does and the way to start a project. Then the route map as a section of its own, under its
+ * title and the tally (one coloured line per project, drawn out of the point as it comes into
+ * view, with trains running), the departures board listing the same projects in the same order,
+ * the ticker of short links, then what can be hired (the services, each with the lines it runs
+ * on), what is under every line (the capabilities), the latest notes (once there are three), and
+ * the way to get in touch. At the window's edge on a wide screen, the strip map: the page's own
+ * stops. Everything is the CMS's: the studio's words, the published projects,
+ * services and capabilities, the short links; the tally is counted from them.
  */
 export default async function Home({ params }: Props) {
   const locale = asLocale((await params).locale)
@@ -79,6 +83,28 @@ export default async function Home({ params }: Props) {
     ...(building > 0 || paused === 0 ? [{ label: t('tallyBuilding'), count: building }] : []),
     ...(paused > 0 ? [{ label: t('tallyPaused'), count: paused }] : []),
   ]
+  const tallyList = (
+    <dl className="tally" aria-label={t('tally')}>
+      {tally.map(({ label, count }) => (
+        <div key={label}>
+          <dt>{label}</dt>
+          <dd>{count}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+  // Nothing when there are no projects, or more than the map can draw (the board lists them all).
+  const map = projects.length > 0 ? await RouteMap({ projects, locale }) : null
+  // The page's own stops, for the strip map: only the sections that are on the page.
+  const stops = [
+    { to: 'top', name: t('stops.studio') },
+    ...(map ? [{ to: 'map', name: t('stops.map') }] : []),
+    { to: 'board', name: t('stops.board') },
+    ...(services.length > 0 ? [{ to: 'services', name: t('stops.services') }] : []),
+    ...(capabilities.length > 0 ? [{ to: 'works', name: t('stops.works') }] : []),
+    ...(notes.length > 0 ? [{ to: 'notes', name: t('stops.notes') }] : []),
+    { to: 'start', name: t('stops.start') },
+  ]
 
   return (
     <div className="home">
@@ -91,6 +117,7 @@ export default async function Home({ params }: Props) {
         })}
       />
       <section className="hero" aria-labelledby="home-title">
+        <HeroLines />
         <p className="kicker enter" style={delay(0)}>
           {t('kicker')}
         </p>
@@ -117,24 +144,31 @@ export default async function Home({ params }: Props) {
               )}
             </p>
           </div>
-          {projects.length > 0 && (
-            <dl className="tally enter" style={delay(4)} aria-label={t('tally')}>
-              {tally.map(({ label, count }) => (
-                <div key={label}>
-                  <dt>{label}</dt>
-                  <dd>{count}</dd>
-                </div>
-              ))}
-            </dl>
+          {/* Without a map the tally has no section of its own, and stays with the pitch. */}
+          {projects.length > 0 && !map && (
+            <div className="enter" style={delay(4)}>
+              {tallyList}
+            </div>
           )}
         </div>
       </section>
 
-      {projects.length > 0 && (
-        <section className="home__map">{await RouteMap({ projects, locale })}</section>
+      {map && (
+        <section className="home__map" id="map" aria-labelledby="lines">
+          <div className="offer__head">
+            <div>
+              <p className="board__kicker">{t('mapKicker')}</p>
+              <h2 className="board__title" id="lines">
+                {t('mapTitle')}
+              </h2>
+            </div>
+            {tallyList}
+          </div>
+          {map}
+        </section>
       )}
 
-      <section className="home__board" aria-labelledby="projects">
+      <section className="home__board" id="board" aria-labelledby="projects">
         {projects.length > 0 ? (
           await Board({ projects, shortLinks, host: new URL(serverUrl).host, locale })
         ) : (
@@ -155,11 +189,14 @@ export default async function Home({ params }: Props) {
 
       <StartBand
         className="home-band"
+        id="start"
         kicker={t('contactKicker')}
         title={t('contactTitle')}
         lead={t('contactLead')}
         action={t('contactAction')}
       />
+
+      <StripMap label={t('stops.label')} stops={stops} />
 
       {/* Keyed on what the map draws: when the home page is fetched again in place (the brand
           link on /en) with a line changed (a delay, a new address), the island starts over on

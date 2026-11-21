@@ -354,22 +354,18 @@
   opacity: 0.85;
 }
 
+/* Where nothing hovers, a line says a terminal is the way in. */
 .map__hint {
+  display: none;
   margin: 8px 0 0;
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.04em;
   color: var(--text-dim);
 }
-.map__hint-tap {
-  display: none;
-}
 @media (hover: none) {
-  .map__hint-point {
-    display: none;
-  }
-  .map__hint-tap {
-    display: inline;
+  .map__hint {
+    display: block;
   }
 }
 

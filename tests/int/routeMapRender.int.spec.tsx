@@ -5,8 +5,10 @@ import { describe, expect, it, vi } from 'vitest'
 
 import en from '../../messages/en.json'
 import hr from '../../messages/hr.json'
+import { HeroLines } from '@/components/site/HeroLines'
 import { RouteMap } from '@/components/site/RouteMap'
 import { Board } from '@/components/site/Signs'
+import { StripMap } from '@/components/site/StripMap'
 import type { Locale } from '@/i18n/locales'
 import type { ShortLinkSign } from '@/lib/payload'
 import type { LiveProject } from '@/lib/status'
@@ -278,6 +280,76 @@ describe('the route map', () => {
     expect(spoken(elements(markup, /<div class="term [^"]*"[^>]*>/)[2])).toBe(
       'Linija 03, Nowhere’s Medical Toolbox, U izradi',
     )
+  })
+})
+
+describe('the hero’s tracks', () => {
+  const markup = renderToStaticMarkup(<HeroLines />)
+
+  it('are decoration: three boxes, each hidden from assistive technology, with no words or links', () => {
+    expect(
+      markup.match(/<div class="hero-art hero-art--(down|up|trunk)" aria-hidden="true">/g),
+    ).toHaveLength(3)
+    expect(markup.replace(/<[^>]+>/g, '').trim()).toBe('')
+    expect(markup).not.toContain('<a ')
+  })
+
+  it('wear the point’s colour only: a line’s colour belongs to the map and the board', () => {
+    expect(markup).not.toContain('--line-')
+    expect(markup).not.toContain('--c:')
+  })
+
+  it('run only level, upright or at exactly 45°, like the map’s lines', () => {
+    const paths = [...markup.matchAll(/class="hero-line__main" d="([^"]+)"/g)].map(([, d]) => d)
+    expect(paths).toHaveLength(6)
+    for (const d of paths) {
+      // The straight runs: from the start, or from the end of a rounded corner, to the next L.
+      const points = [...d.matchAll(/([MLQ])([-\d. ]+)/g)].map(([, kind, numbers]) => ({
+        kind,
+        at: numbers.trim().split(' ').map(Number).slice(-2),
+      }))
+      for (let i = 1; i < points.length; i++) {
+        if (points[i].kind !== 'L') continue
+        const dx = Math.abs(points[i].at[0] - points[i - 1].at[0])
+        const dy = Math.abs(points[i].at[1] - points[i - 1].at[1])
+        expect(dx < 0.2 || dy < 0.2 || Math.abs(dx - dy) < 0.2).toBe(true)
+      }
+    }
+  })
+})
+
+describe('the strip map', () => {
+  const stops = [
+    { to: 'top', name: 'FNW Studio' },
+    { to: 'map', name: 'Route map' },
+    { to: 'board', name: 'Departures' },
+    { to: 'start', name: 'Start a project' },
+  ]
+  const markup = renderToStaticMarkup(<StripMap label="On this page" stops={stops} />)
+
+  it('is a named navigation of plain links, one per stop in order, that works without JavaScript', () => {
+    expect(markup).toMatch(/^<nav class="strip" aria-label="On this page"/)
+    expect([...markup.matchAll(/<a href="#([^"]+)">/g)].map(([, to]) => to)).toEqual([
+      'top',
+      'map',
+      'board',
+      'start',
+    ])
+    // Each link is named by its stop; the mark beside it is hidden.
+    expect(markup).toContain(
+      '<a href="#map"><span class="strip__stop" aria-hidden="true"></span><span class="strip__name">Route map</span></a>',
+    )
+  })
+
+  it('claims no stop as the visitor’s before the browser knows where they are', () => {
+    expect(markup).not.toContain('aria-current')
+    expect(markup).not.toContain('is-live')
+  })
+
+  it('wears the point’s colour only, and counts its stops for the track’s length', () => {
+    expect(markup).not.toContain('--line-')
+    expect(markup).not.toContain('--c:')
+    expect(markup).toContain('style="--stops:4"')
   })
 })
 

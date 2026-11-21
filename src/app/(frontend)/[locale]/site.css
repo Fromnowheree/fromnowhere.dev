@@ -103,12 +103,22 @@
   --nt-draw: 1300ms; /* one line drawing out of the point */
   --nt-lines-at: 700ms; /* when the first line leaves */
   --nt-arrive: 715ms; /* a line's terminal lights, this far into its draw */
+  --nt-hero-draw: 5200ms; /* a hero track drawing its whole length, most of it past the window */
 
   --gutter: 16px;
+  --header-h: 72px; /* the header: a 44px target between 14px paddings */
+  /* How much of the route map's head shows under the hero on the first screen: its title and,
+     on a phone, the first row of the tally too. */
+  --hero-peek: 176px;
+  /* The headline's size, by the window's width, and by its height so a short window still holds
+     the whole hero. The hero's tracks are drawn in it (100 units to 1em). */
+  --hero-fs: clamp(48px, min(9.4vw, 15svh), 152px);
+  --strip-step: 44px; /* from one stop of the strip map to the next: a stop is a 44px target */
 }
 @media (min-width: 720px) {
   :root {
     --gutter: 32px;
+    --hero-peek: 104px;
   }
 }
 
@@ -493,22 +503,39 @@ a {
 .home > * {
   min-width: 0;
 }
+/* The first screen is the hero's alone: it fills the window under the header, less a strip in
+   which the route map's title shows, so the headline has the screen and the map has the next. */
 .hero {
-  padding-top: clamp(28px, 6vw, 64px);
+  position: relative;
+  /* Its tracks sit behind its words and over the sky, run out to the window's right edge, and
+     stop at its own top and foot. */
+  isolation: isolate;
+  overflow-x: visible;
+  overflow-y: clip;
+  display: grid;
+  align-content: center;
+  min-height: calc(100svh - var(--header-h) - var(--hero-peek));
+  padding-block: clamp(24px, 4vw, 48px);
 }
 .hero .kicker {
-  margin-bottom: 18px;
+  margin-bottom: clamp(18px, 2.4vw, 28px);
 }
 .hero h1 {
   margin: 0;
+  /* As wide as its words: the tracks going up start at its right edge (anchor positioning). */
+  width: fit-content;
   max-width: 14ch;
   font-weight: 500;
-  font-size: clamp(36px, 6.4vw, 84px);
-  line-height: 1.02;
-  letter-spacing: -0.035em;
+  font-size: var(--hero-fs);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+  anchor-name: --hero-title;
 }
 /* The headline's full stop is the point. */
 .hero__point {
+  position: relative;
+  anchor-name: --hero-point;
   display: inline-block;
   width: 0.2em;
   height: 0.2em;
@@ -522,7 +549,7 @@ a {
 .hero__row {
   display: grid;
   gap: 24px;
-  margin-top: 24px;
+  margin-top: clamp(24px, 3vw, 40px);
   align-items: end;
 }
 @media (min-width: 900px) {
@@ -530,9 +557,122 @@ a {
     grid-template-columns: minmax(0, 1fr) auto;
   }
 }
+/* A ring leaves the point now and then (motion, below). */
+.hero__point::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid var(--accent);
+  border-radius: 50%;
+  opacity: 0;
+}
+
+/* The hero's tracks (src/components/site/HeroLines.tsx): three boxes placed from the point, the
+   headline and the lede, so a track never runs behind words. Each reaches the window's right
+   edge; without anchor positioning none is shown. */
+.hero-art {
+  display: none;
+  position: absolute;
+  z-index: -1;
+  right: calc((100% - 100vw) / 2);
+  pointer-events: none;
+  font-size: var(--hero-fs);
+  /* The drawing runs 42em on, far past the window: cut it at the box (the window's right edge),
+     with room for a glow, so the page's picture for a transition is no wider than the page. */
+  overflow: clip;
+  overflow-clip-margin: 32px;
+}
+@supports (anchor-name: --hero-point) {
+  .hero-art {
+    display: block;
+  }
+}
+.hero-art--trunk {
+  left: anchor(--hero-point center);
+  top: calc(anchor(--hero-point center) - 0.5em);
+  height: 1em;
+}
+.hero-art--up {
+  left: max(calc(anchor(--hero-point center) + 0.5em), calc(anchor(--hero-title right) + 0.2em));
+  top: calc(anchor(--hero-point center) - 3em);
+  height: 3.5em;
+}
+/* Down to the hero's foot, where its tracks fade out towards the route map. */
+.hero-art--down {
+  left: max(
+    calc(anchor(--hero-point center) + 0.3em),
+    calc(anchor(--hero-lede right, 0px) + 0.3em)
+  );
+  top: calc(anchor(--hero-point center) - 0.5em);
+  bottom: 0;
+  mask-image: linear-gradient(to bottom, #000 48%, transparent 94%);
+}
+.hero-art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.hero-line path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.hero-line__casing {
+  stroke: var(--track);
+  stroke-width: 15;
+}
+.hero-line__main {
+  stroke: var(--accent);
+  stroke-width: 5.5;
+}
+.hero-line__glow {
+  stroke: var(--accent);
+  stroke-width: 13;
+  opacity: 0.16;
+}
+.hero-line__glow--wide {
+  stroke-width: 26;
+  opacity: 0.07;
+}
+.hero-line--2 .hero-line__main {
+  opacity: 0.72;
+}
+.hero-line--3 .hero-line__main {
+  opacity: 0.48;
+}
+.hero-line--2 .hero-line__glow,
+.hero-line--3 .hero-line__glow {
+  opacity: 0.09;
+}
+.hero-line--2 .hero-line__glow--wide,
+.hero-line--3 .hero-line__glow--wide {
+  opacity: 0.04;
+}
+.hero-line__stop {
+  fill: var(--night);
+  stroke: var(--accent);
+  stroke-width: 3.2;
+}
+/* Trains: a short dash every 6em of track, shown and run only where motion is welcome. */
+.hero-line__train,
+.hero-line__halo {
+  stroke-dasharray: 26 574;
+  opacity: 0;
+}
+.hero-line__train {
+  stroke: var(--train-core);
+  stroke-width: 4.5;
+}
+.hero-line__halo {
+  stroke: var(--accent);
+  stroke-width: 15;
+}
+
 .hero__lede {
   margin: 0;
   max-width: 52ch;
+  anchor-name: --hero-lede;
   color: var(--text-muted);
   font-size: clamp(16px, 1.6vw, 19px);
 }
@@ -564,12 +704,169 @@ a {
   font-variant-numeric: tabular-nums;
 }
 
-.home__map {
-  padding-top: clamp(24px, 4vw, 40px);
+/* A section that is linked to, or settled on, stops a little under the window's top. */
+.home > section {
+  scroll-margin-top: 16px;
+}
+
+/* The map and the board are each a screen, so a scroll that ends near the head of the next one
+   settles on it. Only the next one down (`is-next`, HomeMotion): once reached it lets go, so
+   nothing pulls a visitor back, and nothing settles under reduced motion or without JavaScript. */
+:root.is-settling {
+  scroll-snap-type: y proximity;
+}
+.home > .is-next {
+  scroll-snap-align: start;
+}
+/* A ride to a stop of the strip map. */
+:root.is-travelling {
+  scroll-behavior: smooth;
+}
+
+/* ── home: the strip map, the page's own stops ────────────────────────── */
+.strip {
+  display: none;
+}
+@media (min-width: 1024px) and (min-height: 560px) {
+  .strip {
+    display: block;
+    position: fixed;
+    z-index: 4;
+    /* In the gutter; on a wide window a little in from the edge. */
+    left: clamp(0px, calc((100vw - 1384px) / 4), 40px);
+    top: calc(50% - var(--stops) * var(--strip-step) / 2);
+    width: var(--gutter);
+  }
+}
+.strip ol {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.strip li {
+  height: var(--strip-step);
+}
+.strip a {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 100%;
+  text-decoration: none;
+}
+/* The track from the first stop to the last, and over it the part already travelled. */
+.strip::before,
+.strip__lit {
+  content: '';
+  position: absolute;
+  left: calc(50% - 1px);
+  top: calc(var(--strip-step) / 2);
+  width: 2px;
+  height: calc((var(--stops) - 1) * var(--strip-step));
+  border-radius: 1px;
+}
+.strip::before {
+  background: var(--divider-strong);
+}
+.strip__lit {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-soft);
+  transform-origin: top;
+  transform: scaleY(calc(var(--at, 0) / (var(--stops) - 1)));
+}
+.strip__stop {
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--text-dim);
+  border-radius: 50%;
+  background: var(--night);
+  transition:
+    border-color var(--nt-fast),
+    transform var(--nt-fast);
+}
+/* The first stop is the point. */
+.strip li:first-child .strip__stop {
+  width: 11px;
+  height: 11px;
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-soft);
+}
+.strip li.is-passed .strip__stop,
+.strip a[aria-current] .strip__stop {
+  border-color: var(--accent);
+}
+.strip a:hover .strip__stop,
+.strip a:focus-visible .strip__stop {
+  border-color: var(--text);
+  transform: scale(1.35);
+}
+/* The train stands at the stop the visitor is at; it shows once HomeMotion knows where. */
+.strip__train {
+  position: absolute;
+  z-index: 2;
+  left: calc(50% - 2.5px);
+  top: calc(var(--strip-step) / 2 - 9px);
+  width: 5px;
+  height: 18px;
+  border-radius: 3px;
+  background: var(--train-core);
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 0 14px 2px var(--accent);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(calc(var(--at, 0) * var(--strip-step)));
+}
+.strip.is-live .strip__train {
+  opacity: 1;
+}
+/* A stop's name shows while the strip is pointed at, or a stop holds the keyboard's focus (not
+   a click's, or the names would stay up over the page after a ride). */
+.strip__name {
+  position: absolute;
+  left: calc(100% - 2px);
+  top: 50%;
+  padding: 5px 10px;
+  border: 1px solid var(--divider-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.3;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-muted);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition:
+    opacity var(--nt-fast),
+    color var(--nt-fast),
+    border-color var(--nt-fast);
+}
+.strip:hover .strip__name,
+.strip:has(a:focus-visible) .strip__name {
+  opacity: 1;
+  pointer-events: auto;
+}
+.strip a:hover .strip__name,
+.strip a:focus-visible .strip__name,
+.strip a[aria-current] .strip__name {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+/* The route map, a section of its own: its title and the tally, then the drawing. */
+.home__map .offer__head {
+  margin-bottom: clamp(24px, 4vw, 48px);
+  padding-top: 20px;
+  border-top: 1px solid var(--divider-strong);
 }
 .home__board {
   margin-top: clamp(48px, 7vw, 88px);
-  scroll-margin-top: 16px;
 }
 .home__empty {
   margin: 0;
@@ -1289,6 +1586,32 @@ a {
     transform: translateY(10px);
   }
 }
+@keyframes nt-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+@keyframes hero-draw {
+  from {
+    stroke-dasharray: 4300 4300;
+    stroke-dashoffset: 4300;
+  }
+  to {
+    stroke-dasharray: 4300 4300;
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes hero-run {
+  to {
+    stroke-dashoffset: -600;
+  }
+}
+@keyframes hero-fade {
+  from {
+    opacity: 0;
+  }
+}
 @keyframes nt-drift {
   to {
     transform: translate(40vw, 20vh) scale(1.2);
@@ -1398,6 +1721,73 @@ a {
   }
   .band__mover {
     animation: nt-rail 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+
+  /* The hero's tracks draw out of the headline's point as the page arrives, each in its turn;
+     then trains set out along them, and a ring leaves the point now and then. From-only
+     keyframes with backwards fill: the end state is the finished drawing. */
+  .hero__point::after {
+    animation: nt-ring 3.6s var(--ease-standard) 1.4s infinite;
+  }
+  .hero-line__main,
+  .hero-line__glow {
+    animation: hero-draw var(--nt-hero-draw) linear var(--at) backwards;
+  }
+  .hero-line__stop {
+    animation: hero-fade 500ms ease calc(var(--at) + 700ms) backwards;
+  }
+  .hero-line__train,
+  .hero-line__halo {
+    opacity: 1;
+    animation:
+      hero-run var(--pace) linear infinite,
+      hero-fade 900ms ease backwards;
+    animation-delay: var(--phase), calc(var(--at) + 1100ms);
+  }
+  .hero-line__halo {
+    opacity: 0.38;
+  }
+
+  /* The bands under the board (services, the works, notes, the contact band) arrive as they come
+     into view: HomeMotion marks the ones still below the window `is-pending`, then `is-arrived`.
+     The head first, then each card in its turn. */
+  .home
+    > section.is-pending
+    :is(.offer__head, .board__head, .sign, .works-band__area, .notes-board__item),
+  .home > .band.is-pending > * {
+    opacity: 0;
+  }
+  .home
+    > section.is-arrived
+    :is(.offer__head, .board__head, .sign, .works-band__area, .notes-board__item),
+  .home > .band.is-arrived > * {
+    animation: nt-arrive 700ms var(--nt-ease) backwards;
+  }
+  .home > section.is-arrived :is(.sign, .works-band__area, .notes-board__item) {
+    animation-delay: calc(160ms + var(--i, 0) * 110ms);
+  }
+  .home > .band.is-arrived > .band__go {
+    animation-delay: 160ms;
+  }
+  .works-band__area:nth-child(2) {
+    --i: 1;
+  }
+  .works-band__area:nth-child(3) {
+    --i: 2;
+  }
+  .works-band__area:nth-child(4) {
+    --i: 3;
+  }
+
+  /* The strip map comes on after the hero's words; its train and lit track ride to each stop. */
+  .strip {
+    animation: hero-fade 900ms ease 1400ms backwards;
+  }
+  .strip__lit,
+  .strip__train {
+    transition:
+      transform 620ms var(--nt-ease),
+      opacity var(--nt-slow);
   }
 
   /* The trip on a project page draws once as the page opens; its train then runs. */

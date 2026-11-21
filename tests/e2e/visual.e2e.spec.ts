@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 
-import { test, type Page } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { getPayload } from 'payload'
 
 import config from '../../src/payload.config.js'
@@ -50,8 +50,9 @@ test.afterAll(async () => {
 })
 
 /**
- * Opens the page, waits out the opening, scrolls through so the board's rows have arrived, then
- * returns to the top. Trains and loops keep running, so a capture is one moment of them.
+ * Opens the page, scrolls through so the map's opening has begun and the board's rows have
+ * arrived, returns to the top, then waits the opening out. Trains and loops keep running, so a
+ * capture is one moment of them.
  */
 async function open(page: Page, address: string, width: number) {
   await page.setViewportSize({ width, height: 900 })
@@ -65,7 +66,7 @@ async function open(page: Page, address: string, width: number) {
     }
     scrollTo(0, 0)
   })
-  await page.waitForTimeout(1_500)
+  await page.waitForTimeout(3_500)
 }
 
 const shoot = (page: Page, name: string, fullPage = true) =>
@@ -85,7 +86,14 @@ test('the home page’s opening, mid-way and as it settles', async ({ page }) =>
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/en')
     await page.evaluate(() => document.fonts.ready)
-    await page.reload({ waitUntil: 'commit' })
+    // The first screen is the hero's; the map waits under it and draws as it comes into view.
+    const map = page.locator('#route-map')
+    await expect(map).toHaveClass(/is-live/)
+    await shoot(page, `en-${width}-first-screen`, false)
+    await map.evaluate(
+      (el, block) => el.scrollIntoView({ block }),
+      width > 700 ? ('center' as const) : ('start' as const),
+    )
     const start = Date.now()
     for (const at of [600, 1200, 2000]) {
       await page.waitForTimeout(Math.max(0, at - (Date.now() - start)))

@@ -154,7 +154,7 @@ export async function CapabilitiesBand({
   ])
   const count = groups.reduce((sum, group) => sum + group.items.length, 0)
   return (
-    <section className="works-band" aria-labelledby="works-title">
+    <section className="works-band" id="works" aria-labelledby="works-title">
       <div className="offer__head">
         <div>
           <p className="board__kicker">{t('capabilitiesKicker')}</p>
@@ -200,16 +200,23 @@ export function StartBand({
   lead,
   action,
   className,
+  id,
 }: {
   /** A further class on the band, for a page that needs to find its own. */
   className?: string
+  /** An id, for a page that links to the band. */
+  id?: string
   kicker: string
   title: string
   lead: string
   action: string
 }) {
   return (
-    <section className={className ? `band ${className}` : 'band'} aria-labelledby="band-title">
+    <section
+      className={className ? `band ${className}` : 'band'}
+      id={id}
+      aria-labelledby="band-title"
+    >
       <div>
         <p className="kicker">{kicker}</p>
         <h2 id="band-title">{title}</h2>

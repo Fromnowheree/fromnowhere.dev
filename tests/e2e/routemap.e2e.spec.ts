@@ -3,8 +3,10 @@ import { expect, test, type Page } from '@playwright/test'
 /**
  * The home page in Night transit (docs/prototypes/night-transit.html), against the seeded
  * projects: 01 Locals, 02 Giogio (three addresses), 03 Nowhere's Medical Toolbox (building),
- * 04 Gati. The opening on every visit, the trains, lighting between the map and the board, the
- * phone map, reduced motion, no JavaScript, touch targets and forced colours.
+ * 04 Gati. The opening on every visit (held until the map, under the hero's screen, comes into
+ * view), the trains, lighting between the map and the board, the phone map, reduced motion, no
+ * JavaScript, touch targets and forced colours. And the way down the page: a scroll settling on
+ * the map and the board, the bands under them arriving, the strip map of the page's stops.
  */
 
 const slugs = ['locals', 'giogio', 'nmt', 'gati']
@@ -50,6 +52,27 @@ const resetStarts = (page: Page) =>
     ;(window as unknown as { __mapStarts: string[] }).__mapStarts = []
   })
 
+/**
+ * The map is under the hero's screen, its opening held until it comes into view: bring it there.
+ * HomeMotion is listening (and holding the opening) once the map is live.
+ */
+const toMap = async (page: Page) => {
+  await expect(page.locator('#route-map')).toHaveClass(/is-live/)
+  await page.locator('#route-map').scrollIntoViewIfNeeded()
+}
+
+/** The play states of the opening's animations (the ones that end) under the map now. */
+const openingStates = (page: Page) =>
+  page.evaluate(() => [
+    ...new Set(
+      document
+        .getElementById('route-map')!
+        .getAnimations({ subtree: true })
+        .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
+        .map((animation) => animation.playState),
+    ),
+  ])
+
 const lineOpacity = (page: Page, slug: string) =>
   page
     .locator(`.map__svg--wide .line[data-line="${slug}"]`)
@@ -61,8 +84,9 @@ test.describe('the wide map at 1440', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/en')
     await expect(page.locator('.map__svg--wide .line')).toHaveCount(4)
-    // HomeMotion is listening: pointing and focus light lines only from here on.
-    await expect(page.locator('#route-map')).toHaveClass(/is-live/)
+    // HomeMotion is listening: pointing and focus light lines only from here on. In view, the
+    // map draws and its trains set off.
+    await toMap(page)
   })
 
   test('shows the wide drawing, its terminals with their labels to the right', async ({ page }) => {
@@ -195,8 +219,15 @@ test.describe('the opening, on every visit', () => {
     await page.waitForSelector('.map')
   })
 
-  /** The lines draw out of the point one after another, and the terminals light. */
+  /**
+   * Once the map is in view, the lines draw out of the point one after another and the terminals
+   * light. Counted from the moment the island holds the opening, so nothing that began unseen
+   * while the page arrived is taken for it.
+   */
   const expectOpening = async (page: Page) => {
+    await expect(page.locator('#route-map')).toHaveClass(/is-live/)
+    await resetStarts(page)
+    await toMap(page)
     await expect
       .poll(async () => (await starts(page)).filter((name) => name === 'map-draw').length, {
         timeout: 5_000,
@@ -206,6 +237,38 @@ test.describe('the opening, on every visit', () => {
     expect(await starts(page)).toContain('map-label')
     expect(await starts(page)).toContain('map-core')
   }
+
+  test('waits under the hero’s screen, and draws nothing until the map is in view', async ({
+    page,
+  }) => {
+    const map = page.locator('#route-map')
+    await expect(map).toHaveClass(/is-live/)
+    expect(await map.evaluate((el) => el.getBoundingClientRect().top >= innerHeight)).toBe(true)
+    await resetStarts(page)
+    // Longer than the first line's delay: were it playing, lines would have left by now.
+    await page.waitForTimeout(1_500)
+    expect(await openingStates(page)).toEqual(['paused'])
+    // The ambient loops (the point's rings, work lights) run meanwhile; the opening does not.
+    const begun = await starts(page)
+    for (const name of ['map-core', 'map-draw', 'map-pop', 'map-label'])
+      expect(begun).not.toContain(name)
+    await expect(map).not.toHaveClass(/is-settled/)
+    // Held at its first frame: no line drawn yet, no card shown.
+    expect(
+      await page.$$eval('.term', (cards) =>
+        cards.map((card) => Number(getComputedStyle(card).opacity)),
+      ),
+    ).toEqual([0, 0, 0, 0])
+
+    await map.scrollIntoViewIfNeeded()
+    await expect.poll(() => openingStates(page)).toEqual(['running'])
+    await expect(map).toHaveClass(/is-settled/, { timeout: 6_000 })
+    expect(
+      await page.$$eval('.term', (cards) =>
+        cards.map((card) => Number(getComputedStyle(card).opacity)),
+      ),
+    ).toEqual([1, 1, 1, 1])
+  })
 
   test('draws the map on the first load, lines leaving one after another', async ({ page }) => {
     await expectOpening(page)
@@ -251,13 +314,14 @@ test.describe('the trains rest when nobody can see them', () => {
 
   test('while the map is off screen, and while the tab is hidden', async ({ page }) => {
     await page.goto('/en')
+    await toMap(page)
     await expect.poll(async () => (await trains(page)).length, { timeout: 8_000 }).toBe(8)
 
     await page.locator('.site-footer').scrollIntoViewIfNeeded()
     await expect
       .poll(async () => (await trains(page)).every((train) => train.state === 'paused'))
       .toBe(true)
-    await page.evaluate(() => scrollTo(0, 0))
+    await page.locator('#route-map').scrollIntoViewIfNeeded()
     await expect
       .poll(async () => (await trains(page)).every((train) => train.state === 'running'))
       .toBe(true)
@@ -303,6 +367,143 @@ test.describe('the board', () => {
         ),
       )
       .toEqual([1, 1, 1, 1])
+  })
+})
+
+test.describe('the way down the page', () => {
+  test.use({ viewport: { width: 1440, height: 900 } })
+
+  const top = (page: Page, id: string) =>
+    page.evaluate((id) => Math.round(document.getElementById(id)!.getBoundingClientRect().top), id)
+  /** Turns of a mouse wheel, close together, then long enough for the scroll to come to rest. */
+  const wheel = async (page: Page, turns: number, by = 100) => {
+    for (let i = 0; i < turns; i++) {
+      await page.mouse.wheel(0, by)
+      await page.waitForTimeout(40)
+    }
+    await page.waitForTimeout(1_200)
+  }
+  const here = (page: Page) => page.locator('.strip a[aria-current="location"]')
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/en')
+    await expect(page.locator('#route-map')).toHaveClass(/is-live/)
+    await page.mouse.move(720, 450)
+  })
+
+  test('a scroll that ends near the map settles on it, then on the board, and neither pulls back', async ({
+    page,
+  }) => {
+    // Near the top the page scrolls freely: the map is too far to reach. (A wheel's turn is
+    // 100px, give or take a few.)
+    await wheel(page, 2)
+    expect(await page.evaluate(() => scrollY)).toBeGreaterThan(180)
+    expect(await page.evaluate(() => scrollY)).toBeLessThan(220)
+    // Close to the map, the scroll comes to rest with the map's head under the window's top.
+    await wheel(page, 3)
+    expect(await top(page, 'map')).toBe(16)
+    // Reached, it lets go: one turn on, and two back, stay where they are put.
+    await wheel(page, 1)
+    expect(await top(page, 'map')).toBeLessThan(-60)
+    expect(await top(page, 'map')).toBeGreaterThan(-110)
+    await wheel(page, 2, -100)
+    expect(await top(page, 'map')).toBeGreaterThan(90)
+    expect(await top(page, 'map')).toBeLessThan(140)
+    // The board is the next screen.
+    await wheel(page, 7)
+    expect(await top(page, 'board')).toBe(16)
+    await wheel(page, 1)
+    expect(await top(page, 'board')).toBeLessThan(-60)
+    expect(await top(page, 'board')).toBeGreaterThan(-110)
+    // Nothing under it is a screen: the bands scroll freely.
+    await expect(page.locator('.home > .is-next')).toHaveCount(0)
+  })
+
+  test('the bands under the board wait below the window, then arrive, and end fully shown', async ({
+    page,
+  }) => {
+    const bands = page.locator('.home > :is(.offer, .works-band, .home__notes, .band)')
+    await expect(bands).toHaveCount(4)
+    for (const band of await bands.all()) await expect(band).toHaveClass(/is-pending/)
+    await expect(page.locator('#services .sign').first()).toHaveCSS('opacity', '0')
+
+    await page.locator('#services').scrollIntoViewIfNeeded()
+    await expect(page.locator('#services')).toHaveClass(/is-arrived/)
+    await expect(page.locator('#services .sign').last()).toHaveCSS('opacity', '1')
+    // The ones still below wait.
+    await expect(page.locator('#start')).toHaveClass(/is-pending/)
+
+    await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight))
+    for (const band of await bands.all()) await expect(band).toHaveClass(/is-arrived/)
+    await expect(page.locator('#start .btn')).toBeVisible()
+    await expect(page.locator('#start > div').first()).toHaveCSS('opacity', '1')
+  })
+
+  test('the strip map names the page’s stops and follows the visitor down them', async ({
+    page,
+  }) => {
+    const strip = page.getByRole('navigation', { name: 'On this page' })
+    await expect(strip.getByRole('link')).toHaveText([
+      'FNW Studio',
+      'Route map',
+      'Departures',
+      'Services',
+      'The works',
+      'Notes',
+      'Start a project',
+    ])
+    await expect(here(page)).toHaveText('FNW Studio')
+
+    await page.locator('#board').scrollIntoViewIfNeeded()
+    await page.evaluate(() => document.getElementById('board')!.scrollIntoView())
+    await expect(here(page)).toHaveText('Departures')
+    await expect(page.locator('.strip li.is-passed')).toHaveCount(2)
+
+    // The foot of the page is the last stop's, though its band never reaches the middle.
+    await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight))
+    await expect(here(page)).toHaveText('Start a project')
+
+    // It stays where it is while the page scrolls under it.
+    const box = await strip.boundingBox()
+    expect(box!.y).toBe((900 - 7 * 44) / 2)
+  })
+
+  test('a stop is a link: it rides to its section, which stays the one lit', async ({ page }) => {
+    await page.locator('.strip a[href="#services"]').click()
+    await expect(here(page)).toHaveText('Services')
+    await expect.poll(() => top(page, 'services')).toBe(16)
+    expect(new URL(page.url()).hash).toBe('#services')
+    await expect(page.locator('#services')).toHaveClass(/is-arrived/)
+    // The ride over, the page scrolls as it did before.
+    await expect(page.locator('html')).not.toHaveClass(/is-travelling/)
+
+    await page.locator('.strip a[href="#top"]').click()
+    await expect.poll(() => page.evaluate(() => scrollY)).toBe(0)
+    await expect(here(page)).toHaveText('FNW Studio')
+  })
+
+  test('with the keyboard, a stop shows its name and takes a visible focus', async ({ page }) => {
+    const link = page.locator('.strip a[href="#map"]')
+    await expect(link.locator('.strip__name')).toHaveCSS('opacity', '0')
+    await link.focus()
+    await page.keyboard.press('Shift+Tab')
+    await page.keyboard.press('Tab')
+    await expect(link).toBeFocused()
+    await expect(link.locator('.strip__name')).toHaveCSS('opacity', '1')
+    expect(await link.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('solid')
+  })
+})
+
+test.describe('the way down the page on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
+
+  test('has no strip map, and the page is no wider than the window', async ({ page }) => {
+    await page.goto('/en')
+    await expect(page.locator('#route-map')).toHaveClass(/is-live/)
+    await expect(page.locator('.strip')).toBeHidden()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+    // The map is still the next screen a drag settles on.
+    await expect(page.locator('#map')).toHaveClass(/is-next/)
   })
 })
 
@@ -392,6 +593,22 @@ test.describe('reduced motion', () => {
     await expect(page.locator('.clock time')).toHaveText(/^\d\d:\d\d:\d\d$/)
   })
 
+  test('nothing settles, waits or rides: the page scrolls as it is, and the strip map still says where', async ({
+    page,
+  }) => {
+    await page.goto('/en')
+    await expect(page.locator('#route-map')).toHaveClass(/is-live/)
+    await expect(page.locator('html')).not.toHaveClass(/is-settling/)
+    await expect(page.locator('.home > :is(.is-pending, .is-next)')).toHaveCount(0)
+    await page.locator('.strip a[href="#services"]').click()
+    await expect(page.locator('.strip a[aria-current="location"]')).toHaveText('Services')
+    expect(
+      await page.evaluate(() =>
+        Math.round(document.getElementById('services')!.getBoundingClientRect().top),
+      ),
+    ).toBe(16)
+  })
+
   test('still lights a line when a terminal is pointed at', async ({ page }) => {
     await page.goto('/en')
     await page.locator('.term[data-line="giogio"] .term__name').hover()
@@ -429,6 +646,21 @@ test.describe('without JavaScript', () => {
     ).toEqual([1, 1, 1, 1])
     await page.locator('.term[data-line="gati"] .term__name').click()
     await expect(page).toHaveURL(/\/en\/projects\/gati$/)
+  })
+
+  test('the strip map’s stops are plain links to the sections, and nothing waits out of sight', async ({
+    page,
+  }) => {
+    await page.goto('/en')
+    await expect(page.locator('.strip a[aria-current]')).toHaveCount(0)
+    await expect(page.locator('#services .sign').first()).toHaveCSS('opacity', '1')
+    await page.locator('.strip a[href="#works"]').click()
+    await expect(page).toHaveURL(/\/en#works$/)
+    expect(
+      await page.evaluate(() =>
+        Math.round(document.getElementById('works')!.getBoundingClientRect().top),
+      ),
+    ).toBe(16)
   })
 })
 

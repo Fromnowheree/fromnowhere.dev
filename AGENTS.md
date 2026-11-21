@@ -42,8 +42,9 @@ clinic layer (blocks, services, team, locations, brand colour, Tailwind, booking
 
 Layout: `src/payload.config.ts` wires everything; `src/collections/` (Projects, Services,
 Capabilities, Notes, Pages, ShortLinks, StatusChecks, Media, Users), `src/jobs/` (the status check), `src/globals/Studio.ts`, `src/fields/`, `src/components/` (`fnw.tsx`
-the system's components, `site/` the site's chrome, map, board and signs, with `HomeMotion.tsx`
-the home page's one motion island, `Notes.tsx` the notes' log, panel and lists with
+the system's components, `site/` the site's chrome, map, board and signs, with `HeroLines.tsx`
+the hero's tracks, `StripMap.tsx` the home page's own stops and `HomeMotion.tsx` the home page's
+one motion island, `Notes.tsx` the notes' log, panel and lists with
 `NotesMotion.tsx` their train, `Offer.tsx` the services, capabilities and proof chips, `contact/`
 the form, `admin/`), `src/lib/` (`links.ts` the link
 rule, `payload.ts` every query, `routeMap.ts` the map's geometry, `status.ts` a line's live status, `probe.ts` one knock on an
@@ -118,8 +119,29 @@ pixels.
   services, the capabilities, proof chips, the hero's actions, a case study's chapters). Every colour,
   size and duration is a token; add one to `site.css`'s `:root` rather than a raw value. Its
   signature pieces: the headline whose full stop is the point, the route map, the board with the
-  visitor's clock, the ticker of short links, lit terminals, windows. The offer wears the same
-  signs: a **service** is a lettered roundel (A, B, C, by its place) with a short track for each
+  visitor's clock, the ticker of short links, lit terminals, windows. **The home page gives each
+  its own screen** (21 November 2026): the hero fills the first one (`--header-h`, less
+  `--hero-peek`, the strip in which the map's title shows), and the route map is the next section,
+  under its own title ("Route map") with the tally beside it. With no map (no projects, or more
+  than twelve) the tally stays in the hero. The map's point is labelled "FNW Studio", and every
+  section's small label begins with it ("FNW Studio · services"). **Behind the hero, tracks of
+  light leave the headline's point** (`src/components/site/HeroLines.tsx`): a trunk to the right
+  edge, two tracks peeling up and three down, at 0° and 45°, drawn in units of the headline's
+  size (`--hero-fs`). They are decoration (`aria-hidden`) and always the point's violet, never a
+  line's colour. Three boxes placed by CSS anchor positioning keep them clear of words (the trunk
+  from the point, the tracks up from the headline's right edge, the tracks down from the lede's);
+  a browser without anchor positioning shows none. **The way down the page** (21 November 2026):
+  the page never takes the scroll away from the visitor. The map and the board are each a screen,
+  so a scroll that ends near the head of the next one down settles on it (CSS scroll snap,
+  `proximity`, armed by `HomeMotion` for the next screen only and let go once it is reached, so
+  nothing ever pulls back); the bands under them are shorter or longer than a screen and never
+  snap. At the window's left edge from 1024px, **the strip map** (`StripMap.tsx`): the page as a
+  line of its own, one stop per section that is on the page, the point first, each a plain link
+  to its section's id (`#map`, `#board`, `#services`, `#works`, `#notes`, `#start`; `#top` is
+  the top). `HomeMotion` lights the stop the visitor is at (`aria-current="location"`), rides a
+  train there, and makes a click's jump smooth. A stop's name shows when the strip is pointed at
+  or focused with the keyboard. The offer wears the same signs:
+  a **service** is a lettered roundel (A, B, C, by its place) with a short track for each
   line it runs on; a **capability** is a stop on a track under sodium work lights ("the works");
   **proof** is a chip per line in that line's colour, and the point for this site; a **case
   study** is chapters as stops down the project's own line.
@@ -155,8 +177,17 @@ no-preference)`, which `tests/int/routeMap.int.spec.ts` checks for site.css, rou
   - **The home page's opening plays on every visit** (a load, a soft navigation back, the other
     language): CSS on the map's insertion, under `.map:not(.is-settled)`, never keyed on
     `fnw-calm`. The point appears, lines draw out of it one after another, each terminal lights
-    and pulses, its card slides in. `HomeMotion` marks the map settled afterwards, so a layout
-    that appears on resize does not draw again.
+    and pulses, its card slides in. The map is under the hero's screen, so `HomeMotion` starts
+    the opening over and holds it at its first frame until the map comes into view (only while
+    the map is still below the window; without JavaScript it plays as the page arrives).
+    `HomeMotion` marks the map settled afterwards, so a layout that appears on resize does not
+    draw again.
+  - **The hero's tracks draw out of the headline's point as the page arrives** (CSS, on every
+    visit), then short trains set out along them and a ring leaves the point now and then.
+  - **Each section arrives as it comes into view**: the board's rows sweep in, and the bands
+    under it (services, the works, notes, the contact band) rise in, head first, then each card.
+    `HomeMotion` marks only what is still below the window (`is-pending`, then `is-arrived`), so
+    nothing a visitor has seen is ever hidden.
   - **Ambient motion always runs**: trains (one Web Animation each, set off once their line is
     drawn, a pulse at the terminal on each arrival, creeping up to the frontier on a line under
     construction), the point's rings, work lights, the ticker, the contact band's moving point,
@@ -165,7 +196,8 @@ no-preference)`, which `tests/int/routeMap.int.spec.ts` checks for site.css, rou
   - **Lighting**: pointing at or focusing a line, a terminal or a board row lights that line on
     the map and the board, dims the others and speeds its trains up (`HomeMotion`).
   - **Reduced motion**: everything is static and fully drawn; no trains, pulses, ticker or haze
-    (the ticker wraps instead). The clock still ticks.
+    (the ticker wraps instead), nothing settles, waits or rides. The clock still ticks, and the
+    strip map still says where the visitor is.
   - **Progressive enhancement**: without JavaScript the map, board and ticker are all there and
     every link works; `HomeMotion` only adds. No per-frame loop. The clock shows only with
     JavaScript (the server cannot know the visitor's time).

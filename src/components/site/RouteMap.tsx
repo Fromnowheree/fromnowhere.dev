@@ -361,9 +361,9 @@ export async function RouteMap({ projects, locale }: { projects: LiveProject[]; 
           })}
         </div>
       </div>
+      {/* Shown only where there is no pointer to hover with (routemap.css). */}
       <p className="map__hint" aria-hidden="true">
-        <span className="map__hint-point">{tMap('hintPoint')}</span>
-        <span className="map__hint-tap">{tMap('hintTap')}</span>
+        {tMap('hintTap')}
       </p>
     </nav>
   )

@@ -22,6 +22,24 @@ type Line = {
   frame: number
 }
 
+/** How far up the window the map's top comes before its opening plays, as a share of the window. */
+const OPENING_AT = 0.85
+
+/** A section's head settles under the window's top again only after it has been this far down
+ * the window (a share of its height): further than any browser's reach for a near snap point, so
+ * a section that has let go never pulls a visitor back. */
+const SETTLE_FROM = 0.55
+/** The strip map's stop is the last section whose top is above this line (a share of the
+ * window's height from its top); over the page's last screen the line sinks to the window's
+ * foot, so the last, short sections get their turn. */
+const HERE_AT = 0.45
+
+/** The animations under an element that end: an opening's, not the ambient loops. */
+const finite = (root: Element) =>
+  root
+    .getAnimations({ subtree: true })
+    .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
+
 /** The map's layout on screen now (the other is display: none). */
 const shownSvg = (map: HTMLElement) =>
   [...map.querySelectorAll<SVGSVGElement>('.map__svg')].find(
@@ -68,14 +86,20 @@ function trainKeyframes(
  * The home page's motion, on top of a map and a board the server rendered whole
  * (docs/prototypes/night-transit.html). CSS draws the map's opening on every visit; this adds:
  *
+ * - the opening's timing: the map is below the hero's screen, so its opening is started over and
+ *   held at its first frame until the map comes into view, then played;
  * - trains, one Web Animation each, running along their line after it is drawn, with an arrival
  *   pulse at the terminal; paused while the tab is hidden or the map is off screen;
  * - lighting: pointing at or focusing a line, its terminal or its board row lights that line on
  *   the map and the board, dims the others and speeds its trains up;
- * - the board's rows sweeping in as it comes into view.
+ * - the board's rows sweeping in as it comes into view, and the bands under it (services, the
+ *   works, notes, the contact band) arriving as each comes into view;
+ * - settling: a scroll that ends near the head of the map or the board, coming down to it, comes
+ *   to rest on it (CSS scroll snap, armed here for the next one down only);
+ * - the strip map: which stop the visitor is at, and a smooth ride to a stop that is clicked.
  *
  * Nothing here hides content that was already on screen, and under reduced motion it adds only
- * the lighting.
+ * the lighting and the strip map's stop.
  */
 export function HomeMotion() {
   useEffect(() => {
@@ -156,14 +180,11 @@ export function HomeMotion() {
       for (const line of lines) {
         if (!line.group.querySelector('.train')) continue
         // A line's trains set off once it has been drawn (its opening's finite animations).
-        const opening = line.group
-          .getAnimations({ subtree: true })
-          .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
-        Promise.all(opening.map((animation) => animation.finished.catch(() => undefined))).then(
-          () => {
-            if (generation === started) runTrains(line)
-          },
-        )
+        Promise.all(
+          finite(line.group).map((animation) => animation.finished.catch(() => undefined)),
+        ).then(() => {
+          if (generation === started) runTrains(line)
+        })
       }
     }
 
@@ -243,14 +264,51 @@ export function HomeMotion() {
 
     // ── when trains run ─────────────────────────────────────────────────
     if (map) {
+      // The map is below the hero's screen, and CSS began its opening when the page arrived, where
+      // nobody could see it. So it starts over and waits at its first frame until the map comes
+      // into view. Only while the map is still below the window: nothing seen is ever hidden. If it
+      // is already in view (a short hero, a restored scroll), the opening plays as it began.
+      let held: Animation[] = []
+      if (
+        !reduce.matches &&
+        !map.classList.contains('is-settled') &&
+        map.getBoundingClientRect().top >= innerHeight
+      ) {
+        // Settled, the opening's animations are gone; unsettled again, they are made anew.
+        map.classList.add('is-settled')
+        finite(map)
+        map.classList.remove('is-settled')
+        held = finite(map)
+        held.forEach((animation) => animation.pause())
+        const play = () => {
+          for (const animation of held) if (animation.playState === 'paused') animation.play()
+          held = []
+        }
+        const arrive = new IntersectionObserver(
+          (entries) => {
+            if (!entries.some((entry) => entry.isIntersecting)) return
+            arrive.disconnect()
+            play()
+          },
+          { rootMargin: `0px 0px -${Math.round((1 - OPENING_AT) * 100)}% 0px` },
+        )
+        arrive.observe(map)
+        cleanups.push(() => {
+          arrive.disconnect()
+          play()
+        })
+      }
+
       startTrains()
       // Once the opening is over, a layout that appears later (the window crossing the phone
       // width) shows the map at once rather than drawing it again.
-      const opening = map
-        .getAnimations({ subtree: true })
-        .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity)
-      Promise.all(opening.map((animation) => animation.finished.catch(() => undefined))).then(() =>
-        map.classList.add('is-settled'),
+      let mounted = true
+      cleanups.push(() => {
+        mounted = false
+      })
+      Promise.all(finite(map).map((animation) => animation.finished.catch(() => undefined))).then(
+        // Not for an island that has gone: its opening was cut short, not played out.
+        () => mounted && map.classList.add('is-settled'),
       )
 
       const seen = new IntersectionObserver((entries) => {
@@ -301,6 +359,131 @@ export function HomeMotion() {
       }
       cleanups.push(() => board.classList.remove('is-pending', 'is-arrived', 'is-swept'))
     }
+
+    // ── the bands under the board arrive ────────────────────────────────
+    if (!reduce.matches) {
+      const bands = [
+        ...document.querySelectorAll<HTMLElement>(
+          '.home > :is(.offer, .works-band, .home__notes, .band)',
+        ),
+      ].filter((band) => band.getBoundingClientRect().top >= innerHeight)
+      if (bands.length > 0) {
+        // Below the window, so nobody has seen them yet: each waits, then arrives.
+        const arrive = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue
+              entry.target.classList.replace('is-pending', 'is-arrived')
+              arrive.unobserve(entry.target)
+            }
+          },
+          { rootMargin: '0px 0px -12% 0px' },
+        )
+        for (const band of bands) {
+          band.classList.add('is-pending')
+          arrive.observe(band)
+        }
+        cleanups.push(() => {
+          arrive.disconnect()
+          bands.forEach((band) => band.classList.remove('is-pending', 'is-arrived'))
+        })
+      }
+    }
+
+    // ── where the visitor is: settling, and the strip map ───────────────
+    const root = document.documentElement
+    const strip = document.querySelector<HTMLElement>('.strip')
+    const links = strip ? [...strip.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')] : []
+    const hero = document.querySelector<HTMLElement>('.hero')
+    // A stop's section; the first stop is the top of the page, the hero's.
+    const sections = links.map((link) => document.getElementById(link.hash.slice(1)) ?? hero)
+    // The screens a scroll settles on, with how far under the window's top each comes to rest.
+    const screens = reduce.matches
+      ? []
+      : [...document.querySelectorAll<HTMLElement>('.home > :is(.home__map, .home__board)')].map(
+          (el) => ({ el, rest: parseFloat(getComputedStyle(el).scrollMarginTop) || 0 }),
+        )
+    let here = -1
+    // The stop that was clicked stays the one lit, during the ride and until the page is next
+    // scrolled: on a tall window its section may come to rest with the next one in view too.
+    let chosen = -1
+    let riding = false
+    let restedAt = 0
+    const locate = () => {
+      const height = innerHeight
+      // Armed while a screen is well below the window's top, let go once it is reached or passed.
+      for (const { el, rest } of screens) {
+        const top = el.getBoundingClientRect().top
+        if (top <= rest + 2) el.classList.remove('is-next')
+        else if (top >= height * SETTLE_FROM) el.classList.add('is-next')
+      }
+      if (!strip) return
+      if (chosen >= 0 && !riding && Math.abs(scrollY - restedAt) > 4) chosen = -1
+      const left = root.scrollHeight - height - scrollY
+      const line = height * (1 - (1 - HERE_AT) * Math.min(1, Math.max(0, left / height)))
+      let now = 0
+      sections.forEach((section, i) => {
+        if (section && section.getBoundingClientRect().top <= line) now = i
+      })
+      if (chosen >= 0) now = chosen
+      if (now === here) return
+      here = now
+      strip.style.setProperty('--at', String(now))
+      links.forEach((link, i) => {
+        link.parentElement?.classList.toggle('is-passed', i < now)
+        if (i === now) link.setAttribute('aria-current', 'location')
+        else link.removeAttribute('aria-current')
+      })
+    }
+    if (strip || screens.length > 0) {
+      // One reading per frame while the page is scrolling or resizing, and none otherwise.
+      let frame = 0
+      const moved = () => {
+        frame ||= requestAnimationFrame(() => {
+          frame = 0
+          locate()
+        })
+      }
+      locate()
+      if (screens.length > 0) root.classList.add('is-settling')
+      strip?.classList.add('is-live')
+      addEventListener('scroll', moved, { passive: true })
+      addEventListener('resize', moved)
+      cleanups.push(() => {
+        cancelAnimationFrame(frame)
+        removeEventListener('scroll', moved)
+        removeEventListener('resize', moved)
+        root.classList.remove('is-settling')
+        screens.forEach(({ el }) => el.classList.remove('is-next'))
+        strip?.classList.remove('is-live')
+        strip?.style.removeProperty('--at')
+        links.forEach((link) => {
+          link.parentElement?.classList.remove('is-passed')
+          link.removeAttribute('aria-current')
+        })
+      })
+    }
+    // A click on a stop rides there: the browser's own jump to the section, made smooth for as
+    // long as the ride takes (never under reduced motion: the design system forbids it there).
+    let ride = 0
+    listen(strip, 'click', (event) => {
+      const link = (event.target as Element | null)?.closest?.('a[href^="#"]')
+      if (!link) return
+      chosen = links.indexOf(link as HTMLAnchorElement)
+      riding = true
+      locate()
+      root.classList.add('is-travelling')
+      clearTimeout(ride)
+      ride = window.setTimeout(() => {
+        root.classList.remove('is-travelling')
+        riding = false
+        restedAt = scrollY
+      }, 1200)
+    })
+    cleanups.push(() => {
+      clearTimeout(ride)
+      root.classList.remove('is-travelling')
+    })
 
     return () => cleanups.forEach((cleanup) => cleanup())
   }, [])

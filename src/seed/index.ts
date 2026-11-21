@@ -549,7 +549,7 @@ export async function seed(
     slug: 'studio',
     locale: 'en',
     data: {
-      headline: 'From an idea to a running service',
+      headline: 'Built to run',
       email: 'hello@fromnowhere.dev',
       lede: 'Fromnowhere is a software studio. It designs, builds and hosts websites, products and community tools, and keeps them running after launch. Each line below is a project that left from here.',
       defaultDescription:
@@ -560,7 +560,7 @@ export async function seed(
     slug: 'studio',
     locale: 'hr',
     data: {
-      headline: 'Od ideje do sustava koji radi',
+      headline: 'Izrađeno da radi',
       lede: 'Fromnowhere je softverski studio. Dizajnira i izrađuje web stranice, proizvode i alate za zajednice, brine se za njihov hosting i održava ih u pogonu nakon objave. Svaka linija ispod projekt je koji je krenuo odavde.',
       defaultDescription:
         'Fromnowhere je softverski studio: web stranice s uređivačem, proizvodi, alati za zajednice i poslužitelji na kojima rade.',

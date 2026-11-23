@@ -27,7 +27,10 @@ import { WINDOWS, type WindowSeed } from './windowSeeds'
  * (docs/launch.md), so deleting every note later does not bring them back.
  *
  * Statuses and addresses are the launch plan, not a promise: check them in the admin before
- * going live. NMT has no address yet, so its line is dashed and ends at its page here.
+ * going live. Locals and Giogio are seeded as building (23 November 2026): their addresses do
+ * not answer yet, and a running line whose address is quiet shows as delayed. Set each to
+ * running in the admin once its address answers (docs/launch.md). NMT has no address yet, so its
+ * line is dashed and ends at its page here.
  *
  * Windows come from src/seed/windowSeeds.ts and the committed captures in src/seed/windows/
  * (`pnpm capture:windows`). A window is added only for a published destination, so the manifest
@@ -130,7 +133,7 @@ export const PROJECTS: ProjectSeed[] = [
     line: 1,
     name: 'Locals',
     slug: 'locals',
-    status: 'running',
+    status: 'building',
     kind: 'community',
     addresses: [{ url: 'https://yugioh.fromnowhere.dev' }],
     stack: ['Next.js', 'Payload', 'discord.js', 'Postgres'],
@@ -192,7 +195,7 @@ export const PROJECTS: ProjectSeed[] = [
     line: 2,
     name: 'Giogio',
     slug: 'giogio',
-    status: 'running',
+    status: 'building',
     kind: 'music',
     addresses: [
       { url: 'https://giogio.music' },

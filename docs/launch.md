@@ -171,7 +171,9 @@ allow its prefix (e.g. `2001:db8:1234::/56`).
 ## 7. Content, before telling anyone [you, in /admin]
 
 - **Projects**: a project whose address is not live yet goes to **Building** (or Planned), not
-  Running, or the status check shows it as Delayed. Locals stays Building until step 8.
+  Running, or the status check shows it as Delayed. Locals and Giogio are seeded as Building:
+  Locals stays so until step 8, Giogio until giogio.music answers. Until then the board says
+  "No answer" beside each of their addresses.
 - **Studio**: the e-mail is seeded as hello@fromnowhere.dev; add profiles if you want them.
 - **About**: a draft in both languages; make it yours.
 - **Privacy**: a starting text that matches what the site does; read it, and add who is

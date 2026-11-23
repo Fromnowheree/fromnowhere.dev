@@ -90,7 +90,9 @@ in a temporary `MEDIA_DIR`. Build first; `next dev` holds `.next/dev/lock`, so a
 cannot run beside yours, but a build can. The specs that attach test pictures boot Payload in
 the test process; in this mode the config sets `PAYLOAD_MIGRATING` so it never pushes the
 schema (a pushed database would stop the next `next start` at Payload's "data loss" prompt),
-and a database can be reused for another run.
+and a database can be reused for another run. The seed starts Locals and Giogio as building
+(their addresses do not answer yet); the run's global setup (`tests/helpers/inService.ts`) sets
+them running, because the specs are about lines in service.
 
 ```sh
 pnpm build

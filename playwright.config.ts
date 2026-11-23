@@ -52,6 +52,9 @@ if (e2ePort) {
  */
 export default defineConfig({
   testDir: './tests/e2e',
+  /* The seed starts Locals and Giogio as building; the specs want them running. Only ever in
+     the throwaway database. */
+  globalSetup: e2ePort ? './tests/helpers/inService.ts' : undefined,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */

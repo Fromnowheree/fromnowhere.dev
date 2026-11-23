@@ -3,7 +3,8 @@ import { expect, test, type Page } from '@playwright/test'
 /**
  * The home page in Night transit (docs/prototypes/night-transit.html), against the seeded
  * projects: 01 Locals, 02 Giogio (three addresses), 03 Nowhere's Medical Toolbox (building),
- * 04 Gati. The opening on every visit (held until the map, under the hero's screen, comes into
+ * 04 Gati (the seed starts Locals and Giogio as building; tests/helpers/inService.ts sets them
+ * running for these specs). The opening on every visit (held until the map, under the hero's screen, comes into
  * view), the trains, lighting between the map and the board, the phone map, reduced motion, no
  * JavaScript, touch targets and forced colours. And the way down the page: a scroll settling on
  * the map and the board, the bands under them arriving, the strip map of the page's stops.

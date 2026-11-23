@@ -104,9 +104,9 @@ The server never builds this site. On your machine, with everything committed (t
 refuses a tree with changes):
 
 ```sh
-git tag v0.1.0                           # the release: package.json's version, with a v
+git tag v1.0.0                           # the release: package.json's version, with a v
 ./scripts/build-image.sh                 # linux/arm64, under emulation: slow, give it time
-podman save localhost/fromnowhere-web:0.1.0 | ssh <server> docker load    # or docker save
+podman save localhost/fromnowhere-web:1.0.0 | ssh <server> docker load    # or docker save
 ```
 
 The name keeps its `localhost/` prefix: that is what podman calls a local image, and `.env`
@@ -119,7 +119,7 @@ The server needs the release's deployment files (compose, Caddy, db init, script
 source, and no Git remote is needed: send the tag's tree from your machine.
 
 ```sh
-git archive v0.1.0 | ssh <server> 'tar -x -C /srv/fnw'          # [you]
+git archive v1.0.0 | ssh <server> 'tar -x -C /srv/fnw'          # [you]
 cd /srv/fnw && cp .env.example .env && chmod 600 .env          # [server]
 ```
 
@@ -127,7 +127,7 @@ Fill in `.env` (every variable is explained in `.env.example`):
 
 ```sh
 COMPOSE_FILE=compose.yml:compose.shared.yml
-APP_IMAGE=localhost/fromnowhere-web:0.1.0
+APP_IMAGE=localhost/fromnowhere-web:1.0.0
 SITE_DOMAIN=fromnowhere.dev
 SITE_URL=https://fromnowhere.dev
 ADMIN_ALLOW=...              # your own address: curl -4 ifconfig.me (and -6); space-separated
@@ -229,13 +229,13 @@ Reply-To set to the sender, and a link pasted into a chat shows the share card.
 
 ```sh
 # [you] the version first: the image is named after package.json's version.
-npm pkg set version=0.1.1 && git commit -am "Release 0.1.1" && git tag v0.1.1
+npm pkg set version=1.0.1 && git commit -am "Release 1.0.1" && git tag v1.0.1
 ./scripts/build-image.sh
-podman save localhost/fromnowhere-web:0.1.1 | ssh <server> docker load
-git archive v0.1.1 | ssh <server> 'tar -x -C /srv/fnw'     # the release's compose, Caddy, scripts
+podman save localhost/fromnowhere-web:1.0.1 | ssh <server> docker load
+git archive v1.0.1 | ssh <server> 'tar -x -C /srv/fnw'     # the release's compose, Caddy, scripts
 # [server]
 cd /srv/fnw && ./scripts/backup.sh          # the way back is this backup (AGENTS.md §5)
-sed -i 's#^APP_IMAGE=.*#APP_IMAGE=localhost/fromnowhere-web:0.1.1#' .env
+sed -i 's#^APP_IMAGE=.*#APP_IMAGE=localhost/fromnowhere-web:1.0.1#' .env
 docker compose up -d                        # migrations run at start
 docker compose up -d --force-recreate caddy # Caddy reads a changed Caddyfile only when recreated
 ```
